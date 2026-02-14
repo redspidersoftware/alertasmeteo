@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supabase</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .result {
+            background: #2a2a2a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .error {
+            color: #ff6b6b;
+        }
+
+        .success {
+            color: #51cf66;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 Test Supabase Connection</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="results"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const { createClient } = supabase;
+
+        const supabaseUrl = 'https://ewfbpmlcbmkvedgbqfgj.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3ZmJwbWxjYm1rdmVkZ2JxZmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwOTUxNzYsImV4cCI6MjA4NjY3MTE3Nn0.V-ptTSZKrlnec4vsq4bpCwenGN41c7D1ayViO0vastc';
+
+        const client = createClient(supabaseUrl, supabaseKey);
+
+        document.getElementById('results').innerHTML = `
+            <div class="result">
+                <p><strong>URL:</strong> ${supabaseUrl}</p>
+                <p><strong>Key:</strong> ${supabaseKey.substring(0, 30)}...</p>
+            </div>
+        `;
+
+        async function testConnection() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<div class="result">Testing...</div>';
+
+            try {
+                // Test 1: Check if table exists
+                const { data, error } = await client.from('users').select('count');
+
+                if (error) {
+                    results.innerHTML += `
+                        <div class="result error">
+                            <h3>❌ Error:</h3>
+                            <p><strong>Message:</strong> ${error.message}</p>
+                            <p><strong>Code:</strong> ${error.code}</p>
+                            <p><strong>Details:</strong> ${error.details}</p>
+                            <p><strong>Hint:</strong> ${error.hint}</p>
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML += `
+                        <div class="result success">
+                            <h3>✅ Connection OK!</h3>
+                            <p>Table 'users' is accessible</p>
+                        </div>
+                    `;
+
+                    // Test 2: Try signup
+                    testSignup();
+                }
+            } catch (e) {
+                results.innerHTML += `
+                    <div class="result error">
+                        <h3>❌ Network Error:</h3>
+                        <p>${e.message}</p>
+                        <p>This usually means CORS issue or network problem</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testSignup() {
+            const results = document.getElementById('results');
+            const testEmail = 'test' + Date.now() + '@example.com';
+
+            try {
+                const { data, error } = await client.auth.signUp({
+                    email: testEmail,
+                    password: '123456789'
+                });
+
+                if (error) {
+                    results.innerHTML += `
+                        <div class="result error">
+                            <h3>❌ Signup Error:</h3>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML += `
+                        <div class="result success">
+                            <h3>✅ Signup Works!</h3>
+                            <p>Created user: ${testEmail}</p>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                results.innerHTML += `
+                    <div class="result error">
+                        <h3>❌ Signup Failed:</h3>
+                        <p>${e.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>
