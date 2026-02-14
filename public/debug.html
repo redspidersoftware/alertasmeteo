@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Debug</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .result {
+            background: #2a2a2a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            border-left-color: #f44336;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Supabase Connection Debug</h1>
+    
+    <div class="result">
+        <h3>Environment Variables:</h3>
+        <div id="env-check"></div>
+    </div>
+
+    <button onclick="testConnection()">Test Supabase Connection</button>
+    <button onclick="testSignup()">Test User Signup</button>
+    
+    <div id="results"></div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        // Check env vars
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+        document.getElementById('env-check').innerHTML = `
+            <p><strong>VITE_SUPABASE_URL:</strong> ${supabaseUrl || '❌ NOT SET'}</p>
+            <p><strong>VITE_SUPABASE_ANON_KEY:</strong> ${supabaseKey ? '✅ SET (' + supabaseKey.substring(0, 20) + '...)' : '❌ NOT SET'}</p>
+        `;
+
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        window.testConnection = async function() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="result">Testing connection...</div>';
+            
+            try {
+                const { data, error } = await supabase.from('users').select('count');
+                if (error) {
+                    results.innerHTML = `<div class="result error">
+                        <h3>❌ Connection Error:</h3>
+                        <p>${error.message}</p>
+                        <pre>${JSON.stringify(error, null, 2)}</pre>
+                    </div>`;
+                } else {
+                    results.innerHTML = `<div class="result">
+                        <h3>✅ Connection Successful!</h3>
+                        <p>Database is accessible</p>
+                    </div>`;
+                }
+            } catch (e) {
+                results.innerHTML = `<div class="result error">
+                    <h3>❌ Fetch Error:</h3>
+                    <p>${e.message}</p>
+                </div>`;
+            }
+        };
+
+        window.testSignup = async function() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="result">Testing signup...</div>';
+            
+            const testEmail = 'test' + Date.now() + '@example.com';
+            const testPassword = '123456789';
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: testEmail,
+                    password: testPassword
+                });
+                
+                if (error) {
+                    results.innerHTML = `<div class="result error">
+                        <h3>❌ Signup Error:</h3>
+                        <p>${error.message}</p>
+                        <pre>${JSON.stringify(error, null, 2)}</pre>
+                    </div>`;
+                } else {
+                    results.innerHTML = `<div class="result">
+                        <h3>✅ Signup Successful!</h3>
+                        <p>User created: ${testEmail}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>`;
+                }
+            } catch (e) {
+                results.innerHTML = `<div class="result error">
+                    <h3>❌ Fetch Error:</h3>
+                    <p>${e.message}</p>
+                </div>`;
+            }
+        };
+    </script>
+</body>
+</html>
