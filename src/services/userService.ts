@@ -30,15 +30,23 @@ export const validatePostalCode = (cp: string): boolean => {
 export const saveUser = async (userData: UserData): Promise<void> => {
     // 1. Sign Up the user in Supabase Auth
     // We treat the "Phone" as the password for this specific app request
-    // In a real app, you'd have a separate password field.
 
-    // Check if user already exists in Auth by trying to sign up
     const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.phone, // Password = Phone
+        options: {
+            emailRedirectTo: window.location.origin,
+            data: {
+                name: userData.name,
+                phone: userData.phone,
+                postal_code: userData.postalCode,
+                language: userData.language || 'es'
+            }
+        }
     });
 
     if (authError) {
+        console.error("Signup error:", authError);
         throw new Error(authError.message);
     }
 
@@ -53,10 +61,11 @@ export const saveUser = async (userData: UserData): Promise<void> => {
                 phone: userData.phone,
                 postal_code: userData.postalCode,
                 language: userData.language || 'es',
-                is_verified: false
+                is_verified: authData.user.confirmed_at ? true : false
             });
 
         if (dbError) {
+            console.error("Database error:", dbError);
             // If duplicate key error (user profile already exists but auth succeeded?), try update
             if (dbError.code === '23505') {
                 console.log("User profile exists, updating...");

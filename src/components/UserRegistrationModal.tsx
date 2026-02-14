@@ -15,10 +15,12 @@ export const UserRegistrationModal = ({ isOpen, onClose }: Props) => {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const newErrors: Record<string, string> = {};
+        setErrorMessage(''); // Clear previous errors
 
         if (!formData.name) newErrors.name = 'Required';
         if (!validateEmail(formData.email)) newErrors.email = t('form.error.email');
@@ -39,8 +41,9 @@ export const UserRegistrationModal = ({ isOpen, onClose }: Props) => {
                     setSuccess(false);
                     setFormData({ name: '', email: '', phone: '', postalCode: '', language: 'es' });
                 }, 3000); // Increased time to read success message
-            } catch (e) {
-                console.error(e);
+            } catch (e: any) {
+                console.error('Registration error:', e);
+                setErrorMessage(e.message || 'Error al registrar usuario. Por favor, verifica tu configuración de Supabase.');
             } finally {
                 setLoading(false);
             }
@@ -133,6 +136,13 @@ export const UserRegistrationModal = ({ isOpen, onClose }: Props) => {
                                         {errors.cp && <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.cp}</p>}
                                     </div>
                                 </div>
+
+                                {errorMessage && (
+                                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 flex items-start gap-2">
+                                        <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
+                                        <p className="text-sm text-red-300">{errorMessage}</p>
+                                    </div>
+                                )}
 
                                 <div>
                                     <label className="block text-sm font-medium text-slate-300 mb-1">{t('form.lang')}</label>
