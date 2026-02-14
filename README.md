@@ -1,5 +1,7 @@
 # AEMET Weather Alerts Dashboard 🌦️
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/redspidersoftware/alertasmeteo)
+
 Real-time weather alert monitoring system for Spain using AEMET OpenData API.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
