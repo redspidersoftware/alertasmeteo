@@ -124,15 +124,25 @@ export const updateUser = async (uid: string, userData: Partial<UserData>): Prom
     // 2. If phone is updated, update Supabase Auth password
     // In this app, phone acts as the password
     if (userData.phone) {
-        const { error: authError } = await supabase.auth.updateUser({
-            password: userData.phone
-        });
+        // Only update if it's different to avoid "New password should be different from the old password" error
+        await supabase.auth.getUser();
 
-        if (authError) {
-            console.error("Error updating auth password:", authError);
-            // We don't necessarily want to fail the whole profile update if password sync fails,
-            // but in this specific setup it's critical.
-            throw new Error(`Profile updated, but password sync failed: ${authError.message}`);
+        // We need to check the phone in the public.users table for the current user to compare
+        const { data: currentUser } = await supabase
+            .from('users')
+            .select('phone')
+            .eq('id', uid)
+            .single();
+
+        if (currentUser && currentUser.phone !== userData.phone) {
+            const { error: authError } = await supabase.auth.updateUser({
+                password: userData.phone
+            });
+
+            if (authError) {
+                console.error("Error updating auth password:", authError);
+                throw new Error(`Profile updated, but password sync failed: ${authError.message}`);
+            }
         }
     }
 };
