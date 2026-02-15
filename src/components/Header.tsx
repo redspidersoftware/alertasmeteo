@@ -39,7 +39,7 @@ export const Header = () => {
         return (
             <img
                 src={`https://flagcdn.com/w40/${flagCode}.png`}
-                srcset={`https://flagcdn.com/w80/${flagCode}.png 2x`}
+                srcSet={`https://flagcdn.com/w80/${flagCode}.png 2x`}
                 width="20"
                 alt={lang}
                 className="rounded-sm shadow-sm"
