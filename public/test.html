@@ -62,7 +62,7 @@
             </div>
         `;
 
-        async function testConnection() {
+        window.testConnection = async function () {
             const results = document.getElementById('results');
             results.innerHTML += '<div class="result">Testing connection...</div>';
 
@@ -85,7 +85,7 @@
                             <pre>${JSON.stringify(data, null, 2)}</pre>
                         </div>
                     `;
-                    testSignup();
+                    window.testSignup();
                 } else {
                     const errorText = await response.text();
                     results.innerHTML += `
@@ -113,7 +113,7 @@
             }
         }
 
-        async function testSignup() {
+        window.testSignup = async function () {
             const results = document.getElementById('results');
             const testEmail = 'test' + Date.now() + '@example.com';
 
