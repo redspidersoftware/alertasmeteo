@@ -1,29 +1,33 @@
-// Follow this setup guide to integrate Resend with Supabase Edge Functions:
-// https://resend.com/docs/send-with-supabase-edge-functions
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts"
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+const SMTP_USER = Deno.env.get('SMTP_USER')
+const SMTP_PASS = Deno.env.get('SMTP_PASS') // Gmail App Password
 
 serve(async (req) => {
-    const { email, name, preferences } = await req.json()
+    try {
+        const { email, name, preferences } = await req.json()
 
-    // Build a summary of preferences
-    const severities = preferences.preferredSeverities?.join(', ') || 'Todas'
-    const types = preferences.preferredEventTypes?.length > 0
-        ? preferences.preferredEventTypes.join(', ')
-        : 'Todos'
+        // Build a summary of preferences
+        const severities = preferences.preferredSeverities?.join(', ') || 'Todas'
+        const types = preferences.preferredEventTypes?.length > 0
+            ? preferences.preferredEventTypes.join(', ')
+            : 'Todos'
 
-    const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${RESEND_API_KEY}`,
-        },
-        body: JSON.stringify({
-            from: 'Alertas Meteo <onboarding@resend.dev>', // You should change this to your verified domain later
-            to: [email],
-            subject: 'Tus preferencias de alertas han sido actualizadas',
+        const client = new SmtpClient();
+
+        await client.connectTLS({
+            hostname: "smtp.gmail.com",
+            port: 465, // Use 465 for TLS or 587 (with different config)
+            username: SMTP_USER,
+            password: SMTP_PASS,
+        });
+
+        await client.send({
+            from: SMTP_USER!, // Gmail requires matching sender and authenticated user
+            to: email,
+            subject: "Tus preferencias de alertas han sido actualizadas",
+            content: "text/html",
             html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
           <h2 style="color: #2563eb;">¡Hola ${name}!</h2>
@@ -39,13 +43,20 @@ serve(async (req) => {
           <p style="font-size: 12px; color: #64748b;">Este es un mensaje automático de Alertas Meteo.</p>
         </div>
       `,
-        }),
-    })
+        });
 
-    const data = await res.json()
+        await client.close();
 
-    return new Response(JSON.stringify(data), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-    })
+        return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+        })
+
+    } catch (error) {
+        console.error("Error sending email:", error);
+        return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        })
+    }
 })
