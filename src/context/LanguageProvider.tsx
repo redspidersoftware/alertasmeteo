@@ -50,6 +50,7 @@ const translations: Record<string, Record<Language, string>> = {
     'profile.success': { es: 'Perfil actualizado correctamente', en: 'Profile updated successfully' },
     'profile.error': { es: 'Error al actualizar el perfil', en: 'Error updating profile' },
     'footer.donate': { es: 'Apoyar el proyecto (PayPal)', en: 'Support the project (PayPal)' },
+    'footer.donate_bmc': { es: 'Invitame a un café (BMC)', en: 'Buy Me a Coffee (BMC)' },
     'footer.donate_desc': { es: 'Si te gusta el servicio, considera hacer una donación para ayudar a mantenerlo.', en: 'If you like the service, consider making a donation to help maintain it.' }
 };
 
