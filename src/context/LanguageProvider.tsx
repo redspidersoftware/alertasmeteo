@@ -42,7 +42,13 @@ const translations: Record<string, Record<Language, string>> = {
     'login.error.creds': { es: 'Credenciales inválidas', en: 'Invalid credentials' },
     'login.error.unverified': { es: 'Cuenta no verificada. Revisa tu email.', en: 'Account not verified. Check your email.' },
     'auth.logout': { es: 'Cerrar Sesión', en: 'Log Out' },
-    'auth.welcome': { es: 'Hola,', en: 'Hello,' }
+    'auth.welcome': { es: 'Hola,', en: 'Hello,' },
+    'profile.title': { es: 'Configuración de Perfil', en: 'Profile Settings' },
+    'profile.subtitle': { es: 'Actualiza tus datos personales', en: 'Update your personal details' },
+    'profile.save': { es: 'Guardar Cambios', en: 'Save Changes' },
+    'profile.saving': { es: 'Guardando...', en: 'Saving...' },
+    'profile.success': { es: 'Perfil actualizado correctamente', en: 'Profile updated successfully' },
+    'profile.error': { es: 'Error al actualizar el perfil', en: 'Error updating profile' }
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {

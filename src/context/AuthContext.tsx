@@ -6,6 +6,7 @@ interface AuthContextType {
     user: UserData | null;
     login: (email: string, phone: string) => Promise<boolean>; // Keeping signature, phone acts as password
     logout: () => Promise<void>;
+    refreshProfile: () => Promise<void>;
     isAuthenticated: boolean;
 }
 
@@ -13,6 +14,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<UserData | null>(null);
+
+    const refreshProfile = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+            await fetchProfile(session.user.id, session.user.email!);
+        }
+    };
 
     useEffect(() => {
         // 1. Check active session
@@ -73,7 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+        <AuthContext.Provider value={{ user, login, logout, refreshProfile, isAuthenticated: !!user }}>
             {children}
         </AuthContext.Provider>
     );

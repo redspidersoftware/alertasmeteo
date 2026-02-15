@@ -1,9 +1,10 @@
-import { CloudRainWind, ChevronDown, UserPlus, LogIn, LogOut, User } from 'lucide-react';
+import { CloudRainWind, ChevronDown, UserPlus, LogIn, LogOut, User, Settings } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useState, useRef, useEffect } from 'react';
 import { UserRegistrationModal } from './UserRegistrationModal';
 import { LoginModal } from './LoginModal';
+import { ProfileModal } from './ProfileModal';
 
 export const Header = () => {
     const { language, setLanguage, t } = useLanguage();
@@ -11,6 +12,7 @@ export const Header = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const toggleDropdown = () => setIsOpen(!isOpen);
@@ -52,18 +54,27 @@ export const Header = () => {
 
                     <div className="flex items-center gap-3">
                         {user ? (
-                            <div className="flex items-center gap-3 bg-white/5 rounded-lg pl-3 pr-1 py-1 border border-white/10">
+                            <div className="flex items-center gap-2 bg-white/5 rounded-lg pl-3 pr-1 py-1 border border-white/10">
                                 <div className="flex items-center gap-2">
                                     <User size={16} className="text-blue-400" />
                                     <span className="text-sm font-medium text-slate-200 hidden sm:inline">{t('auth.welcome')} {user.name}</span>
                                 </div>
-                                <button
-                                    onClick={logout}
-                                    className="p-1.5 rounded-md hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
-                                    title={t('auth.logout')}
-                                >
-                                    <LogOut size={16} />
-                                </button>
+                                <div className="flex items-center border-l border-white/10 ml-2 pl-1">
+                                    <button
+                                        onClick={() => setIsProfileOpen(true)}
+                                        className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-blue-400 transition-colors"
+                                        title={t('profile.title')}
+                                    >
+                                        <Settings size={16} />
+                                    </button>
+                                    <button
+                                        onClick={logout}
+                                        className="p-1.5 rounded-md hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                                        title={t('auth.logout')}
+                                    >
+                                        <LogOut size={16} />
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             <>
@@ -121,6 +132,7 @@ export const Header = () => {
 
             <UserRegistrationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
             <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+            <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
         </>
     );
 };

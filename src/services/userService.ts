@@ -93,6 +93,40 @@ export const getUserProfile = async (uid: string): Promise<UserData | null> => {
     };
 };
 
+export const updateUser = async (uid: string, userData: Partial<UserData>): Promise<void> => {
+    // 1. Update public.users table
+    const updateData: any = {};
+    if (userData.name !== undefined) updateData.name = userData.name;
+    if (userData.phone !== undefined) updateData.phone = userData.phone;
+    if (userData.postalCode !== undefined) updateData.postal_code = userData.postalCode;
+    if (userData.language !== undefined) updateData.language = userData.language;
+
+    const { error: dbError } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', uid);
+
+    if (dbError) {
+        console.error("Error updating user profile:", dbError);
+        throw new Error(dbError.message);
+    }
+
+    // 2. If phone is updated, update Supabase Auth password
+    // In this app, phone acts as the password
+    if (userData.phone) {
+        const { error: authError } = await supabase.auth.updateUser({
+            password: userData.phone
+        });
+
+        if (authError) {
+            console.error("Error updating auth password:", authError);
+            // We don't necessarily want to fail the whole profile update if password sync fails,
+            // but in this specific setup it's critical.
+            throw new Error(`Profile updated, but password sync failed: ${authError.message}`);
+        }
+    }
+};
+
 export const verifyUser = async (email: string): Promise<boolean> => {
     // Determine UID from email (requires Admin rights usually)
     // OR we change this function to just accept the verification call if we know the user
