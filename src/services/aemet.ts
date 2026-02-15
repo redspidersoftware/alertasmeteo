@@ -46,11 +46,13 @@ export const getAlerts = async (): Promise<WeatherAlert[]> => {
             if (!file.name.endsWith('.xml')) continue;
 
             let xmlContent = "";
-            if (file.readAsString) {
-                xmlContent = file.readAsString();
-            } else if (file.buffer) {
-                const decoder = new TextDecoder("utf-8");
+            const decoder = new TextDecoder("utf-8");
+
+            if (file.buffer) {
                 xmlContent = decoder.decode(file.buffer);
+            } else if (file.readAsString) {
+                // As fallback, but try to fix encoding if possible
+                xmlContent = file.readAsString();
             } else {
                 continue;
             }

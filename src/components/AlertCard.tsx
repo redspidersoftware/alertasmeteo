@@ -24,6 +24,53 @@ const iconColors = {
     unknown: 'bg-slate-500/20 text-slate-400 shadow-slate-500/20'
 };
 
+const detectWeatherType = (eventName: string) => {
+    const event = eventName.toLowerCase();
+    if (event.includes('lluvia') || event.includes('precipitación')) return 'rain';
+    if (event.includes('tormenta')) return 'storm';
+    if (event.includes('nieve')) return 'snow';
+    if (event.includes('viento') || event.includes('rachas')) return 'wind';
+    return null;
+};
+
+const WeatherEffects = ({ type }: { type: string | null }) => {
+    if (!type) return null;
+
+    const particles = Array.from({ length: 15 });
+
+    if (type === 'storm') {
+        return <div className="absolute inset-0 weather-lightning pointer-events-none z-0" />;
+    }
+
+    return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-80">
+            {particles.map((_, i) => {
+                const left = Math.random() * 100;
+                const delay = Math.random() * 5;
+                const duration = 0.5 + Math.random() * 1.5;
+
+                let className = "";
+                if (type === 'rain') className = "weather-rain w-[2px] h-8 bg-blue-400/80 shadow-[0_0_8px_rgba(34,197,94,0.4)]";
+                if (type === 'snow') className = "weather-snow w-3 h-3 bg-white/90 rounded-full blur-[2px]";
+                if (type === 'wind') className = "weather-wind w-16 h-[2px] bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.2)]";
+
+                return (
+                    <div
+                        key={i}
+                        className={`absolute ${className}`}
+                        style={{
+                            left: `${left}%`,
+                            top: `-20%`,
+                            animationDelay: `${delay}s`,
+                            animationDuration: `${type === 'snow' ? duration + 4 : duration}s`
+                        }}
+                    />
+                );
+            })}
+        </div>
+    );
+};
+
 export const AlertCard = ({ alert }: AlertCardProps) => {
     const [expanded, setExpanded] = useState(false);
     const { t } = useLanguage();
@@ -60,6 +107,8 @@ export const AlertCard = ({ alert }: AlertCardProps) => {
         >
             {/* Glow Effect on Hover */}
             <div className={`absolute -inset-px bg-gradient-to-r ${gradientClass} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+
+            <WeatherEffects type={detectWeatherType(alert.event)} />
 
             <div className="relative flex items-start gap-6">
                 <div className={`${iconClass} p-4 rounded-2xl shadow-lg flex-shrink-0 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
