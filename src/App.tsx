@@ -41,10 +41,12 @@ const AppContent = () => {
     }
   }, []);
 
-  // 1. Language Filter
+  // 1. Language Filter + Severity Filter (Only Yellow, Orange, Red)
   const languageFiltered = alerts.filter(alert => {
     const alertLang = alert.language ? alert.language.toLowerCase() : 'es';
-    return alertLang.startsWith(language);
+    const isRightLanguage = alertLang.startsWith(language);
+    const isImportantSeverity = ['yellow', 'orange', 'red'].includes(alert.severity);
+    return isRightLanguage && isImportantSeverity;
   });
 
   // 2. Event Type Filter (applied on top of language filter)
