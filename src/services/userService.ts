@@ -32,7 +32,7 @@ export const saveUser = async (userData: UserData): Promise<void> => {
     // We treat the "Phone" as the password for this specific app request
     // IMPORTANT: The profile is now created automatically by a Database Trigger in Supabase!
 
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { error: authError } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.phone, // Password = Phone
         options: {
