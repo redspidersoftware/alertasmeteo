@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts"
+import nodemailer from "npm:nodemailer"
 
 const SMTP_USER = Deno.env.get('SMTP_USER')
 const SMTP_PASS = Deno.env.get('SMTP_PASS') // Gmail App Password
 
-serve(async (req) => {
+serve(async (req: Request) => {
     // Handle CORS
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*' } })
@@ -14,13 +14,13 @@ serve(async (req) => {
     console.log(`[Function] Method: ${req.method} | Test mode: ${isTest}`)
 
     try {
-        let email, name, preferences
+        let email: string, name: string, preferences: any
 
         if (isTest) {
-            email = SMTP_USER // Test send to self
+            email = SMTP_USER || ""
             name = "Test User"
-            preferences = { preferredSeverities: ['test'], preferredEventTypes: ['test'] }
-            console.log("[Test] Running connectivity test...")
+            preferences = { preferredSeverities: ['test-severity'], preferredEventTypes: ['test-event'] }
+            console.log("[Test] Running connectivity test to:", email)
         } else {
             const payload = await req.json()
             email = payload.email
@@ -30,33 +30,31 @@ serve(async (req) => {
         }
 
         if (!SMTP_USER || !SMTP_PASS) {
-            throw new Error("Missing SMTP_USER or SMTP_PASS secrets")
+            throw new Error("Missing SMTP_USER or SMTP_PASS secrets in Supabase")
         }
 
         // Build a summary of preferences
         const severities = preferences.preferredSeverities?.join(', ') || 'Todas'
         const types = preferences.preferredEventTypes?.length > 0
-            ? preferences.preferredEventTypes.join(', ')
+            ? preferences.preferredEventTypes.sort().join(', ')
             : 'Todos'
 
-        console.log("[SMTP] Initializing client...")
-        const client = new SmtpClient();
-
-        console.log("[SMTP] Connecting to TLS (465)...")
-        await client.connectTLS({
-            hostname: "smtp.gmail.com",
+        console.log("[SMTP] Creating transporter...")
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
             port: 465,
-            username: SMTP_USER,
-            password: SMTP_PASS,
+            secure: true, // Use SSL
+            auth: {
+                user: SMTP_USER,
+                pass: SMTP_PASS,
+            },
         });
-        console.log("[SMTP] Connected successfully")
 
-        console.log("[SMTP] Sending email...")
-        await client.send({
-            from: SMTP_USER!,
+        console.log("[SMTP] Sending mail via Nodemailer...")
+        const info = await transporter.sendMail({
+            from: `"Alertas Meteo" <${SMTP_USER}>`,
             to: email,
-            subject: isTest ? "Prueba de conexión SMTP" : "Tus preferencias de alertas han sido actualizadas",
-            content: "text/html",
+            subject: isTest ? "Prueba de conexión SMTP (Nodemailer)" : "Tus preferencias de alertas han sido actualizadas",
             html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
           <h2 style="color: #2563eb;">¡Hola ${name}!</h2>
@@ -73,27 +71,26 @@ serve(async (req) => {
         </div>
       `,
         });
-        console.log("[SMTP] Email sent")
 
-        await client.close();
-        console.log("[SMTP] Connection closed")
+        console.log("[SMTP] Success:", info.messageId)
 
         return new Response(JSON.stringify({
             success: true,
-            message: isTest ? "SMTP Test successful! Check your inbox." : "Email sent successfully",
+            messageId: info.messageId,
+            message: isTest ? "SMTP Test successful via Nodemailer! Check your inbox." : "Email sent successfully",
             debug: { user: SMTP_USER, target: email }
         }), {
             status: 200,
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         })
 
-    } catch (error) {
-        console.error("[SMTP Error]", error);
+    } catch (err: any) {
+        console.error("[SMTP Error]", err);
         return new Response(JSON.stringify({
             success: false,
-            error: error.message,
-            stack: error.stack,
-            hint: "Check if SMTP_USER and SMTP_PASS (App Password) are correct."
+            error: err.message,
+            stack: err.stack,
+            hint: "Ensure you are using a Gmail App Password, not your regular password. Also check SMTP_USER secret."
         }), {
             status: 500,
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
