@@ -141,28 +141,28 @@
 @keyframes lightning {
 
   0%,
-  95%,
+  90%,
   100% {
     opacity: 0;
     background: transparent;
   }
 
-  96% {
-    opacity: 0.4;
-    background: white;
+  92% {
+    opacity: 0.5;
+    background: rgba(255, 255, 255, 0.4);
   }
 
-  97% {
+  93% {
     opacity: 0.1;
     background: transparent;
   }
 
-  98% {
-    opacity: 0.6;
-    background: white;
+  94% {
+    opacity: 0.8;
+    background: rgba(255, 255, 255, 0.6);
   }
 
-  99% {
+  95% {
     opacity: 0;
     background: transparent;
   }

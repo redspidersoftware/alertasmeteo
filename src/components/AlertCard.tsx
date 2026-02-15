@@ -26,10 +26,11 @@ const iconColors = {
 
 const detectWeatherType = (eventName: string, headline: string = '') => {
     const text = (eventName + ' ' + headline).toLowerCase();
+    // Prioritize storm as it's the most dramatic
+    if (text.includes('tormenta') || text.includes('rayo')) return 'storm';
+    if (text.includes('nieve') || text.includes('nevada') || text.includes('aludes')) return 'snow';
     if (text.includes('lluvia') || text.includes('precipitaci')) return 'rain';
-    if (text.includes('tormenta')) return 'storm';
-    if (text.includes('nieve')) return 'snow';
-    if (text.includes('viento') || text.includes('rachas') || text.includes('galerna')) return 'wind';
+    if (text.includes('viento') || text.includes('rachas') || text.includes('galerna') || text.includes('costero')) return 'wind';
     return null;
 };
 
@@ -46,6 +47,7 @@ const WeatherEffects = ({ type }: { type: string | null }) => {
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-80">
             {particles.map((_, i) => {
                 const left = Math.random() * 100;
+                const top = type === 'wind' ? Math.random() * 100 : -20;
                 const delay = Math.random() * 5;
                 const duration = 0.5 + Math.random() * 1.5;
 
@@ -60,7 +62,7 @@ const WeatherEffects = ({ type }: { type: string | null }) => {
                         className={`absolute ${className}`}
                         style={{
                             left: `${left}%`,
-                            top: `-20%`,
+                            top: `${top}%`,
                             animationDelay: `${delay}s`,
                             animationDuration: `${type === 'snow' ? duration + 4 : duration}s`
                         }}
