@@ -90,16 +90,20 @@ const AppContent = () => {
           {/* Donation Section (Moved here for better visibility) */}
           <div className="mb-10 p-6 rounded-2xl bg-white/5 border border-white/10 text-center backdrop-blur-sm shadow-xl">
             <p className="text-slate-300 mb-4">{t('footer.donate_desc')}</p>
-            <a
-              href="https://www.paypal.com/donate?hosted_button_id=YOUR_ID"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-[#0070ba] hover:bg-[#005ea6] text-white font-bold transition-all shadow-lg hover:shadow-[#0070ba]/20 group"
-            >
-              <span className="text-xl">PayPal</span>
-              <span>{t('footer.donate')}</span>
-              <span className="group-hover:translate-x-1 transition-transform">→</span>
-            </a>
+            <form action="https://www.paypal.com/donate" method="post" target="_blank" className="inline-block">
+              <input type="hidden" name="business" value="RLBDLZGFL5DRQ" />
+              <input type="hidden" name="no_recurring" value="0" />
+              <input type="hidden" name="item_name" value="Ayúdanos a mejorar el servicio" />
+              <input type="hidden" name="currency_code" value="EUR" />
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-[#0070ba] hover:bg-[#005ea6] text-white font-bold transition-all shadow-lg hover:shadow-[#0070ba]/20 group border-none cursor-pointer"
+              >
+                <span className="text-xl">PayPal</span>
+                <span>{t('footer.donate')}</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </button>
+            </form>
           </div>
 
           <div className="mb-6">
