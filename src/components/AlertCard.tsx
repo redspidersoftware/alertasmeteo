@@ -24,12 +24,12 @@ const iconColors = {
     unknown: 'bg-slate-500/20 text-slate-400 shadow-slate-500/20'
 };
 
-const detectWeatherType = (eventName: string) => {
-    const event = eventName.toLowerCase();
-    if (event.includes('lluvia') || event.includes('precipitación')) return 'rain';
-    if (event.includes('tormenta')) return 'storm';
-    if (event.includes('nieve')) return 'snow';
-    if (event.includes('viento') || event.includes('rachas')) return 'wind';
+const detectWeatherType = (eventName: string, headline: string = '') => {
+    const text = (eventName + ' ' + headline).toLowerCase();
+    if (text.includes('lluvia') || text.includes('precipitaci')) return 'rain';
+    if (text.includes('tormenta')) return 'storm';
+    if (text.includes('nieve')) return 'snow';
+    if (text.includes('viento') || text.includes('rachas') || text.includes('galerna')) return 'wind';
     return null;
 };
 
@@ -108,7 +108,7 @@ export const AlertCard = ({ alert }: AlertCardProps) => {
             {/* Glow Effect on Hover */}
             <div className={`absolute -inset-px bg-gradient-to-r ${gradientClass} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
 
-            <WeatherEffects type={detectWeatherType(alert.event)} />
+            <WeatherEffects type={detectWeatherType(alert.event, alert.headline)} />
 
             <div className="relative flex items-start gap-6">
                 <div className={`${iconClass} p-4 rounded-2xl shadow-lg flex-shrink-0 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
