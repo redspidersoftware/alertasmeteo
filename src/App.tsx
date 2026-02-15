@@ -7,7 +7,7 @@ import type { WeatherAlert } from './types';
 import { useLanguage } from './context/LanguageContext';
 import { LanguageProvider } from './context/LanguageProvider';
 import { AlertFilter } from './components/AlertFilter';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { UserListModal } from './components/UserListModal';
 import { verifyUser } from './services/userService';
 
@@ -16,6 +16,7 @@ const AppContent = () => {
   const [selectedEventType, setSelectedEventType] = useState<string | null>(null);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const { t, language } = useLanguage();
+  const { user } = useAuth();
 
   useEffect(() => {
     getAlerts().then(setAlerts);
@@ -41,12 +42,21 @@ const AppContent = () => {
     }
   }, []);
 
-  // 1. Language Filter + Severity Filter (Only Yellow, Orange, Red)
+  // 1. Language Filter + User Preferences (Severity + Event Types)
   const languageFiltered = alerts.filter(alert => {
+    // A. Language Filter
     const alertLang = alert.language ? alert.language.toLowerCase() : 'es';
     const isRightLanguage = alertLang.startsWith(language);
-    const isImportantSeverity = ['yellow', 'orange', 'red'].includes(alert.severity);
-    return isRightLanguage && isImportantSeverity;
+    if (!isRightLanguage) return false;
+
+    // B. User Preferences or Defaults
+    const allowedSeverities = user?.preferredSeverities || ['yellow', 'orange', 'red'];
+    const allowedTypes = user?.preferredEventTypes || [];
+
+    const isAllowedSeverity = allowedSeverities.includes(alert.severity);
+    const isAllowedType = allowedTypes.length === 0 || allowedTypes.includes(alert.event);
+
+    return isAllowedSeverity && isAllowedType;
   });
 
   // 2. Event Type Filter (applied on top of language filter)

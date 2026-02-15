@@ -51,7 +51,27 @@ const translations: Record<string, Record<Language, string>> = {
     'profile.error': { es: 'Error al actualizar el perfil', en: 'Error updating profile' },
     'footer.donate': { es: 'Apoyar el proyecto (PayPal)', en: 'Support the project (PayPal)' },
     'footer.donate_bmc': { es: 'Invitame a un café (BMC)', en: 'Buy Me a Coffee (BMC)' },
-    'footer.donate_desc': { es: 'Si te gusta el servicio, considera hacer una donación para ayudar a mantenerlo.', en: 'If you like the service, consider making a donation to help maintain it.' }
+    'footer.donate_desc': { es: 'Si te gusta el servicio, considera hacer una donación para ayudar a mantenerlo.', en: 'If you like the service, consider making a donation to help maintain it.' },
+
+    // Preferences Tab
+    'profile.tab.basic': { es: 'Datos Básicos', en: 'Basic Info' },
+    'profile.tab.prefs': { es: 'Preferencias', en: 'Preferences' },
+    'profile.severities': { es: 'Niveles de Gravedad', en: 'Severity Levels' },
+    'profile.event_types': { es: 'Tipos de Fenómenos', en: 'Event Types' },
+    'profile.all_types': { es: 'Todos los tipos', en: 'All types' },
+
+    // Severity Labels
+    'severity.red': { es: 'Rojo (Extremo)', en: 'Red (Extreme)' },
+    'severity.orange': { es: 'Naranja (Importante)', en: 'Orange (Severe)' },
+    'severity.yellow': { es: 'Amarillo (Riesgo)', en: 'Yellow (Moderate)' },
+    'severity.green': { es: 'Sin riesgo', en: 'No risk' },
+
+    // Common Event Types
+    'event.rain': { es: 'Lluvia / Tormentas', en: 'Rain / Storms' },
+    'event.wind': { es: 'Viento', en: 'Wind' },
+    'event.snow': { es: 'Nieve', en: 'Snow' },
+    'event.coastal': { es: 'Costeros', en: 'Coastal' },
+    'event.temp': { es: 'Temperaturas', en: 'Temperatures' }
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {

@@ -8,6 +8,8 @@ export interface UserData {
     postalCode: string;
     language?: 'es' | 'en';
     isVerified?: boolean;
+    preferredSeverities?: string[];
+    preferredEventTypes?: string[];
 }
 
 // Validation logic remains the same
@@ -41,7 +43,9 @@ export const saveUser = async (userData: UserData): Promise<void> => {
                 name: userData.name,
                 phone: userData.phone,
                 postal_code: userData.postalCode,
-                language: userData.language || 'es'
+                language: userData.language || 'es',
+                preferred_severities: ['yellow', 'orange', 'red'],
+                preferred_event_types: []
             }
         }
     });
@@ -69,7 +73,9 @@ export const getUsers = async (): Promise<UserData[]> => {
         phone: u.phone,
         postalCode: u.postal_code, // Map snake_case to camelCase
         language: u.language,
-        isVerified: u.is_verified
+        isVerified: u.is_verified,
+        preferredSeverities: u.preferred_severities || ['yellow', 'orange', 'red'],
+        preferredEventTypes: u.preferred_event_types || []
     }));
 };
 
@@ -89,7 +95,9 @@ export const getUserProfile = async (uid: string): Promise<UserData | null> => {
         phone: data.phone,
         postalCode: data.postal_code,
         language: data.language,
-        isVerified: data.is_verified
+        isVerified: data.is_verified,
+        preferredSeverities: data.preferred_severities || ['yellow', 'orange', 'red'],
+        preferredEventTypes: data.preferred_event_types || []
     };
 };
 
@@ -100,6 +108,8 @@ export const updateUser = async (uid: string, userData: Partial<UserData>): Prom
     if (userData.phone !== undefined) updateData.phone = userData.phone;
     if (userData.postalCode !== undefined) updateData.postal_code = userData.postalCode;
     if (userData.language !== undefined) updateData.language = userData.language;
+    if (userData.preferredSeverities !== undefined) updateData.preferred_severities = userData.preferredSeverities;
+    if (userData.preferredEventTypes !== undefined) updateData.preferred_event_types = userData.preferredEventTypes;
 
     const { error: dbError } = await supabase
         .from('users')

@@ -9,6 +9,8 @@ create table public.users (
   postal_code text,
   language text default 'es',
   is_verified boolean default false,
+  preferred_severities text[] default '{ "yellow", "orange", "red" }',
+  preferred_event_types text[] default '{}',
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
