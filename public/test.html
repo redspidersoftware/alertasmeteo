@@ -41,20 +41,21 @@
 </head>
 
 <body>
-    <h1>🔍 Test Supabase Connection</h1>
+    <h1>🔍 Test Supabase Connection (v2 - 01:05)</h1>
     <button onclick="testConnection()">Test Connection</button>
+    <div id="env-check"></div>
     <div id="results"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const { createClient } = supabase;
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-        const supabaseUrl = 'https://ewfbpmlcbmkvedgbqfgj.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3ZmJwbWxjYm1rdmVkZ2JxZmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwOTUxNzYsImV4cCI6MjA4NjY3MTE3Nn0.V-ptTSZKrlnec4vsq4bpCwenGN41c7D1ayViO0vastc';
+        // Check env vars - NO USAR import.meta.env en archivos estáticos de public/
+        const supabaseUrl = 'https://iabbabzszkxscykskmex.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlhYmJhYnpzemt4c2N5a3NrbWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwNTc3NTYsImV4cCI6MjA4NjYzMzc1Nn0.pVYSP3_2WlAmYm0hpkIVNpJLd_Da0TNoFZn_D5E4t2k';
 
         const client = createClient(supabaseUrl, supabaseKey);
 
-        document.getElementById('results').innerHTML = `
+        document.getElementById('env-check').innerHTML = `
             <div class="result">
                 <p><strong>URL:</strong> ${supabaseUrl}</p>
                 <p><strong>Key:</strong> ${supabaseKey.substring(0, 30)}...</p>
@@ -63,41 +64,52 @@
 
         async function testConnection() {
             const results = document.getElementById('results');
-            results.innerHTML += '<div class="result">Testing...</div>';
+            results.innerHTML += '<div class="result">Testing connection...</div>';
+
+            console.log('Testing connection to:', supabaseUrl);
 
             try {
-                // Test 1: Check if table exists
-                const { data, error } = await client.from('users').select('count');
+                const response = await fetch(`${supabaseUrl}/rest/v1/users?select=count`, {
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`
+                    }
+                });
 
-                if (error) {
-                    results.innerHTML += `
-                        <div class="result error">
-                            <h3>❌ Error:</h3>
-                            <p><strong>Message:</strong> ${error.message}</p>
-                            <p><strong>Code:</strong> ${error.code}</p>
-                            <p><strong>Details:</strong> ${error.details}</p>
-                            <p><strong>Hint:</strong> ${error.hint}</p>
-                        </div>
-                    `;
-                } else {
+                if (response.ok) {
+                    const data = await response.json();
                     results.innerHTML += `
                         <div class="result success">
-                            <h3>✅ Connection OK!</h3>
-                            <p>Table 'users' is accessible</p>
+                            <h3>✅ API Response OK!</h3>
+                            <p>Status: ${response.status}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
                         </div>
                     `;
-
-                    // Test 2: Try signup
                     testSignup();
+                } else {
+                    const errorText = await response.text();
+                    results.innerHTML += `
+                        <div class="result error">
+                            <h3>❌ API Error:</h3>
+                            <p>Status: ${response.status}</p>
+                            <pre>${errorText}</pre>
+                        </div>
+                    `;
                 }
             } catch (e) {
                 results.innerHTML += `
                     <div class="result error">
-                        <h3>❌ Network Error:</h3>
+                        <h3>❌ Network/CORS Error:</h3>
                         <p>${e.message}</p>
-                        <p>This usually means CORS issue or network problem</p>
+                        <p><strong>Check list:</strong></p>
+                        <ul>
+                            <li>Are you using an AdBlocker? (Disable it)</li>
+                            <li>Is your firewall blocking supabase.co?</li>
+                            <li>Is there a red message in the Browser Console (F12)?</li>
+                        </ul>
                     </div>
                 `;
+                console.error('Fetch error:', e);
             }
         }
 
