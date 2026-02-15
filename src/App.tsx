@@ -57,7 +57,7 @@ const AppContent = () => {
 
     const isAllowedSeverity = allowedSeverities.includes(alert.severity);
 
-    // Improved matching: partial
+    // Improved matching: partial match to handle "Lluvias y Tormentas" or different AEMET formats
     const isAllowedType = allowedTypes.length === 0 || allowedTypes.some(type =>
       alert.event.toLowerCase().includes(type.toLowerCase()) ||
       type.toLowerCase().includes(alert.event.toLowerCase())

@@ -77,7 +77,11 @@ const translations: Record<string, Record<Language, string>> = {
     // Email Notifications
     'email.subject': { es: 'Tus preferencias han cambiado', en: 'Your preferences have changed' },
     'email.body_header': { es: 'Hola, hemos actualizado tus preferencias de alertas:', en: 'Hi, we have updated your alert preferences:' },
-    'email.success_sent': { es: 'Se ha enviado un correo de confirmación', en: 'A confirmation email has been sent' }
+    'email.success_sent': { es: 'Se ha enviado un correo de confirmación', en: 'A confirmation email has been sent' },
+
+    // UI Revamp
+    'event.filtered_by': { es: 'Filtrado por', en: 'Filtered by' },
+    'footer.donate_title': { es: 'Apoya el Proyecto', en: 'Support the Project' }
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
