@@ -1,7 +1,7 @@
 import { Header } from './components/Header';
 import { AlertList } from './components/AlertList';
 import { MapView } from './components/MapView';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { CloudRainWind } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getAlerts } from './services/aemet';
@@ -57,7 +57,7 @@ const AppContent = () => {
 
     const isAllowedSeverity = allowedSeverities.includes(alert.severity);
 
-    // Improved matching: partial match to handle "Lluvias y Tormentas" or different AEMET formats
+    // Improved matching: partial
     const isAllowedType = allowedTypes.length === 0 || allowedTypes.some(type =>
       alert.event.toLowerCase().includes(type.toLowerCase()) ||
       type.toLowerCase().includes(alert.event.toLowerCase())
