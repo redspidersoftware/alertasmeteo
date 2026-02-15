@@ -4,10 +4,15 @@ import nodemailer from "npm:nodemailer"
 const SMTP_USER = Deno.env.get('SMTP_USER')
 const SMTP_PASS = Deno.env.get('SMTP_PASS') // Gmail App Password
 
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 serve(async (req: Request) => {
-    // Handle CORS
+    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*' } })
+        return new Response('ok', { headers: corsHeaders })
     }
 
     const isTest = req.method === 'GET'

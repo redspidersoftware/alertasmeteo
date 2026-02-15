@@ -155,7 +155,8 @@ export const updateUser = async (uid: string, userData: Partial<UserData>): Prom
         .single();
 
     if (finalUser) {
-        await supabase.functions.invoke('send-confirmation', {
+        console.log("[userService] Triggering email confirmation for:", finalUser.email);
+        const { data, error: funcError } = await supabase.functions.invoke('send-confirmation', {
             body: {
                 email: finalUser.email,
                 name: finalUser.name,
@@ -165,6 +166,12 @@ export const updateUser = async (uid: string, userData: Partial<UserData>): Prom
                 }
             }
         });
+
+        if (funcError) {
+            console.error("[userService] Error invoking send-confirmation:", funcError);
+        } else {
+            console.log("[userService] send-confirmation response:", data);
+        }
     }
 };
 
