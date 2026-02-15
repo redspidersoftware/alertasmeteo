@@ -38,90 +38,96 @@ export const Header = () => {
 
     return (
         <>
-            <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-900/80 border-b border-white/10">
-                <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-blue-500/20 p-2 rounded-lg text-blue-400">
-                            <CloudRainWind size={24} />
+            <header className="sticky top-0 z-50 glass border-b border-white/5 shadow-2xl">
+                <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-4 group cursor-pointer transition-all duration-300">
+                        <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2.5 rounded-2xl text-white shadow-xl shadow-blue-500/20 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                            <CloudRainWind size={28} />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+                            <h1 className="text-2xl font-black text-gradient tracking-tight">
                                 {t('app.title')}
                             </h1>
-                            <p className="text-xs text-slate-400 hidden sm:block">{t('app.subtitle')}</p>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 opacity-80 mt-0.5 hidden sm:block">
+                                {t('app.subtitle')}
+                            </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                         {user ? (
-                            <div className="flex items-center gap-2 bg-white/5 rounded-lg pl-3 pr-1 py-1 border border-white/10">
-                                <div className="flex items-center gap-2">
-                                    <User size={16} className="text-blue-400" />
-                                    <span className="text-sm font-medium text-slate-200 hidden sm:inline">{t('auth.welcome')} {user.name}</span>
+                            <div className="flex items-center gap-2 bg-white/5 rounded-2xl pl-4 pr-1.5 py-1.5 border border-white/10 shadow-inner backdrop-blur-md">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="bg-blue-500/20 p-1.5 rounded-full">
+                                        <User size={16} className="text-blue-400" />
+                                    </div>
+                                    <span className="text-sm font-semibold text-slate-100 hidden sm:inline">
+                                        {t('auth.welcome')} <span className="text-blue-400">{user.name}</span>
+                                    </span>
                                 </div>
-                                <div className="flex items-center border-l border-white/10 ml-2 pl-1">
+                                <div className="flex items-center border-l border-white/10 ml-2 pl-1.5 gap-1">
                                     <button
                                         onClick={() => setIsProfileOpen(true)}
-                                        className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-blue-400 transition-colors"
+                                        className="p-2 rounded-xl hover:bg-white/10 text-slate-400 hover:text-blue-300 transition-all active:scale-95"
                                         title={t('profile.title')}
                                     >
-                                        <Settings size={16} />
+                                        <Settings size={18} />
                                     </button>
                                     <button
                                         onClick={logout}
-                                        className="p-1.5 rounded-md hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                                        className="p-2 rounded-xl hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-all active:scale-95"
                                         title={t('auth.logout')}
                                     >
-                                        <LogOut size={16} />
+                                        <LogOut size={18} />
                                     </button>
                                 </div>
                             </div>
                         ) : (
-                            <>
+                            <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => setIsLoginOpen(true)}
-                                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition-colors text-sm font-medium"
+                                    className="px-4 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-all text-sm font-bold active:scale-95"
                                 >
-                                    <LogIn size={16} />
+                                    <LogIn size={18} className="inline mr-2" />
                                     <span className="hidden sm:inline">{t('login.title')}</span>
                                 </button>
                                 <button
                                     onClick={() => setIsModalOpen(true)}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20"
+                                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold hover:from-blue-500 hover:to-indigo-500 transition-all shadow-xl shadow-blue-500/30 active:scale-95 active:shadow-none"
                                 >
-                                    <UserPlus size={16} />
+                                    <UserPlus size={18} className="inline mr-2" />
                                     <span className="hidden sm:inline">{t('form.title')}</span>
                                 </button>
-                            </>
+                            </div>
                         )}
 
                         <div className="relative" ref={dropdownRef}>
                             <button
                                 onClick={toggleDropdown}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/5 text-sm w-20 sm:w-32 justify-between"
+                                className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-sm group active:scale-95 shadow-lg"
                             >
                                 <div className="flex items-center gap-2">
-                                    <span className="text-lg leading-none">{getFlag(language)}</span>
-                                    <span className="font-medium text-slate-200 uppercase hidden sm:inline">{language.toUpperCase()}</span>
+                                    <span className="text-xl shadow-sm filter grayscale-[0.2] group-hover:grayscale-0 transition-all">{getFlag(language)}</span>
+                                    <span className="font-bold text-slate-100 uppercase hidden sm:inline tracking-widest">{language}</span>
                                 </div>
-                                <ChevronDown size={14} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                                <ChevronDown size={16} className={`text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-400' : ''}`} />
                             </button>
 
                             {isOpen && (
-                                <div className="absolute top-full right-0 mt-2 w-40 bg-slate-800 border border-white/10 rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                <div className="absolute top-full right-0 mt-3 w-44 glass border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
                                     <button
                                         onClick={() => handleLanguageSelect('es')}
-                                        className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors ${language === 'es' ? 'bg-white/5 text-blue-400' : 'text-slate-300'}`}
+                                        className={`w-full flex items-center gap-4 px-4 py-4 text-left hover:bg-blue-500/10 transition-all ${language === 'es' ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300'}`}
                                     >
-                                        <span className="text-lg leading-none">🇪🇸</span>
-                                        <span className="text-sm font-medium">Español (ES)</span>
+                                        <span className="text-xl group-hover:scale-110 transition-transform">🇪🇸</span>
+                                        <span className="text-sm font-bold">Español</span>
                                     </button>
                                     <button
                                         onClick={() => handleLanguageSelect('en')}
-                                        className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors ${language === 'en' ? 'bg-white/5 text-blue-400' : 'text-slate-300'}`}
+                                        className={`w-full flex items-center gap-4 px-4 py-4 text-left hover:bg-blue-500/10 transition-all ${language === 'en' ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300'}`}
                                     >
-                                        <span className="text-lg leading-none">🇬🇧</span>
-                                        <span className="text-sm font-medium">English (EN)</span>
+                                        <span className="text-xl group-hover:scale-110 transition-transform">🇬🇧</span>
+                                        <span className="text-sm font-bold">English</span>
                                     </button>
                                 </div>
                             )}

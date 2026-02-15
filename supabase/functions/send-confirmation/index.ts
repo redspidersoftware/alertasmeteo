@@ -86,7 +86,7 @@ serve(async (req: Request) => {
             debug: { user: SMTP_USER, target: email }
         }), {
             status: 200,
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
 
     } catch (err: any) {
@@ -98,7 +98,7 @@ serve(async (req: Request) => {
             hint: "Ensure you are using a Gmail App Password, not your regular password. Also check SMTP_USER secret."
         }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
     }
 })

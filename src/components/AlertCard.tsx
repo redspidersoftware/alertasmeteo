@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, Clock, MapPin, Info } from 'lucide-react';
+import { AlertTriangle, Clock, MapPin, Info, ChevronDown } from 'lucide-react';
 import type { WeatherAlert } from '../types';
 import { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
@@ -8,26 +8,26 @@ interface AlertCardProps {
     alert: WeatherAlert;
 }
 
-const severityColors = {
-    red: 'bg-red-500/10 border-red-500 text-red-100',
-    orange: 'bg-orange-500/10 border-orange-500 text-orange-100',
-    yellow: 'bg-yellow-500/10 border-yellow-500 text-yellow-100',
-    green: 'bg-green-500/10 border-green-500 text-green-100',
-    unknown: 'bg-gray-500/10 border-gray-500 text-gray-100'
+const severityGradients = {
+    red: 'from-red-600/20 to-rose-600/5 border-red-500/30 text-red-50',
+    orange: 'from-orange-600/20 to-amber-600/5 border-orange-500/30 text-orange-50',
+    yellow: 'from-yellow-500/15 to-amber-500/5 border-yellow-400/30 text-yellow-50',
+    green: 'from-emerald-500/15 to-teal-500/5 border-emerald-500/30 text-emerald-50',
+    unknown: 'from-slate-600/15 to-slate-800/5 border-slate-500/30 text-slate-100'
 };
 
 const iconColors = {
-    red: 'text-red-500',
-    orange: 'text-orange-500',
-    yellow: 'text-yellow-500',
-    green: 'text-green-500',
-    unknown: 'text-gray-500'
+    red: 'bg-red-500/20 text-red-400 shadow-red-500/20',
+    orange: 'bg-orange-500/20 text-orange-400 shadow-orange-500/20',
+    yellow: 'bg-yellow-400/20 text-yellow-400 shadow-yellow-400/20',
+    green: 'bg-emerald-400/20 text-emerald-400 shadow-emerald-400/20',
+    unknown: 'bg-slate-500/20 text-slate-400 shadow-slate-500/20'
 };
 
 export const AlertCard = ({ alert }: AlertCardProps) => {
     const [expanded, setExpanded] = useState(false);
     const { t } = useLanguage();
-    const colorClass = severityColors[alert.severity] || severityColors.unknown;
+    const gradientClass = severityGradients[alert.severity] || severityGradients.unknown;
     const iconClass = iconColors[alert.severity] || iconColors.unknown;
 
     const formatDate = (dateString: string) => {
@@ -51,32 +51,41 @@ export const AlertCard = ({ alert }: AlertCardProps) => {
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            whileHover={{ scale: 1.02 }}
-            className={`relative overflow-hidden rounded-xl border p-4 backdrop-blur-sm transition-all shadow-lg ${colorClass} hover:bg-opacity-20 cursor-pointer`}
+            initial={{ opacity: 0, y: 30, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+            whileHover={{ y: -4, transition: { duration: 0.2 } }}
+            className={`group relative overflow-hidden rounded-3xl border bg-gradient-to-br ${gradientClass} backdrop-blur-xl p-6 transition-all shadow-2xl hover:shadow-cyan-500/10 cursor-pointer`}
             onClick={() => setExpanded(!expanded)}
         >
-            <div className="flex items-start gap-4">
-                <div className={`mt-1 p-2 rounded-full bg-black/20 ${iconClass} flex-shrink-0`}>
-                    <AlertTriangle size={24} />
+            {/* Glow Effect on Hover */}
+            <div className={`absolute -inset-px bg-gradient-to-r ${gradientClass} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+
+            <div className="relative flex items-start gap-6">
+                <div className={`${iconClass} p-4 rounded-2xl shadow-lg flex-shrink-0 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
+                    <AlertTriangle size={28} />
                 </div>
 
-                <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start gap-2">
-                        <h3 className="font-bold text-lg leading-tight truncate">{alert.headline}</h3>
-                        <span className="text-xs font-mono opacity-70 bg-black/30 px-2 py-1 rounded whitespace-nowrap">
-                            {formatDate(alert.sent)}
-                        </span>
+                <div className="flex-1 min-w-0 pt-0.5">
+                    <div className="flex justify-between items-start gap-3">
+                        <h3 className="font-black text-xl leading-tight tracking-tight group-hover:text-white transition-colors">
+                            {alert.headline}
+                        </h3>
+                        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">
+                                {formatDate(alert.sent)}
+                            </span>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2 mt-2 text-sm opacity-90">
-                        <MapPin size={14} className="flex-shrink-0" />
+                    <div className="flex items-center gap-2.5 mt-3 text-sm font-bold opacity-70">
+                        <div className="p-1 rounded-md bg-white/5">
+                            <MapPin size={14} className="text-blue-400" />
+                        </div>
                         <span className="truncate">{alert.area}</span>
                     </div>
 
-                    <p className="mt-2 text-sm opacity-80 line-clamp-2">
+                    <p className={`mt-4 text-slate-300 leading-relaxed font-medium transition-all duration-300 ${expanded ? '' : 'line-clamp-2'}`}>
                         {alert.description}
                     </p>
 
@@ -86,23 +95,53 @@ export const AlertCard = ({ alert }: AlertCardProps) => {
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: "auto", opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.4, ease: "circOut" }}
                                 className="overflow-hidden"
                             >
-                                <div className="mt-4 pt-4 border-t border-white/10 text-sm space-y-3">
-                                    <div>
-                                        <span className="font-semibold block mb-1 flex items-center gap-2"><Info size={14} /> {t('alert.description')}</span>
-                                        <p className="opacity-80 whitespace-pre-wrap">{alert.description}</p>
+                                <div className="mt-6 pt-6 border-t border-white/10 space-y-6">
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2 text-blue-400 font-black text-xs uppercase tracking-widest">
+                                            <Info size={16} />
+                                            {t('alert.description')}
+                                        </div>
+                                        <p className="text-slate-200 leading-relaxed bg-white/5 p-4 rounded-2xl border border-white/5 font-medium shadow-inner">
+                                            {alert.description}
+                                        </p>
                                     </div>
+
                                     {alert.instruction && (
-                                        <div>
-                                            <span className="font-semibold block mb-1">{t('alert.instructions')}</span>
-                                            <p className="opacity-80 italic">{alert.instruction}</p>
+                                        <div className="space-y-3">
+                                            <div className="text-emerald-400 font-black text-xs uppercase tracking-widest">
+                                                {t('alert.instructions')}
+                                            </div>
+                                            <p className="text-emerald-50/80 italic bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10 font-medium">
+                                                {alert.instruction}
+                                            </p>
                                         </div>
                                     )}
-                                    <div className="text-xs opacity-60 flex items-center gap-1 mt-2">
-                                        <Clock size={12} /> {t('alert.expires')} {formatExpires(alert.expires)}
+
+                                    <div className="flex items-center justify-between pt-2">
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 bg-black/20 px-4 py-2 rounded-full border border-white/5">
+                                            <Clock size={12} className="text-blue-400" />
+                                            {t('alert.expires')} {formatExpires(alert.expires)}
+                                        </div>
+
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-blue-400 flex items-center gap-1.5 px-2">
+                                            <span>Ver menos</span>
+                                            <ChevronDown className="rotate-180" size={12} />
+                                        </div>
                                     </div>
                                 </div>
+                            </motion.div>
+                        )}
+                        {!expanded && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400/60 group-hover:text-blue-400 transition-colors"
+                            >
+                                <span>Ver más detalles</span>
+                                <ChevronDown size={12} className="group-hover:translate-y-0.5 transition-transform" />
                             </motion.div>
                         )}
                     </AnimatePresence>
