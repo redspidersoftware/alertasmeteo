@@ -97,14 +97,30 @@ const AppContent = () => {
         </div>
       </main>
 
-      <footer className="py-6 text-center text-slate-500 text-sm border-t border-white/5 mt-auto">
-        <p>© {new Date().getFullYear()} - Visualizador de Alertas AEMET</p>
-        <button
-          onClick={() => setIsAdminOpen(true)}
-          className="mt-2 text-xs opacity-50 hover:opacity-100 hover:text-blue-400 transition-all underline decoration-dotted"
-        >
-          Admin DB
-        </button>
+      <footer className="py-10 text-center border-t border-white/5 mt-auto bg-slate-900/50">
+        <div className="max-w-7xl mx-auto px-4">
+          <p className="text-slate-400 mb-4">{t('footer.donate_desc')}</p>
+          <a
+            href="https://www.paypal.com/donate?hosted_button_id=YOUR_ID"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0070ba] hover:bg-[#005ea6] text-white font-bold transition-all shadow-lg hover:shadow-[#0070ba]/20 mb-6 group"
+          >
+            <span className="text-lg">PayPal</span>
+            <span>{t('footer.donate')}</span>
+            <span className="group-hover:translate-x-1 transition-transform">→</span>
+          </a>
+
+          <div className="flex flex-col items-center gap-2 text-slate-500 text-sm">
+            <p>© {new Date().getFullYear()} - Visualizador de Alertas AEMET</p>
+            <button
+              onClick={() => setIsAdminOpen(true)}
+              className="text-xs opacity-50 hover:opacity-100 hover:text-blue-400 transition-all underline decoration-dotted"
+            >
+              Admin DB
+            </button>
+          </div>
+        </div>
       </footer>
 
       <UserListModal isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />

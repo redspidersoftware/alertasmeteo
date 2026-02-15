@@ -48,7 +48,9 @@ const translations: Record<string, Record<Language, string>> = {
     'profile.save': { es: 'Guardar Cambios', en: 'Save Changes' },
     'profile.saving': { es: 'Guardando...', en: 'Saving...' },
     'profile.success': { es: 'Perfil actualizado correctamente', en: 'Profile updated successfully' },
-    'profile.error': { es: 'Error al actualizar el perfil', en: 'Error updating profile' }
+    'profile.error': { es: 'Error al actualizar el perfil', en: 'Error updating profile' },
+    'footer.donate': { es: 'Apoyar el proyecto (PayPal)', en: 'Support the project (PayPal)' },
+    'footer.donate_desc': { es: 'Si te gusta el servicio, considera hacer una donación para ayudar a mantenerlo.', en: 'If you like the service, consider making a donation to help maintain it.' }
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
