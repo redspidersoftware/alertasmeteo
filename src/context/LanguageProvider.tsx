@@ -67,7 +67,8 @@ const translations: Record<string, Record<Language, string>> = {
     'severity.green': { es: 'Sin riesgo', en: 'No risk' },
 
     // Common Event Types
-    'event.rain': { es: 'Lluvia / Tormentas', en: 'Rain / Storms' },
+    'event.rain': { es: 'Lluvia', en: 'Rain' },
+    'event.storms': { es: 'Tormentas', en: 'Storms' },
     'event.wind': { es: 'Viento', en: 'Wind' },
     'event.snow': { es: 'Nieve', en: 'Snow' },
     'event.coastal': { es: 'Costeros', en: 'Coastal' },

@@ -250,13 +250,13 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                                             type="button"
                                             onClick={() => toggleSeverity(sev)}
                                             className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-xs font-medium ${formData.preferredSeverities?.includes(sev)
-                                                    ? 'bg-white/10 border-blue-500/50 text-white'
-                                                    : 'bg-white/5 border-transparent text-slate-500 opacity-60'
+                                                ? 'bg-white/10 border-blue-500/50 text-white'
+                                                : 'bg-white/5 border-transparent text-slate-500 opacity-60'
                                                 }`}
                                         >
                                             <div className={`w-3 h-3 rounded-full ${sev === 'red' ? 'bg-red-500' :
-                                                    sev === 'orange' ? 'bg-orange-500' :
-                                                        sev === 'yellow' ? 'bg-yellow-400' : 'bg-emerald-500'
+                                                sev === 'orange' ? 'bg-orange-500' :
+                                                    sev === 'yellow' ? 'bg-yellow-400' : 'bg-emerald-500'
                                                 }`} />
                                             {t(`severity.${sev}`)}
                                         </button>
@@ -268,7 +268,8 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                                 <label className="text-xs font-bold text-blue-400 uppercase tracking-wider">{t('profile.event_types')}</label>
                                 <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                                     {[
-                                        { id: 'Lluvias y Tormentas', label: 'event.rain' },
+                                        { id: 'Lluvias', label: 'event.rain' },
+                                        { id: 'Tormentas', label: 'event.storms' },
                                         { id: 'Viento', label: 'event.wind' },
                                         { id: 'Nevadas', label: 'event.snow' },
                                         { id: 'Fenómenos Costeros', label: 'event.coastal' },
@@ -279,8 +280,8 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                                             type="button"
                                             onClick={() => toggleEventType(type.id)}
                                             className={`flex items-center justify-between px-4 py-2.5 rounded-xl border transition-all text-sm ${formData.preferredEventTypes?.includes(type.id)
-                                                    ? 'bg-blue-600/20 border-blue-500/50 text-white shadow-inner'
-                                                    : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
+                                                ? 'bg-blue-600/20 border-blue-500/50 text-white shadow-inner'
+                                                : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
                                                 }`}
                                         >
                                             <span>{t(type.label)}</span>
