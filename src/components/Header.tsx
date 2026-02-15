@@ -34,7 +34,18 @@ export const Header = () => {
         setIsOpen(false);
     };
 
-    const getFlag = (lang: string) => lang === 'es' ? '🇪🇸' : '🇬🇧';
+    const getFlag = (lang: string) => {
+        const flagCode = lang === 'es' ? 'es' : 'gb';
+        return (
+            <img
+                src={`https://flagcdn.com/w40/${flagCode}.png`}
+                srcset={`https://flagcdn.com/w80/${flagCode}.png 2x`}
+                width="20"
+                alt={lang}
+                className="rounded-sm shadow-sm"
+            />
+        );
+    };
 
     return (
         <>
@@ -107,7 +118,7 @@ export const Header = () => {
                                 className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-sm group active:scale-95 shadow-lg"
                             >
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xl shadow-sm filter grayscale-[0.2] group-hover:grayscale-0 transition-all">{getFlag(language)}</span>
+                                    <div className="flex-shrink-0">{getFlag(language)}</div>
                                     <span className="font-bold text-slate-100 uppercase hidden sm:inline tracking-widest">{language}</span>
                                 </div>
                                 <ChevronDown size={16} className={`text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-400' : ''}`} />
@@ -117,16 +128,20 @@ export const Header = () => {
                                 <div className="absolute top-full right-0 mt-3 w-44 glass border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
                                     <button
                                         onClick={() => handleLanguageSelect('es')}
-                                        className={`w-full flex items-center gap-4 px-4 py-4 text-left hover:bg-blue-500/10 transition-all ${language === 'es' ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300'}`}
+                                        className={`w-full flex items-center gap-4 px-4 py-4 text-left hover:bg-blue-500/10 transition-all group ${language === 'es' ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300'}`}
                                     >
-                                        <span className="text-xl group-hover:scale-110 transition-transform">🇪🇸</span>
+                                        <div className="group-hover:scale-110 transition-transform flex-shrink-0">
+                                            {getFlag('es')}
+                                        </div>
                                         <span className="text-sm font-bold">Español</span>
                                     </button>
                                     <button
                                         onClick={() => handleLanguageSelect('en')}
-                                        className={`w-full flex items-center gap-4 px-4 py-4 text-left hover:bg-blue-500/10 transition-all ${language === 'en' ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300'}`}
+                                        className={`w-full flex items-center gap-4 px-4 py-4 text-left hover:bg-blue-500/10 transition-all group ${language === 'en' ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300'}`}
                                     >
-                                        <span className="text-xl group-hover:scale-110 transition-transform">🇬🇧</span>
+                                        <div className="group-hover:scale-110 transition-transform flex-shrink-0">
+                                            {getFlag('en')}
+                                        </div>
                                         <span className="text-sm font-bold">English</span>
                                     </button>
                                 </div>
