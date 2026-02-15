@@ -36,7 +36,7 @@ const detectWeatherType = (eventName: string, headline: string = '') => {
 const WeatherEffects = ({ type }: { type: string | null }) => {
     if (!type) return null;
 
-    const particles = Array.from({ length: 15 });
+    const particles = Array.from({ length: 30 });
 
     if (type === 'storm') {
         return <div className="absolute inset-0 weather-lightning pointer-events-none z-0" />;
