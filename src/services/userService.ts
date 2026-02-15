@@ -145,6 +145,27 @@ export const updateUser = async (uid: string, userData: Partial<UserData>): Prom
             }
         }
     }
+
+    // 3. Send confirmation email via Edge Function
+    // We fetch the latest name/email to ensure accuracy
+    const { data: finalUser } = await supabase
+        .from('users')
+        .select('name, email')
+        .eq('id', uid)
+        .single();
+
+    if (finalUser) {
+        await supabase.functions.invoke('send-confirmation', {
+            body: {
+                email: finalUser.email,
+                name: finalUser.name,
+                preferences: {
+                    preferredSeverities: userData.preferredSeverities,
+                    preferredEventTypes: userData.preferredEventTypes
+                }
+            }
+        });
+    }
 };
 
 export const verifyUser = async (email: string): Promise<boolean> => {

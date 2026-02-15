@@ -72,7 +72,12 @@ const translations: Record<string, Record<Language, string>> = {
     'event.wind': { es: 'Viento', en: 'Wind' },
     'event.snow': { es: 'Nieve', en: 'Snow' },
     'event.coastal': { es: 'Costeros', en: 'Coastal' },
-    'event.temp': { es: 'Temperaturas', en: 'Temperatures' }
+    'event.temp': { es: 'Temperaturas', en: 'Temperatures' },
+
+    // Email Notifications
+    'email.subject': { es: 'Tus preferencias han cambiado', en: 'Your preferences have changed' },
+    'email.body_header': { es: 'Hola, hemos actualizado tus preferencias de alertas:', en: 'Hi, we have updated your alert preferences:' },
+    'email.success_sent': { es: 'Se ha enviado un correo de confirmación', en: 'A confirmation email has been sent' }
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
