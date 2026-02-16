@@ -52,7 +52,7 @@ const WeatherEffects = ({ type }: { type: string | null }) => {
             {/* Base Color Overlays for temperature/dust/thaw */}
             {type === 'heat' && <div className="absolute inset-0 bg-orange-500/10 mix-blend-overlay animate-pulse duration-[4s]" />}
             {type === 'cold' && <div className="absolute inset-0 bg-blue-300/10 mix-blend-overlay animate-pulse duration-[4s]" />}
-            {type === 'dust' && <div className="absolute inset-0 bg-amber-700/10 mix-blend-multiply" />}
+            {type === 'dust' && <div className="absolute inset-0 bg-amber-600/20 mix-blend-multiply transition-opacity duration-1000" />}
             {type === 'thaw' && <div className="absolute inset-0 bg-cyan-400/5 backdrop-blur-[1px]" />}
 
             {particles.map((_, i) => {
@@ -77,8 +77,23 @@ const WeatherEffects = ({ type }: { type: string | null }) => {
                     top = 80;
                 }
                 if (type === 'dust') {
-                    className = "weather-dust w-1 h-1 bg-amber-600/40 rounded-full blur-[0.5px]";
+                    const size = 1 + Math.random() * 3;
+                    className = "weather-dust bg-amber-700/60 rounded-full blur-[1px]";
                     top = Math.random() * 100;
+                    return (
+                        <div
+                            key={i}
+                            className={`absolute ${className}`}
+                            style={{
+                                width: `${size}px`,
+                                height: `${size}px`,
+                                left: `${left}%`,
+                                top: `${top}%`,
+                                animationDelay: `${delay}s`,
+                                animationDuration: `${duration + 12}s`
+                            }}
+                        />
+                    );
                 }
                 if (type === 'thaw') {
                     className = "weather-thaw w-[4px] h-[10px] bg-cyan-200/60 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.3)]";
