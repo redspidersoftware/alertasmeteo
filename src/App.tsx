@@ -16,6 +16,7 @@ import { verifyUser } from './services/userService';
 const AppContent = () => {
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
   const [selectedEventType, setSelectedEventType] = useState<string | null>(null);
+  const [selectedSeverity, setSelectedSeverity] = useState<string | null>(null);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const { t, language } = useLanguage();
   const { user } = useAuth();
@@ -66,10 +67,17 @@ const AppContent = () => {
     return isAllowedSeverity && isAllowedType;
   });
 
-  // 2. Event Type Filter (applied on top of language filter)
-  const finalFilteredAlerts = selectedEventType
-    ? languageFiltered.filter(alert => alert.event === selectedEventType)
-    : languageFiltered;
+  // 2. Event Type + Severity Filter (applied on top of language filter)
+  const finalFilteredAlerts = languageFiltered.filter(alert => {
+    const matchesType = !selectedEventType || alert.event === selectedEventType;
+    const matchesSeverity = !selectedSeverity || alert.severity === selectedSeverity;
+    return matchesType && matchesSeverity;
+  });
+
+  const handleFilterChange = (type: string | null, severity: string | null) => {
+    setSelectedEventType(type);
+    setSelectedSeverity(severity);
+  };
 
   return (
     <div className="min-h-screen flex flex-col selection:bg-blue-500/30">
@@ -92,13 +100,13 @@ const AppContent = () => {
                     {t('map.title')}
                   </h2>
                 </div>
-                {selectedEventType && (
+                {(selectedEventType || selectedSeverity) && (
                   <motion.span
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="text-xs font-black uppercase tracking-widest bg-blue-600/20 text-blue-300 px-4 py-2 rounded-xl border border-blue-500/20 shadow-lg shadow-blue-500/10"
                   >
-                    {t('event.filtered_by')}: {selectedEventType}
+                    {t('event.filtered_by')}: {selectedEventType || selectedSeverity}
                   </motion.span>
                 )}
               </div>
@@ -112,7 +120,8 @@ const AppContent = () => {
               <AlertFilter
                 alerts={languageFiltered}
                 selectedType={selectedEventType}
-                onSelectType={setSelectedEventType}
+                selectedSeverity={selectedSeverity}
+                onFilterChange={handleFilterChange}
               />
             </div>
           </div>
