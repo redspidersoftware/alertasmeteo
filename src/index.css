@@ -188,6 +188,84 @@
   }
 }
 
+@keyframes heat-wave {
+  0% {
+    transform: translateY(0) scaleX(1);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 0.3;
+  }
+
+  50% {
+    transform: translateY(-50%) scaleX(1.1);
+    opacity: 0.5;
+  }
+
+  80% {
+    opacity: 0.3;
+  }
+
+  100% {
+    transform: translateY(-100%) scaleX(1);
+    opacity: 0;
+  }
+}
+
+@keyframes cold-mist {
+  0% {
+    transform: translateX(-50px) scale(1);
+    opacity: 0;
+  }
+
+  50% {
+    transform: translateX(50px) scale(1.2);
+    opacity: 0.4;
+  }
+
+  100% {
+    transform: translateX(-50px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes dust-haze {
+  0% {
+    transform: translateX(-100px);
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+
+  100% {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+}
+
+@keyframes thaw-drip {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(400px);
+    opacity: 0;
+  }
+}
+
 .weather-rain {
   animation: rain 1s linear infinite;
 }
@@ -202,6 +280,22 @@
 
 .weather-wind {
   animation: wind 2s linear infinite;
+}
+
+.weather-heat {
+  animation: heat-wave 4s ease-in-out infinite;
+}
+
+.weather-cold {
+  animation: cold-mist 8s ease-in-out infinite;
+}
+
+.weather-dust {
+  animation: dust-haze 10s linear infinite;
+}
+
+.weather-thaw {
+  animation: thaw-drip 2.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
 }
 
 :root {

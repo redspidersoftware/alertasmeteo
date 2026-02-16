@@ -26,35 +26,64 @@ const iconColors = {
 
 const detectWeatherType = (eventName: string, headline: string = '') => {
     const text = (eventName + ' ' + headline).toLowerCase();
-    // Prioritize storm as it's the most dramatic
+    // Prioritize storm/snow/heat/cold as they are the most dramatic
     if (text.includes('tormenta') || text.includes('rayo')) return 'storm';
     if (text.includes('nieve') || text.includes('nevada') || text.includes('aludes')) return 'snow';
+    if (text.includes('máximas') || text.includes('calor') || text.includes('altas temperaturas')) return 'heat';
+    if (text.includes('mínimas') || text.includes('frío') || text.includes('bajas temperaturas')) return 'cold';
     if (text.includes('lluvia') || text.includes('precipitaci')) return 'rain';
     if (text.includes('viento') || text.includes('rachas') || text.includes('galerna') || text.includes('costero')) return 'wind';
+    if (text.includes('polvo') || text.includes('calima') || text.includes('suspensi')) return 'dust';
+    if (text.includes('deshielo')) return 'thaw';
     return null;
 };
 
 const WeatherEffects = ({ type }: { type: string | null }) => {
     if (!type) return null;
 
-    const particles = Array.from({ length: 30 });
-
     if (type === 'storm') {
         return <div className="absolute inset-0 weather-lightning pointer-events-none z-0" />;
     }
 
+    const particles = Array.from({ length: 30 });
+
     return (
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-80">
+            {/* Base Color Overlays for temperature/dust/thaw */}
+            {type === 'heat' && <div className="absolute inset-0 bg-orange-500/10 mix-blend-overlay animate-pulse duration-[4s]" />}
+            {type === 'cold' && <div className="absolute inset-0 bg-blue-300/10 mix-blend-overlay animate-pulse duration-[4s]" />}
+            {type === 'dust' && <div className="absolute inset-0 bg-amber-700/10 mix-blend-multiply" />}
+            {type === 'thaw' && <div className="absolute inset-0 bg-cyan-400/5 backdrop-blur-[1px]" />}
+
             {particles.map((_, i) => {
                 const left = Math.random() * 100;
-                const top = type === 'wind' ? Math.random() * 100 : -20;
+                let top = -20;
                 const delay = Math.random() * 5;
                 const duration = 0.5 + Math.random() * 1.5;
 
                 let className = "";
                 if (type === 'rain') className = "weather-rain w-[2px] h-8 bg-blue-400/80 shadow-[0_0_8px_rgba(34,197,94,0.4)]";
                 if (type === 'snow') className = "weather-snow w-3 h-3 bg-white/90 rounded-full blur-[2px]";
-                if (type === 'wind') className = "weather-wind w-16 h-[2px] bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.2)]";
+                if (type === 'wind') {
+                    className = "weather-wind w-16 h-[2px] bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.2)]";
+                    top = Math.random() * 100;
+                }
+                if (type === 'heat') {
+                    className = "weather-heat w-12 h-1 bg-white/10 blur-xl";
+                    top = 100;
+                }
+                if (type === 'cold') {
+                    className = "weather-cold w-20 h-12 bg-white/5 blur-3xl rounded-full";
+                    top = 80;
+                }
+                if (type === 'dust') {
+                    className = "weather-dust w-1 h-1 bg-amber-600/40 rounded-full blur-[0.5px]";
+                    top = Math.random() * 100;
+                }
+                if (type === 'thaw') {
+                    className = "weather-thaw w-[4px] h-[10px] bg-cyan-200/60 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.3)]";
+                    top = -20;
+                }
 
                 return (
                     <div
@@ -64,7 +93,11 @@ const WeatherEffects = ({ type }: { type: string | null }) => {
                             left: `${left}%`,
                             top: `${top}%`,
                             animationDelay: `${delay}s`,
-                            animationDuration: `${type === 'snow' ? duration + 4 : duration}s`
+                            animationDuration: `${type === 'snow' ? duration + 4 :
+                                type === 'dust' ? duration + 8 :
+                                    type === 'heat' ? duration + 3 :
+                                        type === 'thaw' ? duration + 2 : duration
+                                }s`
                         }}
                     />
                 );
