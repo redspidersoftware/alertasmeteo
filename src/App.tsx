@@ -10,14 +10,12 @@ import { useLanguage } from './context/LanguageContext';
 import { LanguageProvider } from './context/LanguageProvider';
 import { AlertFilter } from './components/AlertFilter';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { UserListModal } from './components/UserListModal';
 import { verifyUser } from './services/userService';
 
 const AppContent = () => {
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
   const [selectedEventType, setSelectedEventType] = useState<string | null>(null);
   const [selectedSeverity, setSelectedSeverity] = useState<string | null>(null);
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const { t, language } = useLanguage();
   const { user } = useAuth();
 
@@ -201,18 +199,8 @@ const AppContent = () => {
       <footer className="py-12 glass border-t border-white/5 mt-auto text-center relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 flex flex-col items-center gap-4 text-slate-400 text-sm font-bold tracking-tight relative z-10">
           <p>© {new Date().getFullYear()} — <span className="text-gradient font-black">Visualizador de Alertas AEMET</span></p>
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => setIsAdminOpen(true)}
-              className="text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100 hover:text-blue-400 transition-all font-black border border-white/10 px-3 py-1.5 rounded-lg hover:border-blue-400/30"
-            >
-              Admin Dashboard
-            </button>
-          </div>
         </div>
       </footer>
-
-      <UserListModal isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
     </div>
   );
 };

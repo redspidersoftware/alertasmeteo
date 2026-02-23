@@ -200,13 +200,14 @@ export const AlertCard = ({ alert }: AlertCardProps) => {
                         {alert.description}
                     </p>
 
-                    <AnimatePresence>
-                        {expanded && (
+                    <AnimatePresence initial={false}>
+                        {expanded ? (
                             <motion.div
+                                key="expanded"
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: "auto", opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.4, ease: "circOut" }}
+                                transition={{ duration: 0.3, ease: "easeInOut" }}
                                 className="overflow-hidden"
                             >
                                 <div className="mt-6 pt-6 border-t border-white/10 space-y-6">
@@ -244,11 +245,13 @@ export const AlertCard = ({ alert }: AlertCardProps) => {
                                     </div>
                                 </div>
                             </motion.div>
-                        )}
-                        {!expanded && (
+                        ) : (
                             <motion.div
+                                key="collapsed"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
                                 className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400/60 group-hover:text-blue-400 transition-colors"
                             >
                                 <span>Ver más detalles</span>
