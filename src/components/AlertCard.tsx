@@ -39,13 +39,57 @@ const detectWeatherType = (eventName: string, headline: string = '') => {
 };
 
 const WeatherEffects = ({ type }: { type: string | null }) => {
+    const [renderedParticles] = useState(() => {
+        if (!type || type === 'storm') return null;
+
+        return Array.from({ length: 30 }).map((_, i) => {
+            const left = Math.random() * 100;
+            let top = -20;
+            const delay = Math.random() * 5;
+            const duration = 0.5 + Math.random() * 1.5;
+
+            let className = "";
+            let sizeStr = "";
+            if (type === 'rain') className = "weather-rain w-[2px] h-8 bg-blue-400/80 shadow-[0_0_8px_rgba(34,197,94,0.4)]";
+            if (type === 'snow') className = "weather-snow w-3 h-3 bg-white/90 rounded-full blur-[2px]";
+            if (type === 'wind') {
+                className = "weather-wind w-16 h-[2px] bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.2)]";
+                top = Math.random() * 100;
+            }
+            if (type === 'heat') {
+                className = "weather-heat w-12 h-1 bg-white/10 blur-xl";
+                top = 100;
+            }
+            if (type === 'cold') {
+                className = "weather-cold w-20 h-12 bg-white/5 blur-3xl rounded-full";
+                top = 80;
+            }
+            if (type === 'dust') {
+                const size = 1 + Math.random() * 3;
+                sizeStr = `${size}px`;
+                className = "weather-dust bg-amber-700/60 rounded-full blur-[1px]";
+                top = Math.random() * 100;
+            }
+            if (type === 'thaw') {
+                className = "weather-thaw w-[4px] h-[10px] bg-cyan-200/60 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.3)]";
+                top = -20;
+            }
+
+            const animationDuration = `${type === 'snow' ? duration + 4 :
+                type === 'dust' ? duration + 8 :
+                    type === 'heat' ? duration + 3 :
+                        type === 'thaw' ? duration + 2 : duration
+                }s`;
+
+            return { id: i, left, top, delay, duration: animationDuration, className, sizeStr };
+        });
+    });
+
     if (!type) return null;
 
     if (type === 'storm') {
         return <div className="absolute inset-0 weather-lightning pointer-events-none z-0" />;
     }
-
-    const particles = Array.from({ length: 30 });
 
     return (
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-80">
@@ -55,64 +99,32 @@ const WeatherEffects = ({ type }: { type: string | null }) => {
             {type === 'dust' && <div className="absolute inset-0 bg-amber-600/20 mix-blend-multiply transition-opacity duration-1000" />}
             {type === 'thaw' && <div className="absolute inset-0 bg-cyan-400/5 backdrop-blur-[1px]" />}
 
-            {particles.map((_, i) => {
-                const left = Math.random() * 100;
-                let top = -20;
-                const delay = Math.random() * 5;
-                const duration = 0.5 + Math.random() * 1.5;
-
-                let className = "";
-                if (type === 'rain') className = "weather-rain w-[2px] h-8 bg-blue-400/80 shadow-[0_0_8px_rgba(34,197,94,0.4)]";
-                if (type === 'snow') className = "weather-snow w-3 h-3 bg-white/90 rounded-full blur-[2px]";
-                if (type === 'wind') {
-                    className = "weather-wind w-16 h-[2px] bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.2)]";
-                    top = Math.random() * 100;
-                }
-                if (type === 'heat') {
-                    className = "weather-heat w-12 h-1 bg-white/10 blur-xl";
-                    top = 100;
-                }
-                if (type === 'cold') {
-                    className = "weather-cold w-20 h-12 bg-white/5 blur-3xl rounded-full";
-                    top = 80;
-                }
+            {renderedParticles?.map((p) => {
                 if (type === 'dust') {
-                    const size = 1 + Math.random() * 3;
-                    className = "weather-dust bg-amber-700/60 rounded-full blur-[1px]";
-                    top = Math.random() * 100;
                     return (
                         <div
-                            key={i}
-                            className={`absolute ${className}`}
+                            key={p.id}
+                            className={`absolute ${p.className}`}
                             style={{
-                                width: `${size}px`,
-                                height: `${size}px`,
-                                left: `${left}%`,
-                                top: `${top}%`,
-                                animationDelay: `${delay}s`,
-                                animationDuration: `${duration + 12}s`
+                                width: p.sizeStr,
+                                height: p.sizeStr,
+                                left: `${p.left}%`,
+                                top: `${p.top}%`,
+                                animationDelay: `${p.delay}s`,
+                                animationDuration: p.duration
                             }}
                         />
                     );
                 }
-                if (type === 'thaw') {
-                    className = "weather-thaw w-[4px] h-[10px] bg-cyan-200/60 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.3)]";
-                    top = -20;
-                }
-
                 return (
                     <div
-                        key={i}
-                        className={`absolute ${className}`}
+                        key={p.id}
+                        className={`absolute ${p.className}`}
                         style={{
-                            left: `${left}%`,
-                            top: `${top}%`,
-                            animationDelay: `${delay}s`,
-                            animationDuration: `${type === 'snow' ? duration + 4 :
-                                type === 'dust' ? duration + 8 :
-                                    type === 'heat' ? duration + 3 :
-                                        type === 'thaw' ? duration + 2 : duration
-                                }s`
+                            left: `${p.left}%`,
+                            top: `${p.top}%`,
+                            animationDelay: `${p.delay}s`,
+                            animationDuration: p.duration
                         }}
                     />
                 );

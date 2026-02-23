@@ -19,7 +19,7 @@ serve(async (req: Request) => {
     console.log(`[Function] Method: ${req.method} | Test mode: ${isTest}`)
 
     try {
-        let email: string, name: string, preferences: any
+        let email: string, name: string, preferences: { preferredSeverities?: string[], preferredEventTypes?: string[] }
 
         if (isTest) {
             email = SMTP_USER || ""
@@ -40,7 +40,7 @@ serve(async (req: Request) => {
 
         // Build a summary of preferences
         const severities = preferences.preferredSeverities?.join(', ') || 'Todas'
-        const types = preferences.preferredEventTypes?.length > 0
+        const types = preferences.preferredEventTypes && preferences.preferredEventTypes.length > 0
             ? preferences.preferredEventTypes.sort().join(', ')
             : 'Todos'
 
@@ -89,7 +89,8 @@ serve(async (req: Request) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
 
-    } catch (err: any) {
+    } catch (error) {
+        const err = error as Error;
         console.error("[SMTP Error]", err);
         return new Response(JSON.stringify({
             success: false,

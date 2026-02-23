@@ -103,7 +103,7 @@ export const getUserProfile = async (uid: string): Promise<UserData | null> => {
 
 export const updateUser = async (uid: string, userData: Partial<UserData>): Promise<void> => {
     // 1. Update public.users table
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (userData.name !== undefined) updateData.name = userData.name;
     if (userData.phone !== undefined) updateData.phone = userData.phone;
     if (userData.postalCode !== undefined) updateData.postal_code = userData.postalCode;

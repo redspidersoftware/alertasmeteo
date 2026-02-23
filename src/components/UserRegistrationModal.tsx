@@ -32,7 +32,7 @@ export const UserRegistrationModal = ({ isOpen, onClose }: Props) => {
         if (Object.keys(newErrors).length === 0) {
             setLoading(true);
             try {
-                await saveUser(formData as any);
+                await saveUser(formData as unknown as never);
                 setSuccess(true);
                 // Simulate Verification Email
                 console.log(`[SIMULATION] Sending verification email to ${formData.email} using language ${formData.language}`);
@@ -41,9 +41,14 @@ export const UserRegistrationModal = ({ isOpen, onClose }: Props) => {
                     setSuccess(false);
                     setFormData({ name: '', email: '', phone: '', postalCode: '', language: 'es' });
                 }, 3000); // Increased time to read success message
-            } catch (e: any) {
+            } catch (error) {
+                const e = error as Error;
                 console.error('Registration error:', e);
-                setErrorMessage(e.message || 'Error al registrar usuario. Por favor, verifica tu configuración de Supabase.');
+                let msg = e.message || 'Error al registrar usuario.';
+                if (msg.toLowerCase().includes('confirmation email')) {
+                    msg = 'Error de Supabase: No se pudo enviar el email de confirmación (SMTP no configurado o límite alcanzado). Por favor, sigue las instrucciones en SUPABASE_FIX.md para desactivar la confirmación por email.';
+                }
+                setErrorMessage(msg);
             } finally {
                 setLoading(false);
             }

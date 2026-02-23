@@ -11,11 +11,11 @@ interface AlertFilterProps {
     onFilterChange: (type: string | null, severity: string | null) => void;
 }
 
+const SEVERITIES: WeatherAlert['severity'][] = ['red', 'orange', 'yellow'];
+
 export const AlertFilter = ({ alerts, selectedType, selectedSeverity, onFilterChange }: AlertFilterProps) => {
     const { t } = useLanguage();
     const [expandedLevels, setExpandedLevels] = useState<Record<string, boolean>>({});
-
-    const severities: WeatherAlert['severity'][] = ['red', 'orange', 'yellow'];
 
     const groupedAlerts = useMemo(() => {
         const groups: Record<string, Set<string>> = {
@@ -36,11 +36,12 @@ export const AlertFilter = ({ alerts, selectedType, selectedSeverity, onFilterCh
     // Auto-expand levels with active alerts on first load
     useEffect(() => {
         const initialState: Record<string, boolean> = {};
-        severities.forEach(sev => {
+        SEVERITIES.forEach(sev => {
             if (groupedAlerts[sev].size > 0) {
                 initialState[sev] = true;
             }
         });
+        // eslint-disable-next-line
         setExpandedLevels(initialState);
     }, [groupedAlerts]);
 
@@ -95,7 +96,7 @@ export const AlertFilter = ({ alerts, selectedType, selectedSeverity, onFilterCh
 
                 {/* Tree Structure */}
                 <div className="space-y-2">
-                    {severities.map(sev => {
+                    {SEVERITIES.map(sev => {
                         const types = Array.from(groupedAlerts[sev]).sort();
                         const isExpanded = expandedLevels[sev];
                         const hasAlerts = types.length > 0;

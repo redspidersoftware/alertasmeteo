@@ -101,8 +101,9 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
             setTimeout(() => {
                 onClose();
             }, 1000);
-        } catch (error: any) {
-            setErrorMsg(error.message || t('profile.error'));
+        } catch (error) {
+            const err = error as Error;
+            setErrorMsg(err.message || t('profile.error'));
         } finally {
             setIsSaving(false);
         }

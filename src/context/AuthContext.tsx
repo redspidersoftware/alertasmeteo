@@ -15,6 +15,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<UserData | null>(null);
 
+    const fetchProfile = async (uid: string, email: string) => {
+        console.log("Fetching profile for", uid);
+        const profile = await getUserProfile(uid);
+        if (profile) {
+            setUser(profile);
+        } else {
+            // Fallback if profile doesn't exist yet (race condition on signup)
+            setUser({
+                id: uid, // Add ID to UserData type if missing
+                email: email,
+                name: 'User',
+                phone: '',
+                postalCode: '',
+                language: 'es',
+                isVerified: false
+            });
+        }
+    };
+
     const refreshProfile = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
@@ -42,25 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => subscription.unsubscribe();
     }, []);
 
-    const fetchProfile = async (uid: string, email: string) => {
-        console.log("Fetching profile for", uid);
-        const profile = await getUserProfile(uid);
-        if (profile) {
-            setUser(profile);
-        } else {
-            // Fallback if profile doesn't exist yet (race condition on signup)
-            setUser({
-                id: uid, // Add ID to UserData type if missing
-                email: email,
-                name: 'User',
-                phone: '',
-                postalCode: '',
-                language: 'es',
-                isVerified: false
-            });
-        }
-    };
-
     const login = async (email: string, phone: string): Promise<boolean> => {
         // Using Phone as Password for this demo (User requested Phone as 'password')
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -87,6 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) throw new Error('useAuth must be used within an AuthProvider');
