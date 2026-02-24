@@ -34,6 +34,9 @@ const translations: Record<string, Record<Language, string>> = {
     'form.error.phone': { es: 'Teléfono inválido (España)', en: 'Invalid Phone (Spain)' },
     'form.error.cp': { es: 'Código Postal inválido', en: 'Invalid Postal Code' },
     'form.cancel': { es: 'Cancelar', en: 'Cancel' },
+    'form.eula': { es: 'He leído y acepto los', en: 'I have read and accept the' },
+    'form.eula.link': { es: 'Términos y Condiciones de Uso (EULA)', en: 'End User License Agreement (EULA)' },
+    'form.error.eula': { es: 'Debes aceptar los términos para continuar', en: 'You must accept the terms to continue' },
 
     // Login Form
     'login.title': { es: 'Iniciar Sesión', en: 'Log In' },

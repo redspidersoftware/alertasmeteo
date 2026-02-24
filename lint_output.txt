@@ -1,0 +1,143 @@
+
+C:\Users\ochen\Documents\alertasmeteo\src\components\AlertCard.tsx
+  59:30  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\ochen\Documents\alertasmeteo\src\components\AlertCard.tsx:59:30
+  57 |
+  58 |             {particles.map((_, i) => {
+> 59 |                 const left = Math.random() * 100;
+     |                              ^^^^^^^^^^^^^ Cannot call impure function
+  60 |                 let top = -20;
+  61 |                 const delay = Math.random() * 5;
+  62 |                 const duration = 0.5 + Math.random() * 1.5;                                                                                                       react-hooks/purity
+  61:31  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\ochen\Documents\alertasmeteo\src\components\AlertCard.tsx:61:31
+  59 |                 const left = Math.random() * 100;
+  60 |                 let top = -20;
+> 61 |                 const delay = Math.random() * 5;
+     |                               ^^^^^^^^^^^^^ Cannot call impure function
+  62 |                 const duration = 0.5 + Math.random() * 1.5;
+  63 |
+  64 |                 let className = "";                                                                                                         react-hooks/purity
+  62:40  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\ochen\Documents\alertasmeteo\src\components\AlertCard.tsx:62:40
+  60 |                 let top = -20;
+  61 |                 const delay = Math.random() * 5;
+> 62 |                 const duration = 0.5 + Math.random() * 1.5;
+     |                                        ^^^^^^^^^^^^^ Cannot call impure function
+  63 |
+  64 |                 let className = "";
+  65 |                 if (type === 'rain') className = "weather-rain w-[2px] h-8 bg-blue-400/80 shadow-[0_0_8px_rgba(34,197,94,0.4)]";                 react-hooks/purity
+  69:27  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\ochen\Documents\alertasmeteo\src\components\AlertCard.tsx:69:27
+  67 |                 if (type === 'wind') {
+  68 |                     className = "weather-wind w-16 h-[2px] bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.2)]";
+> 69 |                     top = Math.random() * 100;
+     |                           ^^^^^^^^^^^^^ Cannot call impure function
+  70 |                 }
+  71 |                 if (type === 'heat') {
+  72 |                     className = "weather-heat w-12 h-1 bg-white/10 blur-xl";  react-hooks/purity
+  80:38  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\ochen\Documents\alertasmeteo\src\components\AlertCard.tsx:80:38
+  78 |                 }
+  79 |                 if (type === 'dust') {
+> 80 |                     const size = 1 + Math.random() * 3;
+     |                                      ^^^^^^^^^^^^^ Cannot call impure function
+  81 |                     className = "weather-dust bg-amber-700/60 rounded-full blur-[1px]";
+  82 |                     top = Math.random() * 100;
+  83 |                     return (                                               react-hooks/purity
+  82:27  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\ochen\Documents\alertasmeteo\src\components\AlertCard.tsx:82:27
+  80 |                     const size = 1 + Math.random() * 3;
+  81 |                     className = "weather-dust bg-amber-700/60 rounded-full blur-[1px]";
+> 82 |                     top = Math.random() * 100;
+     |                           ^^^^^^^^^^^^^ Cannot call impure function
+  83 |                     return (
+  84 |                         <div
+  85 |                             key={i}                                                  react-hooks/purity
+
+C:\Users\ochen\Documents\alertasmeteo\src\components\AlertFilter.tsx
+  44:9  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\ochen\Documents\alertasmeteo\src\components\AlertFilter.tsx:44:9
+  42 |             }
+  43 |         });
+> 44 |         setExpandedLevels(initialState);
+     |         ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  45 |     }, [groupedAlerts]);
+  46 |
+  47 |     const getIcon = (event: string) => {  react-hooks/set-state-in-effect
+  45:8  warning  React Hook useEffect has a missing dependency: 'severities'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/exhaustive-deps
+
+C:\Users\ochen\Documents\alertasmeteo\src\components\ProfileModal.tsx
+  104:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\ochen\Documents\alertasmeteo\src\components\UserRegistrationModal.tsx
+  35:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  44:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\ochen\Documents\alertasmeteo\src\context\AuthContext.tsx
+  21:19  error  Error: Cannot access variable before it is declared
+
+`fetchProfile` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+C:\Users\ochen\Documents\alertasmeteo\src\context\AuthContext.tsx:21:19
+  19 |         const { data: { session } } = await supabase.auth.getSession();
+  20 |         if (session?.user) {
+> 21 |             await fetchProfile(session.user.id, session.user.email!);
+     |                   ^^^^^^^^^^^^ `fetchProfile` accessed before it is declared
+  22 |         }
+  23 |     };
+  24 |
+
+C:\Users\ochen\Documents\alertasmeteo\src\context\AuthContext.tsx:45:5
+  43 |     }, []);
+  44 |
+> 45 |     const fetchProfile = async (uid: string, email: string) => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 46 |         console.log("Fetching profile for", uid);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 47 |         const profile = await getUserProfile(uid);
+     …
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 61 |         }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 62 |     };
+     | ^^^^^^^ `fetchProfile` is declared here
+  63 |
+  64 |     const login = async (email: string, phone: string): Promise<boolean> => {
+  65 |         // Using Phone as Password for this demo (User requested Phone as 'password')  react-hooks/immutability
+  90:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-refresh/only-export-components
+
+C:\Users\ochen\Documents\alertasmeteo\src\services\userService.ts
+  106:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\ochen\Documents\alertasmeteo\supabase\functions\send-confirmation\index.ts
+  22:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  92:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 16 problems (15 errors, 1 warning)
+

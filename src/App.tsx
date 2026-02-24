@@ -11,6 +11,7 @@ import { LanguageProvider } from './context/LanguageProvider';
 import { AlertFilter } from './components/AlertFilter';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { verifyUser } from './services/userService';
+import { EulaPage } from './components/EulaPage';
 
 const AppContent = () => {
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
@@ -206,6 +207,14 @@ const AppContent = () => {
 };
 
 function App() {
+  if (window.location.pathname === '/eula') {
+    return (
+      <LanguageProvider>
+        <EulaPage />
+      </LanguageProvider>
+    );
+  }
+
   return (
     <LanguageProvider>
       <AuthProvider>

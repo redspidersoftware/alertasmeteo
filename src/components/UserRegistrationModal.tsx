@@ -16,6 +16,7 @@ export const UserRegistrationModal = ({ isOpen, onClose }: Props) => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const [eulaAccepted, setEulaAccepted] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -26,6 +27,7 @@ export const UserRegistrationModal = ({ isOpen, onClose }: Props) => {
         if (!validateEmail(formData.email)) newErrors.email = t('form.error.email');
         if (!validatePhone(formData.phone)) newErrors.phone = t('form.error.phone');
         if (!validatePostalCode(formData.postalCode)) newErrors.cp = t('form.error.cp');
+        if (!eulaAccepted) newErrors.eula = t('form.error.eula');
 
         setErrors(newErrors);
 
@@ -40,6 +42,7 @@ export const UserRegistrationModal = ({ isOpen, onClose }: Props) => {
                     onClose();
                     setSuccess(false);
                     setFormData({ name: '', email: '', phone: '', postalCode: '', language: 'es' });
+                    setEulaAccepted(false);
                 }, 3000); // Increased time to read success message
             } catch (error) {
                 const e = error as Error;
@@ -163,6 +166,39 @@ export const UserRegistrationModal = ({ isOpen, onClose }: Props) => {
                                         <Globe size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none" />
                                     </div>
                                 </div>
+
+                                {/* EULA Checkbox */}
+                                <div className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${errors.eula ? 'border-red-500/50 bg-red-500/5' : 'border-white/10 bg-black/10'
+                                    }`}>
+                                    <input
+                                        type="checkbox"
+                                        id="eula-checkbox"
+                                        checked={eulaAccepted}
+                                        onChange={(e) => {
+                                            setEulaAccepted(e.target.checked);
+                                            if (e.target.checked) setErrors(prev => { const n = { ...prev }; delete n.eula; return n; });
+                                        }}
+                                        className="mt-0.5 w-4 h-4 rounded accent-blue-500 cursor-pointer flex-shrink-0"
+                                    />
+                                    <label htmlFor="eula-checkbox" className="text-sm text-slate-300 cursor-pointer leading-snug">
+                                        {t('form.eula')}{' '}
+                                        <a
+                                            href="/eula"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {t('form.eula.link')}
+                                        </a>
+                                        <span className="text-red-400 ml-1">*</span>
+                                    </label>
+                                </div>
+                                {errors.eula && (
+                                    <p className="text-xs text-red-500 -mt-2 flex items-center gap-1">
+                                        <AlertCircle size={10} /> {errors.eula}
+                                    </p>
+                                )}
 
                                 <div className="pt-4 flex gap-3">
                                     <button
