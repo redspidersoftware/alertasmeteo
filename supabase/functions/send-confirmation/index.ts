@@ -19,17 +19,19 @@ serve(async (req: Request) => {
     console.log(`[Function] Method: ${req.method} | Test mode: ${isTest}`)
 
     try {
-        let email: string, name: string, preferences: { preferredSeverities?: string[], preferredEventTypes?: string[] }
+        let email: string, name: string, appUrl: string, preferences: { preferredSeverities?: string[], preferredEventTypes?: string[] }
 
         if (isTest) {
             email = SMTP_USER || ""
             name = "Test User"
+            appUrl = "http://localhost:5173"
             preferences = { preferredSeverities: ['test-severity'], preferredEventTypes: ['test-event'] }
             console.log("[Test] Running connectivity test to:", email)
         } else {
             const payload = await req.json()
             email = payload.email
             name = payload.name
+            appUrl = payload.appUrl || "https://alertas-meteo.vercel.app"
             preferences = payload.preferences
             console.log(`[Prod] Sending to: ${email}`)
         }
@@ -72,7 +74,11 @@ serve(async (req: Request) => {
           
           <p>A partir de ahora, verás los avisos filtrados según esta configuración cuando inicies sesión.</p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-          <p style="font-size: 12px; color: #64748b;">Este es un mensaje automático de Alertas Meteo.</p>
+          <p style="font-size: 12px; color: #64748b; margin-bottom: 5px;">Este es un mensaje automático de Alertas Meteo.</p>
+          <p style="font-size: 12px; color: #94a3b8;">
+            ¿Ya no deseas recibir estas alertas? 
+            <a href="${appUrl}/unsubscribe" style="color: #2563eb; text-decoration: underline;">Darme de baja aquí</a>.
+          </p>
         </div>
       `,
         });

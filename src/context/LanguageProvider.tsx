@@ -44,6 +44,14 @@ const translations: Record<string, Record<Language, string>> = {
     'login.success': { es: 'Sesión iniciada correctamente', en: 'Logged in successfully' },
     'login.error.creds': { es: 'Credenciales inválidas', en: 'Invalid credentials' },
     'login.error.unverified': { es: 'Cuenta no verificada. Revisa tu email.', en: 'Account not verified. Check your email.' },
+    'login.forgot': { es: '¿Olvidaste tu contraseña?', en: 'Forgot your password?' },
+    'login.reset.title': { es: 'Recuperar Contraseña', en: 'Reset Password' },
+    'login.reset.subtitle': { es: 'Te enviaremos un enlace por email', en: 'We will send you a reset link by email' },
+    'login.reset.send': { es: 'Enviar enlace', en: 'Send link' },
+    'login.reset.back': { es: 'Volver al inicio de sesión', en: 'Back to login' },
+    'login.reset.error': { es: 'No se pudo enviar el enlace. Comprueba el email.', en: 'Could not send reset link. Check the email address.' },
+    'login.reset.sent.title': { es: '¡Email enviado!', en: 'Email sent!' },
+    'login.reset.sent.desc': { es: 'Revisa tu bandeja de entrada. El enlace caduca en 1 hora.', en: 'Check your inbox. The link expires in 1 hour.' },
     'auth.logout': { es: 'Cerrar Sesión', en: 'Log Out' },
     'auth.welcome': { es: 'Hola,', en: 'Hello,' },
     'profile.title': { es: 'Configuración de Perfil', en: 'Profile Settings' },
@@ -84,7 +92,18 @@ const translations: Record<string, Record<Language, string>> = {
 
     // UI Revamp
     'event.filtered_by': { es: 'Filtrado por', en: 'Filtered by' },
-    'footer.donate_title': { es: 'Apoya el Proyecto', en: 'Support the Project' }
+    'footer.donate_title': { es: 'Apoya el Proyecto', en: 'Support the Project' },
+
+    // Unsubscribe Page
+    'unsub.title': { es: 'Darse de Baja', en: 'Unsubscribe' },
+    'unsub.subtitle': { es: 'Esta acción eliminará tu cuenta de forma permanente.', en: 'This action will permanently delete your account.' },
+    'unsub.password': { es: 'Contraseña (Teléfono)', en: 'Password (Phone)' },
+    'unsub.submit': { es: 'Eliminar mi cuenta', en: 'Delete my account' },
+    'unsub.success.title': { es: 'Cuenta eliminada', en: 'Account deleted' },
+    'unsub.success.desc': { es: 'Tu cuenta ha sido eliminada correctamente. Sentimos verte marchar.', en: 'Your account has been permanently deleted. We are sorry to see you go.' },
+    'unsub.error': { es: 'No se pudo eliminar la cuenta. Verifica tus datos.', en: 'Could not delete the account. Please check your details.' },
+    'unsub.back': { es: 'Volver al inicio', en: 'Back to home' },
+    'unsub.warning': { es: 'Esta acción es irreversible. Se eliminarán todos tus datos.', en: 'This action is irreversible. All your data will be deleted.' }
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {

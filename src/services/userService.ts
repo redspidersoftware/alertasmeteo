@@ -160,6 +160,7 @@ export const updateUser = async (uid: string, userData: Partial<UserData>): Prom
             body: {
                 email: finalUser.email,
                 name: finalUser.name,
+                appUrl: window.location.origin,
                 preferences: {
                     preferredSeverities: userData.preferredSeverities,
                     preferredEventTypes: userData.preferredEventTypes

@@ -7,6 +7,7 @@ interface AuthContextType {
     login: (email: string, phone: string) => Promise<boolean>; // Keeping signature, phone acts as password
     logout: () => Promise<void>;
     refreshProfile: () => Promise<void>;
+    resetPassword: (email: string) => Promise<void>;
     isAuthenticated: boolean;
 }
 
@@ -80,8 +81,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
     };
 
+    const resetPassword = async (email: string): Promise<void> => {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw new Error(error.message);
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, refreshProfile, isAuthenticated: !!user }}>
+        <AuthContext.Provider value={{ user, login, logout, refreshProfile, resetPassword, isAuthenticated: !!user }}>
             {children}
         </AuthContext.Provider>
     );

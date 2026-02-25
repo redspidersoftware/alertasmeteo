@@ -1,6 +1,7 @@
 import { Header } from './components/Header';
 import { AlertList } from './components/AlertList';
 import { MapView } from './components/MapView';
+import { UnsubscribePage } from './components/UnsubscribePage';
 import { motion } from 'framer-motion';
 import { CloudRainWind } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -211,6 +212,14 @@ function App() {
     return (
       <LanguageProvider>
         <EulaPage />
+      </LanguageProvider>
+    );
+  }
+
+  if (window.location.pathname === '/unsubscribe') {
+    return (
+      <LanguageProvider>
+        <UnsubscribePage />
       </LanguageProvider>
     );
   }
