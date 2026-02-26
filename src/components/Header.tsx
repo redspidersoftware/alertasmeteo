@@ -5,6 +5,8 @@ import { useState, useRef, useEffect } from 'react';
 import { UserRegistrationModal } from './UserRegistrationModal';
 import { LoginModal } from './LoginModal';
 import { ProfileModal } from './ProfileModal';
+import { AboutModal } from './AboutModal';
+import { ContactModal } from './ContactModal';
 
 export const Header = () => {
     const { language, setLanguage, t } = useLanguage();
@@ -13,6 +15,8 @@ export const Header = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isAboutOpen, setIsAboutOpen] = useState(false);
+    const [isContactOpen, setIsContactOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const toggleDropdown = () => setIsOpen(!isOpen);
@@ -64,6 +68,21 @@ export const Header = () => {
                             </p>
                         </div>
                     </div>
+
+                    <nav className="hidden md:flex items-center gap-8 border-l border-white/5 ml-8 pl-8">
+                        <button
+                            onClick={() => setIsAboutOpen(true)}
+                            className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase tracking-widest active:scale-95"
+                        >
+                            {t('nav.about')}
+                        </button>
+                        <button
+                            onClick={() => setIsContactOpen(true)}
+                            className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase tracking-widest active:scale-95"
+                        >
+                            {t('nav.contact')}
+                        </button>
+                    </nav>
 
                     <div className="flex items-center gap-4">
                         {user ? (
@@ -154,6 +173,8 @@ export const Header = () => {
             <UserRegistrationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
             <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
             <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+            <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+            <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
         </>
     );
 };

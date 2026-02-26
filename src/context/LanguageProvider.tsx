@@ -103,7 +103,34 @@ const translations: Record<string, Record<Language, string>> = {
     'unsub.success.desc': { es: 'Tu cuenta ha sido eliminada correctamente. Sentimos verte marchar.', en: 'Your account has been permanently deleted. We are sorry to see you go.' },
     'unsub.error': { es: 'No se pudo eliminar la cuenta. Verifica tus datos.', en: 'Could not delete the account. Please check your details.' },
     'unsub.back': { es: 'Volver al inicio', en: 'Back to home' },
-    'unsub.warning': { es: 'Esta acción es irreversible. Se eliminarán todos tus datos.', en: 'This action is irreversible. All your data will be deleted.' }
+    'unsub.warning': { es: 'Esta acción es irreversible. Se eliminarán todos tus datos.', en: 'This action is irreversible. All your data will be deleted.' },
+
+    // Navigation
+    'nav.about': { es: 'Qué hacemos', en: 'What we do' },
+    'nav.contact': { es: 'Contacto', en: 'Contact' },
+
+    // About Modal
+    'about.title': { es: 'Nuestra Misión', en: 'Our Mission' },
+    'about.subtitle': { es: 'Tecnología al servicio de tu seguridad', en: 'Technology at the service of your safety' },
+    'about.mission': { es: 'Proporcionamos información meteorológica en tiempo real mediante el procesamiento avanzado de datos de AEMET, asegurando que estés siempre un paso por delante de los fenómenos adversos.', en: 'We provide real-time weather information through advanced AEMET data processing, ensuring you are always one step ahead of adverse events.' },
+    'about.feature1.title': { es: 'Monitorización 24/7', en: '24/7 Monitoring' },
+    'about.feature1.desc': { es: 'Actualización constante de avisos en todo el territorio nacional.', en: 'Constant update of alerts throughout the national territory.' },
+    'about.feature2.title': { es: 'Alertas Personalizadas', en: 'Personalized Alerts' },
+    'about.feature2.desc': { es: 'Recibe solo lo que te importa según tu ubicación y preferencias.', en: 'Receive only what matters to you based on your location and preferences.' },
+    'about.feature3.title': { es: 'Mapa Interactivo', en: 'Interactive Map' },
+    'about.feature3.desc': { es: 'Visualiza la evolución de las alertas de forma clara e intuitiva.', en: 'Visualize the evolution of alerts clearly and intuitively.' },
+
+    // Contact Modal
+    'contact.title': { es: 'Contacta con nosotros', en: 'Contact Us' },
+    'contact.subtitle': { es: 'Estamos aquí para escucharte y ayudarte.', en: 'We are here to listen and help you.' },
+    'contact.name': { es: 'Nombre', en: 'Name' },
+    'contact.email': { es: 'Correo Electrónico', en: 'Email Address' },
+    'contact.subject': { es: 'Asunto', en: 'Subject' },
+    'contact.message': { es: 'Mensaje', en: 'Message' },
+    'contact.submit': { es: 'Enviar mensaje', en: 'Send message' },
+    'contact.sending': { es: 'Enviando...', en: 'Sending...' },
+    'contact.success': { es: 'Mensaje enviado correctamente. Te contactaremos pronto.', en: 'Message sent successfully. We will contact you soon.' },
+    'contact.error': { es: 'Error al enviar el mensaje. Inténtalo de nuevo.', en: 'Error sending message. Please try again.' }
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
