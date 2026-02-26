@@ -97,12 +97,17 @@ serve(async (req: Request) => {
 
     } catch (error) {
         const err = error as Error;
-        console.error("[SMTP Error]", err);
+        console.error("[SMTP Error Detail]", {
+            message: err.message,
+            stack: err.stack,
+            user: SMTP_USER ? "Defined (Hidden)" : "Missing",
+            pass: SMTP_PASS ? "Defined (Hidden)" : "Missing"
+        });
+
         return new Response(JSON.stringify({
             success: false,
             error: err.message,
-            stack: err.stack,
-            hint: "Ensure you are using a Gmail App Password, not your regular password. Also check SMTP_USER secret."
+            hint: "Ensure SMTP_USER and SMTP_PASS are set in Supabase Secrets. Use a Gmail App Password."
         }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
