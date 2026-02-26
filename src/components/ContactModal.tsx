@@ -3,6 +3,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { X, Send, CheckCircle, AlertCircle, MessageSquare } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { validateEmail } from '../services/userService';
+import { supabase } from '../lib/supabase';
 
 interface Props {
     isOpen: boolean;
@@ -30,9 +31,12 @@ export const ContactModal = ({ isOpen, onClose }: Props) => {
         if (Object.keys(newErrors).length === 0) {
             setLoading(true);
             try {
-                // Simulate API Call
-                console.log('Sending contact form data:', formData);
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                const { error: funcError } = await supabase.functions.invoke('send-contact-email', {
+                    body: formData
+                });
+
+                if (funcError) throw funcError;
+
                 setSuccess(true);
                 setTimeout(() => {
                     onClose();
@@ -41,6 +45,7 @@ export const ContactModal = ({ isOpen, onClose }: Props) => {
                 }, 3000);
             } catch (error) {
                 console.error('Error sending message:', error);
+                setErrors({ submit: 'Failed to send message. Please try again later.' });
             } finally {
                 setLoading(false);
             }
@@ -75,6 +80,13 @@ export const ContactModal = ({ isOpen, onClose }: Props) => {
                                 <p className="text-sm text-slate-400">{t('contact.subtitle')}</p>
                             </div>
                         </div>
+
+                        {errors.submit && (
+                            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm flex items-center gap-2">
+                                <AlertCircle size={16} />
+                                {errors.submit}
+                            </div>
+                        )}
 
                         {success ? (
                             <div className="flex flex-col items-center justify-center py-8 text-center animate-in fade-in zoom-in duration-300">
