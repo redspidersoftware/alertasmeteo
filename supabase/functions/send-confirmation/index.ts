@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import nodemailer from "npm:nodemailer"
 
 const SMTP_USER = Deno.env.get('SMTP_USER')
-const SMTP_PASS = Deno.env.get('SMTP_PASS') // Gmail App Password
+const SMTP_PASS = Deno.env.get('SMTP_PASS')
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -10,105 +10,95 @@ const corsHeaders = {
 }
 
 serve(async (req: Request) => {
-    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
 
-    const isTest = req.method === 'GET'
-    console.log(`[Function] Method: ${req.method} | Test mode: ${isTest}`)
-
     try {
-        let email: string, name: string, appUrl: string, preferences: { preferredSeverities?: string[], preferredEventTypes?: string[] }
-
-        if (isTest) {
-            email = SMTP_USER || ""
-            name = "Test User"
-            appUrl = "http://localhost:5173"
-            preferences = { preferredSeverities: ['test-severity'], preferredEventTypes: ['test-event'] }
-            console.log("[Test] Running connectivity test to:", email)
-        } else {
-            const payload = await req.json()
-            email = payload.email
-            name = payload.name
-            appUrl = payload.appUrl || "https://alertas-meteo.vercel.app"
-            preferences = payload.preferences
-            console.log(`[Prod] Sending to: ${email}`)
-        }
+        const isTest = req.method === 'GET'
 
         if (!SMTP_USER || !SMTP_PASS) {
-            throw new Error("Missing SMTP_USER or SMTP_PASS secrets in Supabase")
+            throw new Error("SMTP_USER or SMTP_PASS secrets are not set in Supabase project settings.")
         }
 
-        // Build a summary of preferences
-        const severities = preferences.preferredSeverities?.join(', ') || 'Todas'
-        const types = preferences.preferredEventTypes && preferences.preferredEventTypes.length > 0
-            ? preferences.preferredEventTypes.sort().join(', ')
-            : 'Todos'
+        let email: string, name: string, subject: string, html: string;
 
-        console.log("[SMTP] Creating transporter...")
+        if (isTest) {
+            email = SMTP_USER
+            name = "Test User"
+            subject = "Prueba de conexión SMTP (Nodemailer)"
+            html = "<h1>La conexión SMTP funciona correctamente</h1>"
+        } else {
+            const payload = await req.json()
+            const type = payload.type || 'confirmation'
+            name = payload.name || 'Usuario'
+
+            if (type === 'contact') {
+                const contactEmail = payload.email || 'No proporcionado'
+                subject = `[Contacto] ${payload.subject || 'Sin asunto'}`
+                html = `
+                    <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                        <h2 style="color: #2563eb;">Nuevo mensaje de contacto</h2>
+                        <p><strong>De:</strong> ${name} (${contactEmail})</p>
+                        <p><strong>Asunto:</strong> ${payload.subject}</p>
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <p style="white-space: pre-wrap; color: #334155;">${payload.message || 'Sin mensaje'}</p>
+                        </div>
+                        <p style="font-size: 12px; color: #64748b;">Mensaje enviado desde Alertas Meteo.</p>
+                    </div>
+                `
+                email = "ochentainueve@gmail.com" // Recibir el contacto aquí
+            } else {
+                email = payload.email
+                const preferences = payload.preferences || {}
+                const severities = preferences.preferredSeverities?.join(', ') || 'Todas'
+                const eventTypes = preferences.preferredEventTypes && preferences.preferredEventTypes.length > 0
+                    ? preferences.preferredEventTypes.sort().join(', ')
+                    : 'Todos'
+                const appUrl = payload.appUrl || "https://alertas-meteo.vercel.app"
+
+                subject = "Tus preferencias de alertas han sido actualizadas"
+                html = `
+                    <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                        <h2 style="color: #2563eb;">¡Hola ${name}!</h2>
+                        <p>Te confirmamos que hemos actualizado tus preferencias de visualización de alertas meteorológicas.</p>
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <p><strong>Niveles de gravedad:</strong> ${severities}</p>
+                            <p><strong>Tipos de avisos:</strong> ${eventTypes}</p>
+                        </div>
+                        <p>A partir de ahora, verás los avisos filtrados según esta configuración cuando inicies sesión.</p>
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                        <p style="font-size: 12px; color: #64748b;">¿Ya no deseas recibir estas alertas? <a href="${appUrl}/unsubscribe" style="color: #2563eb;">Darme de baja aquí</a>.</p>
+                    </div>
+                `
+            }
+        }
+
         const transporter = nodemailer.createTransport({
             host: "smtp.gmail.com",
             port: 465,
-            secure: true, // Use SSL
+            secure: true,
             auth: {
                 user: SMTP_USER,
                 pass: SMTP_PASS,
             },
         });
 
-        console.log("[SMTP] Sending mail via Nodemailer...")
-        const info = await transporter.sendMail({
+        await transporter.sendMail({
             from: `"Alertas Meteo" <${SMTP_USER}>`,
             to: email,
-            subject: isTest ? "Prueba de conexión SMTP (Nodemailer)" : "Tus preferencias de alertas han sido actualizadas",
-            html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-          <h2 style="color: #2563eb;">¡Hola ${name}!</h2>
-          <p>Te confirmamos que hemos actualizado tus preferencias de visualización de alertas meteorológicas.</p>
-          
-          <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Niveles de gravedad:</strong> ${severities}</p>
-            <p><strong>Tipos de avisos:</strong> ${types}</p>
-          </div>
-          
-          <p>A partir de ahora, verás los avisos filtrados según esta configuración cuando inicies sesión.</p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-          <p style="font-size: 12px; color: #64748b; margin-bottom: 5px;">Este es un mensaje automático de Alertas Meteo.</p>
-          <p style="font-size: 12px; color: #94a3b8;">
-            ¿Ya no deseas recibir estas alertas? 
-            <a href="${appUrl}/unsubscribe" style="color: #2563eb; text-decoration: underline;">Darme de baja aquí</a>.
-          </p>
-        </div>
-      `,
+            subject: subject,
+            html: html,
         });
 
-        console.log("[SMTP] Success:", info.messageId)
-
-        return new Response(JSON.stringify({
-            success: true,
-            messageId: info.messageId,
-            message: isTest ? "SMTP Test successful via Nodemailer! Check your inbox." : "Email sent successfully",
-            debug: { user: SMTP_USER, target: email }
-        }), {
+        return new Response(JSON.stringify({ success: true }), {
             status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
 
     } catch (error) {
-        const err = error as Error;
-        console.error("[SMTP Error Detail]", {
-            message: err.message,
-            stack: err.stack,
-            user: SMTP_USER ? "Defined (Hidden)" : "Missing",
-            pass: SMTP_PASS ? "Defined (Hidden)" : "Missing"
-        });
-
-        return new Response(JSON.stringify({
-            success: false,
-            error: err.message,
-            hint: "Ensure SMTP_USER and SMTP_PASS are set in Supabase Secrets. Use a Gmail App Password."
-        }), {
+        return new Response(JSON.stringify({ success: false, error: error.message }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })

@@ -31,8 +31,8 @@ export const ContactModal = ({ isOpen, onClose }: Props) => {
         if (Object.keys(newErrors).length === 0) {
             setLoading(true);
             try {
-                const { error: funcError } = await supabase.functions.invoke('send-contact-email', {
-                    body: formData
+                const { error: funcError } = await supabase.functions.invoke('send-confirmation', {
+                    body: { ...formData, type: 'contact' }
                 });
 
                 if (funcError) throw funcError;
