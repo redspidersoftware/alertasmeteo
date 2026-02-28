@@ -44,7 +44,7 @@ export const saveUser = async (userData: UserData): Promise<void> => {
                 phone: userData.phone,
                 postal_code: userData.postalCode,
                 language: userData.language || 'es',
-                preferred_severities: ['yellow', 'orange', 'red'],
+                preferred_severities: ['yellow', 'orange', 'red', 'green'],
                 preferred_event_types: []
             }
         }
@@ -74,7 +74,7 @@ export const getUsers = async (): Promise<UserData[]> => {
         postalCode: u.postal_code, // Map snake_case to camelCase
         language: u.language,
         isVerified: u.is_verified,
-        preferredSeverities: u.preferred_severities || ['yellow', 'orange', 'red'],
+        preferredSeverities: u.preferred_severities || ['yellow', 'orange', 'red', 'green'],
         preferredEventTypes: u.preferred_event_types || []
     }));
 };
@@ -96,7 +96,7 @@ export const getUserProfile = async (uid: string): Promise<UserData | null> => {
         postalCode: data.postal_code,
         language: data.language,
         isVerified: data.is_verified,
-        preferredSeverities: data.preferred_severities || ['yellow', 'orange', 'red'],
+        preferredSeverities: data.preferred_severities || ['yellow', 'orange', 'red', 'green'],
         preferredEventTypes: data.preferred_event_types || []
     };
 };

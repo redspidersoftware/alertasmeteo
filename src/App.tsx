@@ -53,7 +53,7 @@ const AppContent = () => {
     if (!isRightLanguage) return false;
 
     // B. User Preferences or Defaults
-    const allowedSeverities = user?.preferredSeverities || ['yellow', 'orange', 'red'];
+    const allowedSeverities = user?.preferredSeverities || ['yellow', 'orange', 'red', 'green'];
     const allowedTypes = user?.preferredEventTypes || [];
 
     const isAllowedSeverity = allowedSeverities.includes(alert.severity);
