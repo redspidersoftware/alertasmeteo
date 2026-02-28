@@ -274,7 +274,12 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                                         { id: 'Viento', label: 'event.wind' },
                                         { id: 'Nevadas', label: 'event.snow' },
                                         { id: 'Fenómenos Costeros', label: 'event.coastal' },
-                                        { id: 'Temperaturas Extremas', label: 'event.temp' }
+                                        { id: 'Temperaturas Extremas', label: 'event.temp' },
+                                        { id: 'Visibilidad', label: 'event.visibility' },
+                                        { id: 'Aludes', label: 'event.avalanches' },
+                                        { id: 'Risagas', label: 'event.risagas' },
+                                        { id: 'Galernas', label: 'event.gales' },
+                                        { id: 'Polvo en suspensión', label: 'event.dust' }
                                     ].map(type => (
                                         <button
                                             key={type.id}

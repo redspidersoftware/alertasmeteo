@@ -84,6 +84,11 @@ const translations: Record<string, Record<Language, string>> = {
     'event.snow': { es: 'Nieve', en: 'Snow' },
     'event.coastal': { es: 'Costeros', en: 'Coastal' },
     'event.temp': { es: 'Temperaturas', en: 'Temperatures' },
+    'event.visibility': { es: 'Visibilidad', en: 'Visibility' },
+    'event.avalanches': { es: 'Aludes', en: 'Avalanches' },
+    'event.risagas': { es: 'Risagas', en: 'Meteotsunamis' },
+    'event.gales': { es: 'Galernas', en: 'Gales' },
+    'event.dust': { es: 'Polvo en suspensión', en: 'Suspended dust' },
 
     // Email Notifications
     'email.subject': { es: 'Tus preferencias han cambiado', en: 'Your preferences have changed' },
