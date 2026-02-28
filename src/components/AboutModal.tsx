@@ -1,14 +1,18 @@
-import { X, Shield, Zap, Map as MapIcon, Info } from 'lucide-react';
+import { X, Shield, Zap, Map as MapIcon, Info, Mail, MessageSquare, Send } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
+import { useState } from 'react';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
 }
 
+type Tab = 'features' | 'notifications';
+
 export const AboutModal = ({ isOpen, onClose }: Props) => {
     const { t } = useLanguage();
+    const [activeTab, setActiveTab] = useState<Tab>('features');
 
     if (!isOpen) return null;
 
@@ -27,6 +31,24 @@ export const AboutModal = ({ isOpen, onClose }: Props) => {
             icon: <MapIcon className="text-green-400" size={24} />,
             title: t('about.feature3.title'),
             desc: t('about.feature3.desc')
+        }
+    ];
+
+    const notifications = [
+        {
+            icon: <Mail className="text-blue-400" size={24} />,
+            title: t('about.notif.mail.title'),
+            desc: t('about.notif.mail.desc')
+        },
+        {
+            icon: <MessageSquare className="text-emerald-400" size={24} />,
+            title: t('about.notif.whatsapp.title'),
+            desc: t('about.notif.whatsapp.desc')
+        },
+        {
+            icon: <Send className="text-sky-400" size={24} />,
+            title: t('about.notif.telegram.title'),
+            desc: t('about.notif.telegram.desc')
         }
     ];
 
@@ -63,28 +85,74 @@ export const AboutModal = ({ isOpen, onClose }: Props) => {
                             </div>
                         </div>
 
-                        <div className="space-y-8">
-                            <p className="text-slate-300 text-lg leading-relaxed font-medium">
-                                {t('about.mission')}
-                            </p>
+                        {/* Tabs Navigation */}
+                        <div className="flex gap-2 p-1 bg-white/5 rounded-2xl mb-8 w-fit">
+                            {(['features', 'notifications'] as const).map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === tab
+                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                        }`}
+                                >
+                                    {t(`about.tab.${tab}`)}
+                                </button>
+                            ))}
+                        </div>
 
-                            <div className="grid sm:grid-cols-3 gap-6">
-                                {features.map((feature, index) => (
-                                    <motion.div
-                                        key={index}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.1 + 0.3 }}
-                                        className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors group"
-                                    >
-                                        <div className="mb-4 bg-slate-800/50 w-12 h-12 flex items-center justify-center rounded-xl group-hover:scale-110 transition-transform">
-                                            {feature.icon}
+                        <div className="space-y-8 min-h-[300px]">
+                            {activeTab === 'features' ? (
+                                <motion.div
+                                    key="features"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    className="space-y-8"
+                                >
+                                    <p className="text-slate-300 text-lg leading-relaxed font-medium">
+                                        {t('about.mission')}
+                                    </p>
+
+                                    <div className="grid sm:grid-cols-3 gap-6">
+                                        {features.map((feature, index) => (
+                                            <div
+                                                key={index}
+                                                className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors group"
+                                            >
+                                                <div className="mb-4 bg-slate-800/50 w-12 h-12 flex items-center justify-center rounded-xl group-hover:scale-110 transition-transform">
+                                                    {feature.icon}
+                                                </div>
+                                                <h3 className="text-white font-bold mb-2">{feature.title}</h3>
+                                                <p className="text-slate-400 text-sm leading-snug">{feature.desc}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="notifications"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-6"
+                                >
+                                    {notifications.map((notif, index) => (
+                                        <div
+                                            key={index}
+                                            className="bg-white/5 border border-white/10 rounded-2xl p-6 flex gap-6 hover:bg-white/10 transition-colors group"
+                                        >
+                                            <div className="bg-slate-800/50 w-16 h-16 flex-shrink-0 flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform shadow-inner">
+                                                {notif.icon}
+                                            </div>
+                                            <div>
+                                                <h3 className="text-white text-xl font-bold mb-2">{notif.title}</h3>
+                                                <p className="text-slate-400 leading-relaxed font-medium">{notif.desc}</p>
+                                            </div>
                                         </div>
-                                        <h3 className="text-white font-bold mb-2">{feature.title}</h3>
-                                        <p className="text-slate-400 text-sm leading-snug">{feature.desc}</p>
-                                    </motion.div>
-                                ))}
-                            </div>
+                                    ))}
+                                </motion.div>
+                            )}
                         </div>
 
                         <div className="mt-12 flex justify-center">

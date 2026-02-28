@@ -130,7 +130,17 @@ const translations: Record<string, Record<Language, string>> = {
     'contact.submit': { es: 'Enviar mensaje', en: 'Send message' },
     'contact.sending': { es: 'Enviando...', en: 'Sending...' },
     'contact.success': { es: 'Mensaje enviado correctamente. Te contactaremos pronto.', en: 'Message sent successfully. We will contact you soon.' },
-    'contact.error': { es: 'Error al enviar el mensaje. Inténtalo de nuevo.', en: 'Error sending message. Please try again.' }
+    'contact.error': { es: 'Error al enviar el mensaje. Inténtalo de nuevo.', en: 'Error sending message. Please try again.' },
+
+    // Notifications Info
+    'about.tab.features': { es: 'Características', en: 'Features' },
+    'about.tab.notifications': { es: 'Notificaciones', en: 'Notifications' },
+    'about.notif.mail.title': { es: 'Email', en: 'Email' },
+    'about.notif.mail.desc': { es: 'Recibirás avisos detallados con instrucciones de seguridad directamente en tu bandeja de entrada según tus preferencias de severidad y tipo de fenómeno.', en: 'You will receive detailed warnings with safety instructions directly in your inbox according to your severity and event type preferences.' },
+    'about.notif.whatsapp.title': { es: 'WhatsApp', en: 'WhatsApp' },
+    'about.notif.whatsapp.desc': { es: 'Enviamos alertas críticas (Naranja y Roja) directamente a tu móvil para que no te pierdas ningún aviso urgente mientras estás fuera.', en: 'We send critical alerts (Orange and Red) directly to your mobile so you don\'t miss any urgent warnings while you\'re out.' },
+    'about.notif.telegram.title': { es: 'Telegram', en: 'Telegram' },
+    'about.notif.telegram.desc': { es: 'Suscríbete a nuestro canal de Telegram para recibir todas las alertas en tiempo real de forma inmediata y automática.', en: 'Subscribe to our Telegram channel to receive all alerts in real time immediately and automatically.' }
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
