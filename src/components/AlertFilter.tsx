@@ -11,7 +11,7 @@ interface AlertFilterProps {
     onFilterChange: (type: string | null, severity: string | null) => void;
 }
 
-const SEVERITIES: WeatherAlert['severity'][] = ['red', 'orange', 'yellow'];
+const SEVERITIES: WeatherAlert['severity'][] = ['red', 'orange', 'yellow', 'green'];
 
 export const AlertFilter = ({ alerts, selectedType, selectedSeverity, onFilterChange }: AlertFilterProps) => {
     const { t } = useLanguage();
@@ -21,7 +21,8 @@ export const AlertFilter = ({ alerts, selectedType, selectedSeverity, onFilterCh
         const groups: Record<string, Set<string>> = {
             red: new Set(),
             orange: new Set(),
-            yellow: new Set()
+            yellow: new Set(),
+            green: new Set()
         };
 
         alerts.forEach(alert => {
@@ -37,7 +38,7 @@ export const AlertFilter = ({ alerts, selectedType, selectedSeverity, onFilterCh
     useEffect(() => {
         const initialState: Record<string, boolean> = {};
         SEVERITIES.forEach(sev => {
-            if (groupedAlerts[sev].size > 0) {
+            if (groupedAlerts[sev] && groupedAlerts[sev].size > 0) {
                 initialState[sev] = true;
             }
         });
@@ -57,7 +58,7 @@ export const AlertFilter = ({ alerts, selectedType, selectedSeverity, onFilterCh
     const cleanEventName = (name: string) => {
         return name
             .replace(/aviso de /i, '')
-            .replace(/ de nivel (amarillo|naranja|rojo)/i, '')
+            .replace(/ de nivel (amarillo|naranja|rojo|verde)/i, '')
             .split('/')[0] // Take first part if there are multiple
             .trim();
     };
@@ -97,7 +98,7 @@ export const AlertFilter = ({ alerts, selectedType, selectedSeverity, onFilterCh
                 {/* Tree Structure */}
                 <div className="space-y-2">
                     {SEVERITIES.map(sev => {
-                        const types = Array.from(groupedAlerts[sev]).sort();
+                        const types = Array.from(groupedAlerts[sev] || []).sort();
                         const isExpanded = expandedLevels[sev];
                         const hasAlerts = types.length > 0;
                         const labels: Record<string, string> = {
@@ -137,7 +138,7 @@ export const AlertFilter = ({ alerts, selectedType, selectedSeverity, onFilterCh
                                             }`}
                                     >
                                         <span className="flex items-center gap-2">
-                                            <div className={`w-2 h-2 rounded-full ${sev === 'red' ? 'bg-red-500' : sev === 'orange' ? 'bg-orange-500' : 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]'}`} />
+                                            <div className={`w-2 h-2 rounded-full ${sev === 'red' ? 'bg-red-500' : sev === 'orange' ? 'bg-orange-500' : sev === 'yellow' ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`} />
                                             {label}
                                         </span>
                                         {hasAlerts && (
