@@ -140,7 +140,7 @@ const translations: Record<string, Record<Language, string>> = {
     'about.notif.whatsapp.title': { es: 'WhatsApp', en: 'WhatsApp' },
     'about.notif.whatsapp.desc': { es: 'Enviamos alertas críticas (Naranja y Roja) directamente a tu móvil para que no te pierdas ningún aviso urgente mientras estás fuera.', en: 'We send critical alerts (Orange and Red) directly to your mobile so you don\'t miss any urgent warnings while you\'re out.' },
     'about.notif.telegram.title': { es: 'Telegram', en: 'Telegram' },
-    'about.notif.telegram.desc': { es: 'Suscríbete a nuestro canal de Telegram para recibir todas las alertas en tiempo real de forma inmediata y automática.', en: 'Subscribe to our Telegram channel to receive all alerts in real time immediately and automatically.' }
+    'about.notif.telegram.desc': { es: 'Suscríbete a nuestro canal oficial para recibir todas las alertas en tiempo real: https://t.me/Aemet_Avisos_Bot', en: 'Subscribe to our official channel to receive all alerts in real time: https://t.me/Aemet_Avisos_Bot' }
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {

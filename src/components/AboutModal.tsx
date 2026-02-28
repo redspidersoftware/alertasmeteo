@@ -67,7 +67,7 @@ export const AboutModal = ({ isOpen, onClose }: Props) => {
 
                     <button
                         onClick={onClose}
-                        className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors z-10 bg-white/5 p-2 rounded-full hover:bg-white/10"
+                        className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors z-50 bg-white/5 p-2 rounded-full hover:bg-white/10"
                     >
                         <X size={20} />
                     </button>
@@ -147,7 +147,23 @@ export const AboutModal = ({ isOpen, onClose }: Props) => {
                                             </div>
                                             <div>
                                                 <h3 className="text-white text-xl font-bold mb-2">{notif.title}</h3>
-                                                <p className="text-slate-400 leading-relaxed font-medium">{notif.desc}</p>
+                                                <p className="text-slate-400 leading-relaxed font-medium">
+                                                    {notif.desc.includes('https://') ? (
+                                                        <>
+                                                            {notif.desc.split('https://')[0]}
+                                                            <a
+                                                                href={`https://${notif.desc.split('https://')[1]}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-400 hover:text-blue-300 underline underline-offset-4 break-all block mt-2"
+                                                            >
+                                                                https://{notif.desc.split('https://')[1]}
+                                                            </a>
+                                                        </>
+                                                    ) : (
+                                                        notif.desc
+                                                    )}
+                                                </p>
                                             </div>
                                         </div>
                                     ))}
