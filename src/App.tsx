@@ -4,7 +4,8 @@ import { MapView } from './components/MapView';
 import { UnsubscribePage } from './components/UnsubscribePage';
 import { motion } from 'framer-motion';
 import { CloudRainWind } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+
 import { getAlerts } from './services/aemet';
 import type { WeatherAlert } from './types';
 import { useLanguage } from './context/LanguageContext';
@@ -13,13 +14,18 @@ import { AlertFilter } from './components/AlertFilter';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { verifyUser } from './services/userService';
 import { EulaPage } from './components/EulaPage';
+import { Timeline } from './components/Timeline';
+
 
 const AppContent = () => {
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
   const [selectedEventType, setSelectedEventType] = useState<string | null>(null);
   const [selectedSeverity, setSelectedSeverity] = useState<string | null>(null);
+  const [timelineTime, setTimelineTime] = useState<Date | null>(null);
+  const [isTimelinePlaying, setIsTimelinePlaying] = useState(false);
   const { t, language } = useLanguage();
   const { user } = useAuth();
+
 
   useEffect(() => {
     getAlerts().then(setAlerts);
@@ -44,35 +50,81 @@ const AppContent = () => {
       });
     }
   }, []);
-
   // 1. Language Filter + User Preferences (Severity + Event Types)
-  const languageFiltered = alerts.filter(alert => {
-    // A. Language Filter
-    const alertLang = alert.language ? alert.language.toLowerCase() : 'es';
-    const isRightLanguage = alertLang.startsWith(language);
-    if (!isRightLanguage) return false;
+  const languageFiltered = useMemo(() => {
+    return alerts.filter(alert => {
+      // A. Language Filter
+      const alertLang = alert.language ? alert.language.toLowerCase() : 'es';
+      const isRightLanguage = alertLang.startsWith(language);
+      if (!isRightLanguage) return false;
 
-    // B. User Preferences or Defaults
-    const allowedSeverities = user?.preferredSeverities || ['yellow', 'orange', 'red', 'green'];
-    const allowedTypes = user?.preferredEventTypes || [];
+      // B. User Preferences or Defaults
+      const allowedSeverities = user?.preferredSeverities || ['yellow', 'orange', 'red', 'green'];
+      const allowedTypes = user?.preferredEventTypes || [];
 
-    const isAllowedSeverity = allowedSeverities.includes(alert.severity);
+      const isAllowedSeverity = allowedSeverities.includes(alert.severity);
 
-    // Improved matching: partial match to handle "Lluvias y Tormentas" or different AEMET formats
-    const isAllowedType = allowedTypes.length === 0 || allowedTypes.some(type =>
-      alert.event.toLowerCase().includes(type.toLowerCase()) ||
-      type.toLowerCase().includes(alert.event.toLowerCase())
-    );
+      // Improved matching: partial match to handle "Lluvias y Tormentas" or different AEMET formats
+      const isAllowedType = allowedTypes.length === 0 || allowedTypes.some(type =>
+        alert.event.toLowerCase().includes(type.toLowerCase()) ||
+        type.toLowerCase().includes(alert.event.toLowerCase())
+      );
 
-    return isAllowedSeverity && isAllowedType;
-  });
+      return isAllowedSeverity && isAllowedType;
+    });
+  }, [alerts, language, user]);
+
+  const timelineRange = useMemo(() => {
+
+    if (languageFiltered.length === 0) return null;
+    let min = new Date(languageFiltered[0].raw.effective || languageFiltered[0].sent).getTime();
+    let max = new Date(languageFiltered[0].expires).getTime();
+    languageFiltered.forEach(alert => {
+      const eff = new Date(alert.raw.effective || alert.sent).getTime();
+      const exp = new Date(alert.expires).getTime();
+      if (eff < min) min = eff;
+      if (exp > max) max = exp;
+    });
+    return { min, max };
+  }, [languageFiltered]);
+
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+
+    if (isTimelinePlaying) {
+      if (!timelineTime && timelineRange) {
+        setTimelineTime(new Date(timelineRange.min));
+      }
+      interval = setInterval(() => {
+        setTimelineTime(prev => {
+          if (!prev || !timelineRange) return null;
+          const next = new Date(prev.getTime() + 1800000); // 30 mins step
+          if (next.getTime() > timelineRange.max) {
+            return new Date(timelineRange.min); // Loop
+          }
+          return next;
+        });
+      }, 300);
+    }
+    return () => clearInterval(interval);
+  }, [isTimelinePlaying, timelineTime, timelineRange]);
+
 
   // 2. Event Type + Severity Filter (applied on top of language filter)
   const finalFilteredAlerts = languageFiltered.filter(alert => {
     const matchesType = !selectedEventType || alert.event === selectedEventType;
     const matchesSeverity = !selectedSeverity || alert.severity === selectedSeverity;
-    return matchesType && matchesSeverity;
+
+    const effective = new Date(alert.raw.effective || alert.sent).getTime();
+    const expires = new Date(alert.expires).getTime();
+    const targetTime = timelineTime ? timelineTime.getTime() : Date.now();
+
+    const isWithinTime = targetTime >= effective && targetTime < expires;
+
+    return matchesType && matchesSeverity && isWithinTime;
   });
+
 
   const handleFilterChange = (type: string | null, severity: string | null) => {
     setSelectedEventType(type);
@@ -113,6 +165,60 @@ const AppContent = () => {
               <div className="glass-dark rounded-[2.5rem] overflow-hidden p-1 shadow-2xl ring-1 ring-white/5 bg-slate-900/40">
                 <MapView alerts={finalFilteredAlerts} />
               </div>
+
+              {/* Donation Section - Relocated under map */}
+              <motion.div
+                whileHover={{ scale: 1.005 }}
+                className="mt-8 glass rounded-[2.5rem] p-6 sm:p-8 relative overflow-hidden group border border-white/5"
+              >
+                {/* Decorative Background Elements */}
+                <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl group-hover:bg-blue-600/15 transition-colors duration-700"></div>
+                <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-600/10 rounded-full blur-3xl group-hover:bg-indigo-600/15 transition-colors duration-700"></div>
+
+                <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+                  <div className="flex items-center gap-4 text-center sm:text-left">
+                    <div className="bg-blue-500/10 p-3 rounded-2xl border border-blue-500/20 shadow-inner flex-shrink-0">
+                      <CloudRainWind size={24} className="text-blue-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-black text-white tracking-tight">
+                        {t('footer.donate_title') || t('footer.donate')}
+                      </h2>
+                      <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-md">
+                        {t('footer.donate_desc')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap justify-center sm:justify-end gap-4">
+                    {/* PayPal Form */}
+                    <form action="https://www.paypal.com/donate" method="post" target="_blank">
+                      <input type="hidden" name="business" value="RLBDLZGFL5DRQ" />
+                      <input type="hidden" name="no_recurring" value="0" />
+                      <input type="hidden" name="item_name" value="Ayúdanos a mejorar el servicio" />
+                      <input type="hidden" name="currency_code" value="EUR" />
+                      <button
+                        type="submit"
+                        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#0070ba] to-[#005ea6] text-white font-black transition-all shadow-lg hover:shadow-[#0070ba]/40 active:scale-95 group/btn text-xs tracking-widest uppercase"
+                      >
+                        <span className="text-lg">PayPal</span>
+                        {t('footer.donate')}
+                      </button>
+                    </form>
+
+                    {/* Buy Me a Coffee */}
+                    <a
+                      href="https://buymeacoffee.com/alertasmeteo"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-black transition-all shadow-lg hover:shadow-white/20 active:scale-95 group/btn text-xs tracking-widest uppercase border border-white"
+                    >
+                      <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="BMC" className="h-5" />
+                      <span>{t('footer.donate_bmc')}</span>
+                    </a>
+                  </div>
+                </div>
+              </motion.div>
             </div>
 
             {/* Sidebar */}
@@ -123,58 +229,17 @@ const AppContent = () => {
                 selectedSeverity={selectedSeverity}
                 onFilterChange={handleFilterChange}
               />
+              <Timeline
+                alerts={languageFiltered}
+                currentTime={timelineTime}
+                onTimeChange={setTimelineTime}
+                isPlaying={isTimelinePlaying}
+                onTogglePlay={() => setIsTimelinePlaying(!isTimelinePlaying)}
+              />
             </div>
+
           </div>
 
-          {/* Donation Section - Premium Redesign */}
-          <motion.div
-            whileHover={{ scale: 1.01 }}
-            className="mb-16 glass rounded-[2.5rem] p-8 sm:p-12 relative overflow-hidden group border border-white/5"
-          >
-            {/* Decorative Background Elements */}
-            <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl group-hover:bg-blue-600/15 transition-colors duration-700"></div>
-            <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl group-hover:bg-indigo-600/15 transition-colors duration-700"></div>
-
-            <div className="relative z-10 flex flex-col items-center text-center">
-              <div className="bg-blue-500/10 p-4 rounded-3xl mb-6 border border-blue-500/20 shadow-inner">
-                <CloudRainWind size={40} className="text-blue-400" />
-              </div>
-              <h2 className="text-3xl font-black text-white mb-4 tracking-tight">
-                {t('footer.donate_title') || t('footer.donate')}
-              </h2>
-              <p className="text-slate-400 max-w-2xl mx-auto mb-10 text-lg font-medium leading-relaxed">
-                {t('footer.donate_desc')}
-              </p>
-
-              <div className="flex flex-wrap justify-center gap-6">
-                {/* PayPal Form */}
-                <form action="https://www.paypal.com/donate" method="post" target="_blank">
-                  <input type="hidden" name="business" value="RLBDLZGFL5DRQ" />
-                  <input type="hidden" name="no_recurring" value="0" />
-                  <input type="hidden" name="item_name" value="Ayúdanos a mejorar el servicio" />
-                  <input type="hidden" name="currency_code" value="EUR" />
-                  <button
-                    type="submit"
-                    className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#0070ba] to-[#005ea6] text-white font-black transition-all shadow-xl hover:shadow-[#0070ba]/40 active:scale-95 group/btn text-sm tracking-widest uppercase"
-                  >
-                    <span className="text-xl">PayPal</span>
-                    {t('footer.donate')}
-                  </button>
-                </form>
-
-                {/* Buy Me a Coffee */}
-                <a
-                  href="https://buymeacoffee.com/alertasmeteo"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-white text-black font-black transition-all shadow-xl hover:shadow-white/20 active:scale-95 group/btn text-sm tracking-widest uppercase border border-white"
-                >
-                  <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="BMC" className="h-6" />
-                  <span>{t('footer.donate_bmc')}</span>
-                </a>
-              </div>
-            </div>
-          </motion.div>
 
           {/* List Section */}
           <div className="mb-12">

@@ -145,8 +145,13 @@ const translations: Record<string, Record<Language, string>> = {
     'about.notif.whatsapp.title': { es: 'WhatsApp', en: 'WhatsApp' },
     'about.notif.whatsapp.desc': { es: 'Enviamos alertas críticas (Naranja y Roja) directamente a tu móvil para que no te pierdas ningún aviso urgente mientras estás fuera.', en: 'We send critical alerts (Orange and Red) directly to your mobile so you don\'t miss any urgent warnings while you\'re out.' },
     'about.notif.telegram.title': { es: 'Telegram', en: 'Telegram' },
-    'about.notif.telegram.desc': { es: 'Suscríbete a nuestro canal oficial para recibir todas las alertas en tiempo real: https://t.me/Aemet_Avisos_Bot', en: 'Subscribe to our official channel to receive all alerts in real time: https://t.me/Aemet_Avisos_Bot' }
+    'about.notif.telegram.desc': { es: 'Suscríbete a nuestro canal oficial para recibir todas las alertas en tiempo real: https://t.me/Aemet_Avisos_Bot', en: 'Subscribe to our official channel to receive all alerts in real time: https://t.me/Aemet_Avisos_Bot' },
+
+    // Timeline
+    'timeline.title': { es: 'Línea de Tiempo', en: 'Alert Timeline' },
+    'timeline.live': { es: 'En Vivo', en: 'Live' }
 };
+
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     const [language, setLanguage] = useState<Language>('es');
