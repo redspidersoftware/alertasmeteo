@@ -33,8 +33,8 @@ const parsePolygon = (polygonStr: string): LatLngTuple[] => {
         return coords.map(coord => {
             const parts = coord.split(',');
             if (parts.length < 2) return [0, 0];
-            // AEMET CAP format is lon,lat — Leaflet needs [lat, lon]
-            const [lon, lat] = parts.map(Number);
+            // AEMET CAP format uses lat,lon — Leaflet needs [lat, lon]
+            const [lat, lon] = parts.map(Number);
             if (isNaN(lat) || isNaN(lon)) return [0, 0];
             return [lat, lon] as LatLngTuple;
         }).filter(p => p[0] !== 0 || p[1] !== 0) as LatLngTuple[];
