@@ -10,15 +10,14 @@ interface AlertListProps {
 }
 
 export const AlertList = ({ filteredAlerts }: AlertListProps) => {
-    // If filteredAlerts is provided, use it. Otherwise fetch locally (fallback, though App passes it now)
-    // For logic consistency with App.tsx, we should prefer receiving props.
-    // However, initially AlertList fetched its own data.
-    // To keep it compatible, we can check if props are passed.
-
     const [internalAlerts, setInternalAlerts] = useState<WeatherAlert[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { t } = useLanguage();
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const alertsPerPage = 12; // Number of alerts to show per page
 
     const fetchAlerts = useCallback(async () => {
         if (filteredAlerts) {
@@ -48,6 +47,26 @@ export const AlertList = ({ filteredAlerts }: AlertListProps) => {
 
     const displayAlerts = filteredAlerts || internalAlerts;
 
+    // Reset currentPage to 1 whenever the list of alerts changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [displayAlerts]);
+
+    // Calculate pagination values
+    const totalAlerts = displayAlerts.length;
+    const totalPages = Math.ceil(totalAlerts / alertsPerPage);
+    const indexOfLastAlert = currentPage * alertsPerPage;
+    const indexOfFirstAlert = indexOfLastAlert - alertsPerPage;
+    const currentAlerts = displayAlerts.slice(indexOfFirstAlert, indexOfLastAlert);
+
+    const handleNextPage = () => {
+        setCurrentPage(prevPage => Math.min(prevPage + 1, totalPages));
+    };
+
+    const handlePreviousPage = () => {
+        setCurrentPage(prevPage => Math.max(prevPage - 1, 1));
+    };
+
     if (loading && displayAlerts.length === 0) {
         return (
             <div className="flex justify-center items-center py-20">
@@ -72,15 +91,42 @@ export const AlertList = ({ filteredAlerts }: AlertListProps) => {
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4 items-start">
-            {displayAlerts.length === 0 ? (
+        <div className="p-4">
+            {currentAlerts.length === 0 && totalAlerts === 0 ? (
                 <div className="col-span-full text-center py-20 text-gray-400">
                     <p>{t('no.alerts')}</p>
                 </div>
             ) : (
-                displayAlerts.map(alert => (
-                    <AlertCard key={alert.id} alert={alert} />
-                ))
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+                        {currentAlerts.map(alert => (
+                            <AlertCard key={alert.id} alert={alert} />
+                        ))}
+                    </div>
+
+                    {totalPages > 1 && (
+                        <div className="flex justify-center items-center mt-8 space-x-4">
+                            <button
+                                onClick={handlePreviousPage}
+                                disabled={currentPage === 1}
+                                className="px-4 py-2 rounded-xl text-sm font-bold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                ← Anterior
+                            </button>
+                            <span className="text-slate-400 text-sm font-bold">
+                                Página <span className="text-white">{currentPage}</span> de <span className="text-white">{totalPages}</span>
+                                <span className="ml-2 text-slate-600">({totalAlerts} avisos)</span>
+                            </span>
+                            <button
+                                onClick={handleNextPage}
+                                disabled={currentPage === totalPages}
+                                className="px-4 py-2 rounded-xl text-sm font-bold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                Siguiente →
+                            </button>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );

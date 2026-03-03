@@ -71,7 +71,7 @@ export const AlertFilter = ({ alerts, selectedType, selectedSeverity, onFilterCh
     const isTypeSelected = (sev: string, type: string) => selectedSeverity === sev && selectedType === type;
 
     return (
-        <div className="bg-slate-900 border border-white/10 rounded-2xl p-5 h-full overflow-y-auto custom-scrollbar max-h-[600px] shadow-2xl">
+        <div className="bg-slate-900 border border-white/10 rounded-2xl p-5 h-[500px] overflow-y-auto custom-scrollbar shadow-2xl">
             <h3 className="text-xl font-black text-white mb-6 flex items-center gap-3 tracking-tight">
                 <div className="w-2 h-6 bg-blue-500 rounded-full" />
                 {t('filter.title') || 'Filtro de Avisos'}

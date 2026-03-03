@@ -199,7 +199,7 @@ const AppContent = () => {
                       <input type="hidden" name="currency_code" value="EUR" />
                       <button
                         type="submit"
-                        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#0070ba] to-[#005ea6] text-white font-black transition-all shadow-lg hover:shadow-[#0070ba]/40 active:scale-95 group/btn text-xs tracking-widest uppercase"
+                        className="flex items-center justify-center gap-2 px-6 h-11 min-w-[200px] rounded-xl bg-gradient-to-r from-[#0070ba] to-[#005ea6] text-white font-black transition-all shadow-lg hover:shadow-[#0070ba]/40 active:scale-95 group/btn text-xs tracking-widest uppercase"
                       >
                         <span className="text-lg">PayPal</span>
                         {t('footer.donate')}
@@ -211,7 +211,7 @@ const AppContent = () => {
                       href="https://buymeacoffee.com/alertasmeteo"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-black transition-all shadow-lg hover:shadow-white/20 active:scale-95 group/btn text-xs tracking-widest uppercase border border-white"
+                      className="flex items-center justify-center gap-2 px-6 h-11 min-w-[200px] rounded-xl bg-white text-black font-black transition-all shadow-lg hover:shadow-white/20 active:scale-95 group/btn text-xs tracking-widest uppercase border border-white"
                     >
                       <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="BMC" className="h-5" />
                       <span>{t('footer.donate_bmc')}</span>
