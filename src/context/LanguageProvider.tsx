@@ -4,7 +4,7 @@ import { LanguageContext, type LanguageContextType } from './LanguageContext';
 type Language = 'es' | 'en';
 
 const translations: Record<string, Record<Language, string>> = {
-    'app.title': { es: 'AEMET Alertas', en: 'AEMET Alerts' },
+    'app.title': { es: 'ALERTAS Meteo', en: 'METEO Alerts' },
     'app.subtitle': { es: 'Tiempo Real', en: 'Real Time' },
     'app.providedBy': { es: 'Datos proporcionados por', en: 'Data provided by' },
     'map.title': { es: 'Mapa de Alertas', en: 'Alert Map' },

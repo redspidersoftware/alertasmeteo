@@ -1,4 +1,4 @@
-import { CloudRainWind, ChevronDown, UserPlus, LogIn, LogOut, User, Settings } from 'lucide-react';
+import { ChevronDown, UserPlus, LogIn, LogOut, User, Settings } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useState, useRef, useEffect } from 'react';
@@ -56,14 +56,18 @@ export const Header = () => {
             <header className="sticky top-0 z-50 glass border-b border-white/5 shadow-2xl">
                 <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-4 group cursor-pointer transition-all duration-300">
-                        <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2.5 rounded-2xl text-white shadow-xl shadow-blue-500/20 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                            <CloudRainWind size={28} />
+                        <div className="relative group-hover:scale-105 transition-all duration-500">
+                            <img
+                                src="/logo.png"
+                                alt="ALERTAS Meteo Logo"
+                                className="h-12 w-auto drop-shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+                            />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-black text-gradient tracking-tight">
+                            <h1 className="text-2xl font-black text-gradient tracking-tight leading-none">
                                 {t('app.title')}
                             </h1>
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 opacity-80 mt-0.5 hidden sm:block">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 opacity-90 mt-1 hidden sm:block">
                                 {t('app.subtitle')}
                             </p>
                         </div>
