@@ -113,6 +113,7 @@ const translations: Record<string, Record<Language, string>> = {
     // Navigation
     'nav.about': { es: 'Qué hacemos', en: 'What we do' },
     'nav.contact': { es: 'Contacto', en: 'Contact' },
+    'nav.national_prediction': { es: 'Predicción Nacional', en: 'National Prediction' },
 
     // About Modal
     'about.title': { es: 'Nuestra Misión', en: 'Our Mission' },

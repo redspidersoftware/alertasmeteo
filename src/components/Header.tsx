@@ -7,6 +7,7 @@ import { LoginModal } from './LoginModal';
 import { ProfileModal } from './ProfileModal';
 import { AboutModal } from './AboutModal';
 import { ContactModal } from './ContactModal';
+import { NationalPredictionModal } from './NationalPredictionModal';
 
 export const Header = () => {
     const { language, setLanguage, t } = useLanguage();
@@ -17,6 +18,7 @@ export const Header = () => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isAboutOpen, setIsAboutOpen] = useState(false);
     const [isContactOpen, setIsContactOpen] = useState(false);
+    const [isNationalPredictionOpen, setIsNationalPredictionOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const toggleDropdown = () => setIsOpen(!isOpen);
@@ -79,6 +81,13 @@ export const Header = () => {
                             className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase tracking-widest active:scale-95"
                         >
                             {t('nav.about')}
+                        </button>
+                        <button
+                            onClick={() => setIsNationalPredictionOpen(true)}
+                            className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-widest active:scale-95 flex items-center gap-2"
+                        >
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                            {t('nav.national_prediction')}
                         </button>
                         <button
                             onClick={() => setIsContactOpen(true)}
@@ -207,6 +216,7 @@ export const Header = () => {
             <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
             <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
             <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
+            <NationalPredictionModal isOpen={isNationalPredictionOpen} onClose={() => setIsNationalPredictionOpen(false)} />
         </>
     );
 };

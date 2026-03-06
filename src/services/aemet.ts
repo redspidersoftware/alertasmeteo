@@ -2,7 +2,7 @@ import axios from 'axios';
 import { XMLParser } from 'fast-xml-parser';
 // @ts-expect-error - js-untar types not available
 import untar from 'js-untar';
-import type { WeatherAlert, CapAlert, CapInfo, AemetApiResponse } from '../types';
+import type { WeatherAlert, CapAlert, CapInfo, AemetApiResponse, NationalPrediction } from '../types';
 
 const API_KEY = import.meta.env.VITE_AEMET_API_KEY;
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true' || !API_KEY;
@@ -102,6 +102,108 @@ const parseCapToAlerts = (cap: CapAlert): WeatherAlert[] => {
             language: info.language || 'es', // Capture language
             raw: info
         };
+    });
+};
+
+export const getNationalPrediction = async (): Promise<NationalPrediction | null> => {
+    if (USE_MOCK) {
+        return getMockNationalPrediction();
+    }
+
+    try {
+        const initResponse = await axios.get<AemetApiResponse>(
+            'https://opendata.aemet.es/opendata/api/prediccion/nacional/hoy',
+            {
+                params: { api_key: API_KEY },
+                headers: { 'Accept': 'application/json' }
+            }
+        );
+
+        if (initResponse.data.estado !== 200) {
+            throw new Error(`AEMET API Error: ${initResponse.data.descripcion}`);
+        }
+
+        const textResponse = await axios.get(initResponse.data.datos, {
+            responseType: 'text',
+            headers: { 'Accept': 'text/plain; charset=iso-8859-15' }
+        });
+
+        return parseNationalPrediction(textResponse.data);
+
+    } catch (error) {
+        console.error("Failed to fetch national prediction:", error);
+        return null;
+    }
+};
+
+const parseNationalPrediction = (text: string): NationalPrediction => {
+    // Basic parser for AEMET text prediction
+    let elaborated = "";
+    let validity = "";
+    let significantPhenomena = "";
+    let generalPrediction = "";
+    let temperatures = "";
+    let wind = "";
+
+    // The first lines usually contain the title and date
+    const lines = text.split('\n').map(l => l.trim());
+    const dateLine = lines.find(l => l.includes('DÍA'));
+    if (dateLine) elaborated = dateLine;
+
+    const validLine = lines.find(l => l.includes('VÁLIDA'));
+    if (validLine) validity = validLine;
+
+    // A.- FENÓMENOS SIGNIFICATIVOS
+    const sigIdx = text.indexOf('A.- FENÓMENOS SIGNIFICATIVOS');
+    const predIdx = text.indexOf('B.- PREDICCIÓN');
+
+    if (sigIdx !== -1 && predIdx !== -1) {
+        significantPhenomena = text.substring(sigIdx + 28, predIdx).trim();
+    }
+
+    // B.- PREDICCIÓN (Contains general, then maybe sub-sections like temperatures/wind)
+    if (predIdx !== -1) {
+        const predText = text.substring(predIdx + 14).trim();
+        const tempIdx = predText.indexOf('Temperaturas');
+        const windIdx = predText.indexOf('Soplará viento');
+
+        if (tempIdx !== -1) {
+            generalPrediction = predText.substring(0, tempIdx).trim();
+            if (windIdx !== -1) {
+                temperatures = predText.substring(tempIdx, windIdx).trim();
+                wind = predText.substring(windIdx).trim();
+            } else {
+                temperatures = predText.substring(tempIdx).trim();
+            }
+        } else {
+            generalPrediction = predText;
+        }
+    }
+
+    return {
+        id: `national-${Date.now()}`,
+        elaborated,
+        validity,
+        significantPhenomena,
+        generalPrediction,
+        temperatures,
+        wind
+    };
+};
+
+const getMockNationalPrediction = (): Promise<NationalPrediction> => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve({
+                id: "mock-national",
+                elaborated: "DÍA 04 DE MARZO DE 2026 A LAS 08:35 HORA OFICIAL",
+                validity: "PREDICCIÓN VÁLIDA PARA EL MIÉRCOLES 4",
+                significantPhenomena: "Chubascos y tormentas con probabilidad de ser fuertes en regiones de Andalucía, Castilla-La Mancha y Madrid...",
+                generalPrediction: "Situación de inestabilidad en la mayor parte del país debido a una dana situada sobre Marruecos...",
+                temperatures: "Temperaturas máximas en descenso en la mitad sur peninsular, notable en regiones de Andalucía...",
+                wind: "Soplará viento de componente norte con intervalos de fuerte en Canarias..."
+            });
+        }, 800);
     });
 };
 

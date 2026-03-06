@@ -58,3 +58,13 @@ export interface WeatherAlert {
     language: string;
     raw: CapInfo; // Keep original for reference
 }
+
+export interface NationalPrediction {
+    id: string;
+    elaborated: string;
+    validity: string;
+    significantPhenomena: string;
+    generalPrediction: string;
+    temperatures: string;
+    wind: string;
+}
