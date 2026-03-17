@@ -1,5 +1,6 @@
 import { Header } from './components/Header';
-import { AlertList } from './components/AlertList';
+import { SatelliteVideo } from './components/SatelliteVideo';
+import { AlertSidebar } from './components/AlertSidebar';
 import { MapView } from './components/MapView';
 import { UnsubscribePage } from './components/UnsubscribePage';
 import { motion } from 'framer-motion';
@@ -134,6 +135,7 @@ const AppContent = () => {
   return (
     <div className="min-h-screen flex flex-col selection:bg-blue-500/30">
       <Header />
+      <AlertSidebar alerts={finalFilteredAlerts} />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <motion.div
@@ -241,25 +243,8 @@ const AppContent = () => {
           </div>
 
 
-          {/* List Section */}
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                <span className="w-2 h-8 bg-indigo-500 rounded-full"></span>
-                {t('list.title')}
-              </h2>
-              <div className="hidden sm:block text-xs font-black uppercase tracking-[0.2em] text-slate-500 bg-white/5 px-4 py-2 rounded-full border border-white/5">
-                {finalFilteredAlerts.length} avisos activos
-              </div>
-            </div>
-
-            <motion.div
-              layout
-              className="relative"
-            >
-              <AlertList filteredAlerts={finalFilteredAlerts} />
-            </motion.div>
-          </div>
+          {/* Satellite Video Section */}
+          <SatelliteVideo />
         </motion.div>
       </main>
 

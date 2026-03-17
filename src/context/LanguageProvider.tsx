@@ -150,7 +150,18 @@ const translations: Record<string, Record<Language, string>> = {
 
     // Timeline
     'timeline.title': { es: 'Línea de Tiempo', en: 'Alert Timeline' },
-    'timeline.live': { es: 'En Vivo', en: 'Live' }
+    'timeline.live': { es: 'En Vivo', en: 'Live' },
+
+    // Satellite Video
+    'satellite.title': { es: 'Evolución Atmosférica', en: 'Atmospheric Evolution' },
+    'satellite.source': { es: 'MET Norway', en: 'MET Norway' },
+    'satellite.label': { es: 'Satélite Europa', en: 'Europe Satellite' },
+    'satellite.description': { es: 'Imagen satelital en tiempo real', en: 'Real-time satellite imagery' },
+
+    // Alert Sidebar
+    'sidebar.toggle': { es: 'Alertas', en: 'Alerts' },
+    'sidebar.title': { es: 'Avisos Activos', en: 'Active Advisories' },
+    'sidebar.active_count': { es: 'avisos activos', en: 'active alerts' }
 };
 
 
