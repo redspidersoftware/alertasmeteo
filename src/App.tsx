@@ -145,7 +145,9 @@ const AppContent = () => {
 
       <div className="relative z-10 flex flex-col min-h-screen">
         <Header />
-        <DonationSection isFixed />
+        <div className="hidden lg:block">
+          <DonationSection isFixed />
+        </div>
         <AlertSidebar alerts={finalFilteredAlerts} />
 
         {/* Filters Toggle Button - Fixed right side (Mobile only) */}
