@@ -3,8 +3,9 @@ import { SatelliteVideo } from './components/SatelliteVideo';
 import { AlertSidebar } from './components/AlertSidebar';
 import { MapView } from './components/MapView';
 import { UnsubscribePage } from './components/UnsubscribePage';
+import { DonationSection } from './components/DonationSection';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CloudRainWind, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 
 import { getAlerts } from './services/aemet';
@@ -142,6 +143,7 @@ const AppContent = () => {
 
       <div className="relative z-10 flex flex-col min-h-screen">
         <Header />
+        <DonationSection isFixed />
         <AlertSidebar alerts={finalFilteredAlerts} />
 
         {/* Filters Toggle Button - Fixed right side (Mobile only) */}
@@ -260,55 +262,17 @@ const AppContent = () => {
                   />
                 </div>
 
-                {/* Donation Section - Moved to sidebar */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="bg-slate-900/40 backdrop-blur-3xl rounded-[2rem] p-6 border border-white/5 shadow-2xl relative overflow-hidden group"
-                >
-                  <div className="relative z-10 flex flex-col gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-blue-500/20 p-2 rounded-xl">
-                        <CloudRainWind size={18} className="text-blue-400" />
-                      </div>
-                      <h2 className="text-lg font-black text-white tracking-tight">
-                        {t('footer.donate_title') || t('footer.donate')}
-                      </h2>
-                    </div>
 
-                    <div className="flex flex-col gap-3">
-                      {/* PayPal */}
-                      <form action="https://www.paypal.com/donate" method="post" target="_blank">
-                        <input type="hidden" name="business" value="RLBDLZGFL5DRQ" />
-                        <input type="hidden" name="no_recurring" value="0" />
-                        <input type="hidden" name="item_name" value="Ayúdanos a mejorar el servicio" />
-                        <input type="hidden" name="currency_code" value="EUR" />
-                        <button
-                          type="submit"
-                          className="w-full flex items-center justify-center gap-2 h-10 rounded-xl bg-[#0070ba] hover:bg-[#005ea6] text-white text-[10px] font-black transition-all shadow-lg uppercase tracking-widest"
-                        >
-                          PayPal {t('footer.donate')}
-                        </button>
-                      </form>
-
-                      {/* Buy Me a Coffee */}
-                      <a
-                        href="https://buymeacoffee.com/alertasmeteo"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full flex items-center justify-center gap-2 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] font-black transition-all border border-white/10 uppercase tracking-widest"
-                      >
-                        <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="BMC" className="h-4" />
-                        <span>{t('footer.donate_bmc')}</span>
-                      </a>
-                    </div>
-                  </div>
-                </motion.div>
               </div>
             </div>
 
             {/* Satellite Video Section */}
             <SatelliteVideo />
+
+            {/* Mobile donation section */}
+            <div className="lg:hidden mt-8 mb-12">
+              <DonationSection />
+            </div>
 
           </motion.div>
         </main>
