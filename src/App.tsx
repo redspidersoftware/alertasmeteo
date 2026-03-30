@@ -5,7 +5,7 @@ import { MapView } from './components/MapView';
 import { UnsubscribePage } from './components/UnsubscribePage';
 import { DonationSection } from './components/DonationSection';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Filter, X, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 
 import { getAlerts } from './services/aemet';
@@ -26,6 +26,8 @@ const AppContent = () => {
   const [timelineTime, setTimelineTime] = useState<Date | null>(null);
   const [isTimelinePlaying, setIsTimelinePlaying] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [isFiltersOpenPC, setIsFiltersOpenPC] = useState(false);
+  const [isTimelineOpenPC, setIsTimelineOpenPC] = useState(false);
   const { t, language } = useLanguage();
   const { user } = useAuth();
 
@@ -219,6 +221,115 @@ const AppContent = () => {
           )}
         </AnimatePresence>
 
+        {/* PC Filters Toggle Button (Fixed left) */}
+        <button
+          onClick={() => setIsFiltersOpenPC(!isFiltersOpenPC)}
+          className="fixed left-0 top-[35%] -translate-y-1/2 z-50 hidden lg:flex items-center gap-0 group"
+          aria-label="Toggle Filters"
+        >
+          <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 border-l-0 rounded-r-2xl py-4 px-2 shadow-2xl shadow-black/50 flex flex-col items-center gap-3 transition-all duration-300 hover:bg-slate-800/95 hover:px-3">
+            <Filter size={20} className="text-white" />
+            {isFiltersOpenPC ? <ChevronLeft size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
+          </div>
+        </button>
+
+        {/* PC Timeline Toggle Button (Fixed left) */}
+        <button
+          onClick={() => setIsTimelineOpenPC(!isTimelineOpenPC)}
+          className="fixed left-0 top-[65%] -translate-y-1/2 z-50 hidden lg:flex items-center gap-0 group"
+          aria-label="Toggle Timeline"
+        >
+          <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 border-l-0 rounded-r-2xl py-4 px-2 shadow-2xl shadow-black/50 flex flex-col items-center gap-3 transition-all duration-300 hover:bg-slate-800/95 hover:px-3">
+            <Clock size={20} className="text-white" />
+            {isTimelineOpenPC ? <ChevronLeft size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
+          </div>
+        </button>
+
+        {/* PC Filters Sidebar Panel */}
+        <AnimatePresence>
+          {isFiltersOpenPC && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 hidden lg:block"
+                onClick={() => setIsFiltersOpenPC(false)}
+              />
+              <motion.aside
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed left-0 top-0 bottom-0 z-50 w-[420px] flex flex-col bg-slate-950/60 backdrop-blur-[32px] border-r border-white/10 shadow-2xl shadow-black/80 hidden lg:flex"
+              >
+                <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-500/20 p-2.5 rounded-xl border border-blue-500/30">
+                      <Filter size={18} className="text-blue-400" />
+                    </div>
+                    <h2 className="text-lg font-black text-white tracking-tight">{t('filter.title') || 'Filtros'}</h2>
+                  </div>
+                  <button onClick={() => setIsFiltersOpenPC(false)} className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                    <X size={16} className="text-slate-400" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                  <AlertFilter
+                    alerts={languageFiltered}
+                    selectedType={selectedEventType}
+                    selectedSeverity={selectedSeverity}
+                    onFilterChange={handleFilterChange}
+                  />
+                </div>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* PC Timeline Sidebar Panel */}
+        <AnimatePresence>
+          {isTimelineOpenPC && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 hidden lg:block"
+                onClick={() => setIsTimelineOpenPC(false)}
+              />
+              <motion.aside
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed left-0 top-0 bottom-0 z-50 w-[420px] flex flex-col bg-slate-950/60 backdrop-blur-[32px] border-r border-white/10 shadow-2xl shadow-black/80 hidden lg:flex"
+              >
+                <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-indigo-500/20 p-2.5 rounded-xl border border-indigo-500/30">
+                      <Clock size={18} className="text-indigo-400" />
+                    </div>
+                    <h2 className="text-lg font-black text-white tracking-tight">{t('timeline.title') || 'Línea de Tiempo'}</h2>
+                  </div>
+                  <button onClick={() => setIsTimelineOpenPC(false)} className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                    <X size={16} className="text-slate-400" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                  <Timeline
+                    alerts={languageFiltered}
+                    currentTime={timelineTime}
+                    onTimeChange={setTimelineTime}
+                    isPlaying={isTimelinePlaying}
+                    onTogglePlay={() => setIsTimelinePlaying(!isTimelinePlaying)}
+                  />
+                </div>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+
 
         <main className="flex-1 w-full max-w-none px-4 sm:px-6 lg:px-12 xl:px-20 py-8 sm:py-12">
 
@@ -246,21 +357,7 @@ const AppContent = () => {
               {/* Sidebar */}
               <div className="w-full lg:w-[420px] flex-shrink-0 space-y-6">
 
-                <div className="hidden lg:block opacity-40 hover:opacity-100 transition-opacity duration-300">
-                  <AlertFilter
-                    alerts={languageFiltered}
-                    selectedType={selectedEventType}
-                    selectedSeverity={selectedSeverity}
-                    onFilterChange={handleFilterChange}
-                  />
-                  <Timeline
-                    alerts={languageFiltered}
-                    currentTime={timelineTime}
-                    onTimeChange={setTimelineTime}
-                    isPlaying={isTimelinePlaying}
-                    onTogglePlay={() => setIsTimelinePlaying(!isTimelinePlaying)}
-                  />
-                </div>
+
 
 
               </div>
