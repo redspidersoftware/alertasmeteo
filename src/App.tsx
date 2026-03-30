@@ -151,13 +151,15 @@ const AppContent = () => {
             transition={{ duration: 0.6 }}
           >
             {/* Map + Sidebar Layout */}
-            <div className="flex flex-col lg:flex-row gap-8 mb-16">
+            <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 mb-16 justify-end relative">
+
               {/* Map Section */}
-              <div className="flex-1 min-w-0">
-                <div className="mb-6 flex items-center justify-between">
+              {/* Map Title Overlay - Kept for context but smaller/on-top */}
+              <div className="absolute top-0 left-0 right-0 p-4 lg:p-0 pointer-events-none">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                      <span className="w-2 h-8 bg-blue-500 rounded-full"></span>
+                    <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3 bg-slate-900/40 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/5 shadow-2xl">
+                      <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span>
                       {t('map.title')}
                     </h2>
                   </div>
@@ -165,73 +167,21 @@ const AppContent = () => {
                     <motion.span
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="text-xs font-black uppercase tracking-widest bg-blue-600/20 text-blue-300 px-4 py-2 rounded-xl border border-blue-500/20 shadow-lg shadow-blue-500/10"
+                      className="text-[10px] font-black uppercase tracking-widest bg-blue-600/30 text-blue-200 px-4 py-2 rounded-xl backdrop-blur-md border border-blue-500/20 shadow-lg"
                     >
                       {t('event.filtered_by')}: {selectedEventType || selectedSeverity}
                     </motion.span>
                   )}
                 </div>
-                {/* Map Placeholder/Empty space - removed MapView from here */}
-                <div className="h-[300px] lg:h-[400px] pointer-events-none mb-8"></div>
-
-
-                {/* Donation Section - Relocated under map */}
-                <motion.div
-                  whileHover={{ scale: 1.005 }}
-                  className="mt-8 glass rounded-[2.5rem] p-6 sm:p-8 relative overflow-hidden group border border-white/5"
-                >
-                  {/* Decorative Background Elements */}
-                  <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl group-hover:bg-blue-600/15 transition-colors duration-700"></div>
-                  <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-600/10 rounded-full blur-3xl group-hover:bg-indigo-600/15 transition-colors duration-700"></div>
-
-                  <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-4 text-center sm:text-left">
-                      <div className="bg-blue-500/10 p-3 rounded-2xl border border-blue-500/20 shadow-inner flex-shrink-0">
-                        <CloudRainWind size={24} className="text-blue-400" />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-black text-white tracking-tight">
-                          {t('footer.donate_title') || t('footer.donate')}
-                        </h2>
-                        <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-md">
-                          {t('footer.donate_desc')}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap justify-center sm:justify-end gap-4">
-                      {/* PayPal Form */}
-                      <form action="https://www.paypal.com/donate" method="post" target="_blank">
-                        <input type="hidden" name="business" value="RLBDLZGFL5DRQ" />
-                        <input type="hidden" name="no_recurring" value="0" />
-                        <input type="hidden" name="item_name" value="Ayúdanos a mejorar el servicio" />
-                        <input type="hidden" name="currency_code" value="EUR" />
-                        <button
-                          type="submit"
-                          className="flex items-center justify-center gap-2 px-6 h-11 min-w-[200px] rounded-xl bg-gradient-to-r from-[#0070ba] to-[#005ea6] text-white font-black transition-all shadow-lg hover:shadow-[#0070ba]/40 active:scale-95 group/btn text-xs tracking-widest uppercase"
-                        >
-                          <span className="text-lg">PayPal</span>
-                          {t('footer.donate')}
-                        </button>
-                      </form>
-
-                      {/* Buy Me a Coffee */}
-                      <a
-                        href="https://buymeacoffee.com/alertasmeteo"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 px-6 h-11 min-w-[200px] rounded-xl bg-white text-black font-black transition-all shadow-lg hover:shadow-white/20 active:scale-95 group/btn text-xs tracking-widest uppercase border border-white"
-                      >
-                        <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="BMC" className="h-5" />
-                        <span>{t('footer.donate_bmc')}</span>
-                      </a>
-                    </div>
-                  </div>
-                </motion.div>
               </div>
 
-              {/* Sidebar */}
-              <div className="w-full lg:w-96 flex-shrink-0 lg:pt-14">
+              {/* Empty space to let map show through */}
+              <div className="h-[200px] lg:h-[300px] pointer-events-none"></div>
+            </div>
+
+            {/* Sidebar */}
+            <div className="w-full lg:w-[420px] flex-shrink-0 lg:pt-14 space-y-6">
+              <div className="opacity-40">
                 <AlertFilter
                   alerts={languageFiltered}
                   selectedType={selectedEventType}
@@ -247,6 +197,50 @@ const AppContent = () => {
                 />
               </div>
 
+              {/* Donation Section - Moved to sidebar */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-slate-900/40 backdrop-blur-3xl rounded-[2rem] p-6 border border-white/5 shadow-2xl relative overflow-hidden group"
+              >
+                <div className="relative z-10 flex flex-col gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-500/20 p-2 rounded-xl">
+                      <CloudRainWind size={18} className="text-blue-400" />
+                    </div>
+                    <h2 className="text-lg font-black text-white tracking-tight">
+                      {t('footer.donate_title') || t('footer.donate')}
+                    </h2>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    {/* PayPal */}
+                    <form action="https://www.paypal.com/donate" method="post" target="_blank">
+                      <input type="hidden" name="business" value="RLBDLZGFL5DRQ" />
+                      <input type="hidden" name="no_recurring" value="0" />
+                      <input type="hidden" name="item_name" value="Ayúdanos a mejorar el servicio" />
+                      <input type="hidden" name="currency_code" value="EUR" />
+                      <button
+                        type="submit"
+                        className="w-full flex items-center justify-center gap-2 h-10 rounded-xl bg-[#0070ba] hover:bg-[#005ea6] text-white text-[10px] font-black transition-all shadow-lg uppercase tracking-widest"
+                      >
+                        PayPal {t('footer.donate')}
+                      </button>
+                    </form>
+
+                    {/* Buy Me a Coffee */}
+                    <a
+                      href="https://buymeacoffee.com/alertasmeteo"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] font-black transition-all border border-white/10 uppercase tracking-widest"
+                    >
+                      <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="BMC" className="h-4" />
+                      <span>{t('footer.donate_bmc')}</span>
+                    </a>
+                  </div>
+                </div>
+              </motion.div>
             </div>
 
 
