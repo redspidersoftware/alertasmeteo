@@ -144,7 +144,8 @@ const AppContent = () => {
         <AlertSidebar alerts={finalFilteredAlerts} />
 
 
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <main className="flex-1 w-full max-w-none px-4 sm:px-6 lg:px-12 xl:px-20 py-8 sm:py-12">
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
