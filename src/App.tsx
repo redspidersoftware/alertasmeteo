@@ -3,8 +3,8 @@ import { SatelliteVideo } from './components/SatelliteVideo';
 import { AlertSidebar } from './components/AlertSidebar';
 import { MapView } from './components/MapView';
 import { UnsubscribePage } from './components/UnsubscribePage';
-import { motion } from 'framer-motion';
-import { CloudRainWind } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CloudRainWind, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 
 import { getAlerts } from './services/aemet';
@@ -24,6 +24,7 @@ const AppContent = () => {
   const [selectedSeverity, setSelectedSeverity] = useState<string | null>(null);
   const [timelineTime, setTimelineTime] = useState<Date | null>(null);
   const [isTimelinePlaying, setIsTimelinePlaying] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const { t, language } = useLanguage();
   const { user } = useAuth();
 
@@ -143,6 +144,79 @@ const AppContent = () => {
         <Header />
         <AlertSidebar alerts={finalFilteredAlerts} />
 
+        {/* Filters Toggle Button - Fixed right side (Mobile only) */}
+        <button
+          onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+          className="fixed right-0 top-[60%] -translate-y-1/2 z-50 flex items-center gap-0 group lg:hidden"
+          aria-label="Toggle Filters"
+        >
+          <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 border-r-0 rounded-l-2xl py-4 px-2 shadow-2xl shadow-black/50 flex flex-col items-center gap-3 transition-all duration-300 hover:bg-slate-800/95 hover:px-3">
+            <div className="relative">
+              <Filter size={20} className="text-white" />
+            </div>
+            {isFiltersOpen ? (
+              <ChevronRight size={14} className="text-slate-400" />
+            ) : (
+              <ChevronLeft size={14} className="text-slate-400" />
+            )}
+          </div>
+        </button>
+
+        {/* Filters Sidebar Panel (Mobile only) */}
+        <AnimatePresence>
+          {isFiltersOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+                onClick={() => setIsFiltersOpen(false)}
+              />
+              <motion.aside
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed right-0 top-0 bottom-0 z-50 w-[90vw] sm:w-[420px] flex flex-col bg-slate-950/60 backdrop-blur-[32px] border-l border-white/10 shadow-2xl shadow-black/80 lg:hidden"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-500/20 p-2.5 rounded-xl border border-blue-500/30">
+                      <Filter size={18} className="text-blue-400" />
+                    </div>
+                    <h2 className="text-lg font-black text-white tracking-tight">{t('filter.title') || 'Filtros'}</h2>
+                  </div>
+                  <button
+                    onClick={() => setIsFiltersOpen(false)}
+                    className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                  >
+                    <X size={16} className="text-slate-400" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+                  <AlertFilter
+                    alerts={languageFiltered}
+                    selectedType={selectedEventType}
+                    selectedSeverity={selectedSeverity}
+                    onFilterChange={handleFilterChange}
+                  />
+                  <Timeline
+                    alerts={languageFiltered}
+                    currentTime={timelineTime}
+                    onTimeChange={setTimelineTime}
+                    isPlaying={isTimelinePlaying}
+                    onTogglePlay={() => setIsTimelinePlaying(!isTimelinePlaying)}
+                  />
+                </div>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+
 
         <main className="flex-1 w-full max-w-none px-4 sm:px-6 lg:px-12 xl:px-20 py-8 sm:py-12">
 
@@ -170,7 +244,7 @@ const AppContent = () => {
               {/* Sidebar */}
               <div className="w-full lg:w-[420px] flex-shrink-0 space-y-6">
 
-                <div className="opacity-40">
+                <div className="hidden lg:block opacity-40 hover:opacity-100 transition-opacity duration-300">
                   <AlertFilter
                     alerts={languageFiltered}
                     selectedType={selectedEventType}
