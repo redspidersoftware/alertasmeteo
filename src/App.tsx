@@ -152,100 +152,89 @@ const AppContent = () => {
           >
             {/* Map + Sidebar Layout */}
             <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 mb-16 justify-end relative">
-
-              {/* Map Section */}
-              {/* Map Title Overlay - Kept for context but smaller/on-top */}
-              <div className="absolute top-0 left-0 right-0 p-4 lg:p-0 pointer-events-none">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3 bg-slate-900/40 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/5 shadow-2xl">
-                      <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span>
-                      {t('map.title')}
-                    </h2>
-                  </div>
-                  {(selectedEventType || selectedSeverity) && (
-                    <motion.span
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="text-[10px] font-black uppercase tracking-widest bg-blue-600/30 text-blue-200 px-4 py-2 rounded-xl backdrop-blur-md border border-blue-500/20 shadow-lg"
-                    >
-                      {t('event.filtered_by')}: {selectedEventType || selectedSeverity}
-                    </motion.span>
-                  )}
+              {/* Discreet Filter Indicator Overlay */}
+              {(selectedEventType || selectedSeverity) && (
+                <div className="absolute top-4 left-4 z-20 pointer-events-none">
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-[10px] font-black uppercase tracking-widest bg-blue-600/30 text-blue-200 px-4 py-2 rounded-xl backdrop-blur-md border border-blue-500/20 shadow-lg"
+                  >
+                    {t('event.filtered_by')}: {selectedEventType || selectedSeverity}
+                  </motion.span>
                 </div>
-              </div>
+              )}
 
-              {/* Empty space to let map show through */}
-              <div className="h-[200px] lg:h-[300px] pointer-events-none"></div>
-            </div>
 
-            {/* Sidebar */}
-            <div className="w-full lg:w-[420px] flex-shrink-0 lg:pt-14 space-y-6">
-              <div className="opacity-40">
-                <AlertFilter
-                  alerts={languageFiltered}
-                  selectedType={selectedEventType}
-                  selectedSeverity={selectedSeverity}
-                  onFilterChange={handleFilterChange}
-                />
-                <Timeline
-                  alerts={languageFiltered}
-                  currentTime={timelineTime}
-                  onTimeChange={setTimelineTime}
-                  isPlaying={isTimelinePlaying}
-                  onTogglePlay={() => setIsTimelinePlaying(!isTimelinePlaying)}
-                />
-              </div>
+              {/* Sidebar */}
+              <div className="w-full lg:w-[420px] flex-shrink-0 space-y-6">
 
-              {/* Donation Section - Moved to sidebar */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="bg-slate-900/40 backdrop-blur-3xl rounded-[2rem] p-6 border border-white/5 shadow-2xl relative overflow-hidden group"
-              >
-                <div className="relative z-10 flex flex-col gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-500/20 p-2 rounded-xl">
-                      <CloudRainWind size={18} className="text-blue-400" />
+                <div className="opacity-40">
+                  <AlertFilter
+                    alerts={languageFiltered}
+                    selectedType={selectedEventType}
+                    selectedSeverity={selectedSeverity}
+                    onFilterChange={handleFilterChange}
+                  />
+                  <Timeline
+                    alerts={languageFiltered}
+                    currentTime={timelineTime}
+                    onTimeChange={setTimelineTime}
+                    isPlaying={isTimelinePlaying}
+                    onTogglePlay={() => setIsTimelinePlaying(!isTimelinePlaying)}
+                  />
+                </div>
+
+                {/* Donation Section - Moved to sidebar */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="bg-slate-900/40 backdrop-blur-3xl rounded-[2rem] p-6 border border-white/5 shadow-2xl relative overflow-hidden group"
+                >
+                  <div className="relative z-10 flex flex-col gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-500/20 p-2 rounded-xl">
+                        <CloudRainWind size={18} className="text-blue-400" />
+                      </div>
+                      <h2 className="text-lg font-black text-white tracking-tight">
+                        {t('footer.donate_title') || t('footer.donate')}
+                      </h2>
                     </div>
-                    <h2 className="text-lg font-black text-white tracking-tight">
-                      {t('footer.donate_title') || t('footer.donate')}
-                    </h2>
-                  </div>
 
-                  <div className="flex flex-col gap-3">
-                    {/* PayPal */}
-                    <form action="https://www.paypal.com/donate" method="post" target="_blank">
-                      <input type="hidden" name="business" value="RLBDLZGFL5DRQ" />
-                      <input type="hidden" name="no_recurring" value="0" />
-                      <input type="hidden" name="item_name" value="Ayúdanos a mejorar el servicio" />
-                      <input type="hidden" name="currency_code" value="EUR" />
-                      <button
-                        type="submit"
-                        className="w-full flex items-center justify-center gap-2 h-10 rounded-xl bg-[#0070ba] hover:bg-[#005ea6] text-white text-[10px] font-black transition-all shadow-lg uppercase tracking-widest"
+                    <div className="flex flex-col gap-3">
+                      {/* PayPal */}
+                      <form action="https://www.paypal.com/donate" method="post" target="_blank">
+                        <input type="hidden" name="business" value="RLBDLZGFL5DRQ" />
+                        <input type="hidden" name="no_recurring" value="0" />
+                        <input type="hidden" name="item_name" value="Ayúdanos a mejorar el servicio" />
+                        <input type="hidden" name="currency_code" value="EUR" />
+                        <button
+                          type="submit"
+                          className="w-full flex items-center justify-center gap-2 h-10 rounded-xl bg-[#0070ba] hover:bg-[#005ea6] text-white text-[10px] font-black transition-all shadow-lg uppercase tracking-widest"
+                        >
+                          PayPal {t('footer.donate')}
+                        </button>
+                      </form>
+
+                      {/* Buy Me a Coffee */}
+                      <a
+                        href="https://buymeacoffee.com/alertasmeteo"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full flex items-center justify-center gap-2 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] font-black transition-all border border-white/10 uppercase tracking-widest"
                       >
-                        PayPal {t('footer.donate')}
-                      </button>
-                    </form>
-
-                    {/* Buy Me a Coffee */}
-                    <a
-                      href="https://buymeacoffee.com/alertasmeteo"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-2 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] font-black transition-all border border-white/10 uppercase tracking-widest"
-                    >
-                      <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="BMC" className="h-4" />
-                      <span>{t('footer.donate_bmc')}</span>
-                    </a>
+                        <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="BMC" className="h-4" />
+                        <span>{t('footer.donate_bmc')}</span>
+                      </a>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </div>
             </div>
-
 
             {/* Satellite Video Section */}
             <SatelliteVideo />
+
           </motion.div>
         </main>
 
