@@ -52,7 +52,8 @@ export const Timeline = ({ alerts, currentTime, onTimeChange, isPlaying, onToggl
     const progress = ((displayTime.getTime() - range.min) / (range.max - range.min)) * 100;
 
     return (
-        <div className="bg-slate-900 border border-white/10 rounded-2xl p-5 mt-4 shadow-2xl">
+        <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 mt-4 shadow-2xl">
+
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-black text-white flex items-center gap-2 uppercase tracking-wider opacity-70">
                     <Clock size={14} className="text-blue-400" />

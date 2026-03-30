@@ -2,7 +2,7 @@ import { MapContainer, TileLayer, Polygon, Popup } from 'react-leaflet';
 import type { LatLngTuple } from 'leaflet';
 import type { WeatherAlert, CapArea } from '../types';
 import 'leaflet/dist/leaflet.css';
-import { useLanguage } from '../context/LanguageContext';
+
 
 interface MapViewProps {
     alerts: WeatherAlert[];
@@ -45,7 +45,11 @@ const parsePolygon = (polygonStr: string): LatLngTuple[] => {
 };
 
 export const MapView = ({ alerts }: MapViewProps) => {
-    const { t } = useLanguage();
+    // const { t } = useLanguage(); - removed because t is unused now
+    // If you need it back later, uncomment or re-add it.
+    // Actually, just remove it to satisfy lint.
+    // useLanguage(); // just call it if side effects are needed, but here it's likely just for the title.
+
 
     if (!alerts) return null;
 
@@ -68,15 +72,12 @@ export const MapView = ({ alerts }: MapViewProps) => {
         });
 
     return (
-        <div className="h-[500px] w-full rounded-xl overflow-hidden border border-white/10 shadow-lg relative z-0 bg-slate-900">
-            <div className="absolute top-2 right-2 z-[1000] bg-black/50 p-2 rounded text-xs text-white backdrop-blur">
-                {t('map.title')}
-            </div>
+        <div className="h-full w-full relative z-0">
             <MapContainer
                 center={[40.4168, -3.7038]}
                 zoom={6}
                 style={{ height: '100%', width: '100%' }}
-                scrollWheelZoom={false}
+                scrollWheelZoom={true}
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

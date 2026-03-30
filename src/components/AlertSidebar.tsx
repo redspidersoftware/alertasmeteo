@@ -105,7 +105,8 @@ export const AlertSidebar = ({ alerts }: AlertSidebarProps) => {
                         animate={{ x: 0 }}
                         exit={{ x: '-100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed left-0 top-0 bottom-0 z-50 w-[90vw] sm:w-[420px] lg:w-[440px] flex flex-col bg-slate-950/95 backdrop-blur-2xl border-r border-white/10 shadow-2xl shadow-black/60"
+                        className="fixed left-0 top-0 bottom-0 z-50 w-[90vw] sm:w-[420px] lg:w-[440px] flex flex-col bg-slate-950/80 backdrop-blur-[32px] border-r border-white/10 shadow-2xl shadow-black/80"
+
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
