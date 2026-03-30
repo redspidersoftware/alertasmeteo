@@ -338,6 +338,17 @@ const AppContent = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
+            {/* First fold spacer to show the background map */}
+            <div className="h-[75vh] pointer-events-none flex flex-col items-center justify-center">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.6 }}
+                transition={{ delay: 1, duration: 1 }}
+                className="text-white/20 text-xs font-black uppercase tracking-[0.5em] mt-auto pb-12 animate-bounce"
+              >
+                {t('scroll.to.explore') || 'Desliza para explorar'} ↓
+              </motion.div>
+            </div>
             {/* Map + Sidebar Layout */}
             <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 mb-16 justify-end relative">
               {/* Discreet Filter Indicator Overlay */}

@@ -74,8 +74,8 @@ export const MapView = ({ alerts }: MapViewProps) => {
     return (
         <div className="h-full w-full relative z-0">
             <MapContainer
-                center={[40.4168, -3.7038]}
-                zoom={6}
+                center={[36.5, -6]}
+                zoom={5}
                 style={{ height: '100%', width: '100%' }}
                 scrollWheelZoom={true}
             >
