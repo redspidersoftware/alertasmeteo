@@ -6,6 +6,7 @@ import { useLanguage } from '../context/LanguageContext';
 
 interface AlertCardProps {
     alert: WeatherAlert;
+    isTooltip?: boolean;
 }
 
 const severityGradients = {
@@ -38,11 +39,11 @@ const detectWeatherType = (eventName: string, headline: string = '') => {
     return null;
 };
 
-const WeatherEffects = ({ type }: { type: string | null }) => {
+const WeatherEffects = ({ type, isTooltip }: { type: string | null, isTooltip?: boolean }) => {
     const [renderedParticles] = useState(() => {
         if (!type || type === 'storm') return null;
 
-        return Array.from({ length: 30 }).map((_, i) => {
+        return Array.from({ length: isTooltip ? 10 : 30 }).map((_, i) => {
             const left = Math.random() * 100;
             let top = -20;
             const delay = Math.random() * 5;
@@ -92,7 +93,7 @@ const WeatherEffects = ({ type }: { type: string | null }) => {
     }
 
     return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-80">
+        <div className={`absolute inset-0 overflow-hidden pointer-events-none z-0 ${isTooltip ? 'opacity-40' : 'opacity-80'}`}>
             {/* Base Color Overlays for temperature/dust/thaw */}
             {type === 'heat' && <div className="absolute inset-0 bg-orange-500/10 mix-blend-overlay animate-pulse duration-[4s]" />}
             {type === 'cold' && <div className="absolute inset-0 bg-blue-300/10 mix-blend-overlay animate-pulse duration-[4s]" />}
@@ -133,7 +134,7 @@ const WeatherEffects = ({ type }: { type: string | null }) => {
     );
 };
 
-export const AlertCard = ({ alert }: AlertCardProps) => {
+export const AlertCard = ({ alert, isTooltip = false }: AlertCardProps) => {
     const [expanded, setExpanded] = useState(false);
     const { t } = useLanguage();
     const gradientClass = severityGradients[alert.severity] || severityGradients.unknown;
@@ -157,108 +158,120 @@ export const AlertCard = ({ alert }: AlertCardProps) => {
         }
     };
 
+    const handleClick = () => {
+        if (!isTooltip) {
+            setExpanded(!expanded);
+        }
+    };
+
     return (
         <motion.div
-            layout
-            initial={{ opacity: 0, y: 30, scale: 0.98 }}
+            layout={!isTooltip}
+            initial={isTooltip ? { opacity: 0, scale: 0.95 } : { opacity: 0, y: 30, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-            whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            className={`group relative overflow-hidden rounded-3xl border bg-gradient-to-br ${gradientClass} backdrop-blur-xl p-6 transition-all shadow-2xl hover:shadow-cyan-500/10 cursor-pointer`}
-            onClick={() => setExpanded(!expanded)}
+            whileHover={!isTooltip ? { y: -4, transition: { duration: 0.2 } } : undefined}
+            className={`group relative overflow-hidden ${isTooltip ? 'rounded-2xl p-4 w-72' : 'rounded-3xl p-6 cursor-pointer'} border bg-gradient-to-br ${gradientClass} backdrop-blur-xl transition-all shadow-2xl ${!isTooltip ? 'hover:shadow-cyan-500/10' : ''}`}
+            onClick={handleClick}
         >
             {/* Glow Effect on Hover */}
-            <div className={`absolute -inset-px bg-gradient-to-r ${gradientClass} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+            {!isTooltip && (
+                <div className={`absolute -inset-px bg-gradient-to-r ${gradientClass} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+            )}
 
-            <WeatherEffects type={detectWeatherType(alert.event, alert.headline)} />
+            <WeatherEffects type={detectWeatherType(alert.event, alert.headline)} isTooltip={isTooltip} />
 
-            <div className="relative flex items-start gap-6">
-                <div className={`${iconClass} p-4 rounded-2xl shadow-lg flex-shrink-0 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
-                    <AlertTriangle size={28} />
+            <div className="relative flex items-start gap-4">
+                <div className={`${iconClass} ${isTooltip ? 'p-2.5' : 'p-4'} rounded-2xl shadow-lg flex-shrink-0 transition-transform duration-500 ${!isTooltip ? 'group-hover:scale-110 group-hover:rotate-3' : ''}`}>
+                    <AlertTriangle size={isTooltip ? 20 : 28} />
                 </div>
 
                 <div className="flex-1 min-w-0 pt-0.5">
-                    <div className="flex justify-between items-start gap-3">
-                        <h3 className="font-black text-xl leading-tight tracking-tight group-hover:text-white transition-colors">
+                    <div className="flex justify-between items-start gap-2">
+                        <h3 className={`font-black tracking-tight transition-colors ${isTooltip ? 'text-sm leading-tight' : 'text-xl leading-tight group-hover:text-white'}`}>
                             {alert.headline}
                         </h3>
-                        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">
-                                {formatDate(alert.sent)}
-                            </span>
-                        </div>
+                        {!isTooltip && (
+                            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-60 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">
+                                    {formatDate(alert.sent)}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex items-center gap-2.5 mt-3 text-sm font-bold opacity-70">
+                    <div className={`flex items-center gap-2 mt-2 font-bold opacity-70 ${isTooltip ? 'text-[10px]' : 'text-sm'}`}>
                         <div className="p-1 rounded-md bg-white/5">
-                            <MapPin size={14} className="text-blue-400" />
+                            <MapPin size={isTooltip ? 10 : 14} className="text-blue-400" />
                         </div>
                         <span className="truncate">{alert.area}</span>
                     </div>
 
-                    <p className={`mt-4 text-slate-300 leading-relaxed font-medium transition-all duration-300 ${expanded ? '' : 'line-clamp-2'}`}>
+                    <p className={`mt-3 text-slate-300 leading-relaxed font-medium transition-all duration-300 ${isTooltip ? 'text-xs line-clamp-2' : (expanded ? '' : 'line-clamp-2')}`}>
                         {alert.description}
                     </p>
 
-                    <AnimatePresence initial={false}>
-                        {expanded ? (
-                            <motion.div
-                                key="expanded"
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.3, ease: "easeInOut" }}
-                                className="overflow-hidden"
-                            >
-                                <div className="mt-6 pt-6 border-t border-white/10 space-y-6">
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-blue-400 font-black text-xs uppercase tracking-widest">
-                                            <Info size={16} />
-                                            {t('alert.description')}
-                                        </div>
-                                        <p className="text-slate-200 leading-relaxed bg-white/5 p-4 rounded-2xl border border-white/5 font-medium shadow-inner">
-                                            {alert.description}
-                                        </p>
-                                    </div>
-
-                                    {alert.instruction && (
+                    {!isTooltip && (
+                        <AnimatePresence initial={false}>
+                            {expanded ? (
+                                <motion.div
+                                    key="expanded"
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="mt-6 pt-6 border-t border-white/10 space-y-6">
                                         <div className="space-y-3">
-                                            <div className="text-emerald-400 font-black text-xs uppercase tracking-widest">
-                                                {t('alert.instructions')}
+                                            <div className="flex items-center gap-2 text-blue-400 font-black text-xs uppercase tracking-widest">
+                                                <Info size={16} />
+                                                {t('alert.description')}
                                             </div>
-                                            <p className="text-emerald-50/80 italic bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10 font-medium">
-                                                {alert.instruction}
+                                            <p className="text-slate-200 leading-relaxed bg-white/5 p-4 rounded-2xl border border-white/5 font-medium shadow-inner">
+                                                {alert.description}
                                             </p>
                                         </div>
-                                    )}
 
-                                    <div className="flex items-center justify-between pt-2">
-                                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 bg-black/20 px-4 py-2 rounded-full border border-white/5">
-                                            <Clock size={12} className="text-blue-400" />
-                                            {t('alert.expires')} {formatExpires(alert.expires)}
-                                        </div>
+                                        {alert.instruction && (
+                                            <div className="space-y-3">
+                                                <div className="text-emerald-400 font-black text-xs uppercase tracking-widest">
+                                                    {t('alert.instructions')}
+                                                </div>
+                                                <p className="text-emerald-50/80 italic bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10 font-medium">
+                                                    {alert.instruction}
+                                                </p>
+                                            </div>
+                                        )}
 
-                                        <div className="text-[10px] font-black uppercase tracking-widest text-blue-400 flex items-center gap-1.5 px-2">
-                                            <span>Ver menos</span>
-                                            <ChevronDown className="rotate-180" size={12} />
+                                        <div className="flex items-center justify-between pt-2">
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 bg-black/20 px-4 py-2 rounded-full border border-white/5">
+                                                <Clock size={12} className="text-blue-400" />
+                                                {t('alert.expires')} {formatExpires(alert.expires)}
+                                            </div>
+
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-blue-400 flex items-center gap-1.5 px-2">
+                                                <span>Ver menos</span>
+                                                <ChevronDown className="rotate-180" size={12} />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="collapsed"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400/60 group-hover:text-blue-400 transition-colors"
-                            >
-                                <span>Ver más detalles</span>
-                                <ChevronDown size={12} className="group-hover:translate-y-0.5 transition-transform" />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="collapsed"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400/60 group-hover:text-blue-400 transition-colors"
+                                >
+                                    <span>Ver más detalles</span>
+                                    <ChevronDown size={12} className="group-hover:translate-y-0.5 transition-transform" />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    )}
                 </div>
             </div>
         </motion.div>

@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { MapContainer, TileLayer, Polygon, Popup } from 'react-leaflet';
+import type { LeafletMouseEvent } from 'leaflet';
 import type { LatLngTuple } from 'leaflet';
 import type { WeatherAlert, CapArea } from '../types';
+import { AlertCard } from './AlertCard';
 import 'leaflet/dist/leaflet.css';
-
 
 interface MapViewProps {
     alerts: WeatherAlert[];
@@ -45,11 +47,8 @@ const parsePolygon = (polygonStr: string): LatLngTuple[] => {
 };
 
 export const MapView = ({ alerts }: MapViewProps) => {
-    // const { t } = useLanguage(); - removed because t is unused now
-    // If you need it back later, uncomment or re-add it.
-    // Actually, just remove it to satisfy lint.
-    // useLanguage(); // just call it if side effects are needed, but here it's likely just for the title.
-
+    const [hoveredAlert, setHoveredAlert] = useState<WeatherAlert | null>(null);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
     if (!alerts) return null;
 
@@ -70,6 +69,19 @@ export const MapView = ({ alerts }: MapViewProps) => {
             const orderB = severityOrder[b.severity] || 0;
             return orderA - orderB; // Draw low priority first, high priority last (on top)
         });
+
+    const handleMouseOver = (e: LeafletMouseEvent, alert: WeatherAlert) => {
+        setHoveredAlert(alert);
+        setMousePos({ x: e.originalEvent.clientX, y: e.originalEvent.clientY });
+    };
+
+    const handleMouseOut = () => {
+        setHoveredAlert(null);
+    };
+
+    const handleMouseMove = (e: LeafletMouseEvent) => {
+        setMousePos({ x: e.originalEvent.clientX, y: e.originalEvent.clientY });
+    };
 
     return (
         <div className="h-full w-full relative z-0">
@@ -103,6 +115,11 @@ export const MapView = ({ alerts }: MapViewProps) => {
                                     fillOpacity: 0.6, // Increased opacity slightly for better visibility
                                     weight: 2
                                 }}
+                                eventHandlers={{
+                                    mouseover: (e) => handleMouseOver(e, alert),
+                                    mouseout: handleMouseOut,
+                                    mousemove: handleMouseMove
+                                }}
                             >
                                 <Popup className="text-slate-900">
                                     <strong>{alert.headline}</strong><br />
@@ -113,6 +130,19 @@ export const MapView = ({ alerts }: MapViewProps) => {
                     });
                 })}
             </MapContainer>
+
+            {hoveredAlert && (
+                <div
+                    className="fixed pointer-events-none z-[9999]"
+                    style={{
+                        left: mousePos.x + 20,
+                        top: mousePos.y + 20,
+                        transform: mousePos.x + 320 > window.innerWidth ? 'translateX(-100%) translateX(-40px)' : 'none'
+                    }}
+                >
+                    <AlertCard alert={hoveredAlert} isTooltip={true} />
+                </div>
+            )}
         </div>
     );
 };
