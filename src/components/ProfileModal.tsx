@@ -21,7 +21,8 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
         postalCode: '',
         language: 'es',
         preferredSeverities: ['yellow', 'orange', 'red'],
-        preferredEventTypes: []
+        preferredEventTypes: [],
+        dailyForecast: true
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -38,7 +39,8 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                 postalCode: user.postalCode || '',
                 language: user.language || 'es',
                 preferredSeverities: user.preferredSeverities || ['yellow', 'orange', 'red'],
-                preferredEventTypes: user.preferredEventTypes || []
+                preferredEventTypes: user.preferredEventTypes || [],
+                dailyForecast: user.dailyForecast ?? true
             });
             setErrors({});
             setSuccessMsg('');
@@ -93,7 +95,8 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                 postalCode: formData.postalCode,
                 language: formData.language,
                 preferredSeverities: formData.preferredSeverities,
-                preferredEventTypes: formData.preferredEventTypes
+                preferredEventTypes: formData.preferredEventTypes,
+                dailyForecast: formData.dailyForecast
             });
 
             await refreshProfile();
@@ -111,7 +114,7 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 scale-90 sm:scale-100 duration-200">
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/5">
                     <div className="flex items-center gap-3">
@@ -188,7 +191,7 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
+                                <div className="space-y-1" style={{ display: 'none' }}>
                                     <label className="text-xs font-medium text-slate-400 ml-1">{t('form.phone')}</label>
                                     <div className="relative">
                                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
@@ -242,6 +245,34 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                         </div>
                     ) : (
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                            {/* Daily Forecast Toggle */}
+                            <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 flex items-center justify-between gap-4">
+                                <div className="space-y-1">
+                                    <h4 className="text-sm font-bold text-white flex items-center flex-wrap gap-2">
+                                        {t('profile.daily_forecast')}
+                                        <a
+                                            href="https://t.me/alertasMeteoBot"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="ml-1 text-[10px] bg-blue-500/20 text-blue-400 hover:bg-blue-500/40 px-2 py-0.5 rounded-full transition-colors flex items-center gap-1"
+                                        >
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-18.6 8.632a2.25 2.25 0 0 0-.256 4.012l4.897 1.83 2.925 9.07a2.25 2.25 0 0 0 4.148-.225l1.64-5.323 6.942 5.093a2.23 2.23 0 0 0 3.398-1.042l5.77-19.82a2.25 2.25 0 0 0-2.842-2.842l-7.001 2.057z"></path></svg>
+                                            Vincular Bot
+                                        </a>
+                                    </h4>
+                                    <p className="text-[10px] text-slate-400 line-clamp-2">{t('profile.daily_forecast_desc')}</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, dailyForecast: !formData.dailyForecast })}
+                                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${formData.dailyForecast ? 'bg-blue-600' : 'bg-slate-700'}`}
+                                >
+                                    <span
+                                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.dailyForecast ? 'translate-x-5' : 'translate-x-0'}`}
+                                    />
+                                </button>
+                            </div>
+
                             <div className="space-y-3">
                                 <label className="text-xs font-bold text-blue-400 uppercase tracking-wider">{t('profile.severities')}</label>
                                 <div className="grid grid-cols-2 gap-2">

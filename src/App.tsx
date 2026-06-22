@@ -17,6 +17,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { verifyUser } from './services/userService';
 import { EulaPage } from './components/EulaPage';
 import { Timeline } from './components/Timeline';
+import { NuevaPage } from './components/NuevaPage';
+
 
 
 const AppContent = () => {
@@ -413,6 +415,17 @@ function App() {
       </LanguageProvider>
     );
   }
+
+  if (window.location.pathname === '/nueva') {
+    return (
+      <LanguageProvider>
+        <AuthProvider>
+          <NuevaPage />
+        </AuthProvider>
+      </LanguageProvider>
+    );
+  }
+
 
   return (
     <LanguageProvider>

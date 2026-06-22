@@ -60,6 +60,8 @@ const translations: Record<string, Record<Language, string>> = {
     'profile.saving': { es: 'Guardando...', en: 'Saving...' },
     'profile.success': { es: 'Perfil actualizado correctamente', en: 'Profile updated successfully' },
     'profile.error': { es: 'Error al actualizar el perfil', en: 'Error updating profile' },
+    'profile.daily_forecast': { es: 'Previsión diaria Telegram', en: 'Daily Telegram Forecast' },
+    'profile.daily_forecast_desc': { es: 'Recibe cada mañana la previsión del tiempo y el mapa de alertas.', en: 'Receive every morning the weather forecast and the alert map.' },
     'footer.donate': { es: 'Apoyar el proyecto (PayPal)', en: 'Support the project (PayPal)' },
     'footer.donate_bmc': { es: 'Invitame a un café (BMC)', en: 'Buy Me a Coffee (BMC)' },
     'footer.donate_desc': { es: 'Si te gusta el servicio, considera hacer una donación para ayudar a mantenerlo.', en: 'If you like the service, consider making a donation to help maintain it.' },
@@ -143,10 +145,10 @@ const translations: Record<string, Record<Language, string>> = {
     'about.tab.notifications': { es: 'Notificaciones', en: 'Notifications' },
     'about.notif.mail.title': { es: 'Email', en: 'Email' },
     'about.notif.mail.desc': { es: 'Recibirás avisos detallados con instrucciones de seguridad directamente en tu bandeja de entrada según tus preferencias de severidad y tipo de fenómeno.', en: 'You will receive detailed warnings with safety instructions directly in your inbox according to your severity and event type preferences.' },
-    'about.notif.whatsapp.title': { es: 'WhatsApp', en: 'WhatsApp' },
-    'about.notif.whatsapp.desc': { es: 'Enviamos alertas críticas (Naranja y Roja) directamente a tu móvil para que no te pierdas ningún aviso urgente mientras estás fuera.', en: 'We send critical alerts (Orange and Red) directly to your mobile so you don\'t miss any urgent warnings while you\'re out.' },
-    'about.notif.telegram.title': { es: 'Telegram', en: 'Telegram' },
-    'about.notif.telegram.desc': { es: 'Suscríbete a nuestro canal oficial para recibir todas las alertas en tiempo real: https://t.me/Aemet_Avisos_Bot', en: 'Subscribe to our official channel to receive all alerts in real time: https://t.me/Aemet_Avisos_Bot' },
+    'about.notif.whatsapp.title': { es: 'Notificaciones Push', en: 'Push Notifications' },
+    'about.notif.whatsapp.desc': { es: 'Este servicio ahora se entrega preferentemente vía Telegram. Vincula tu cuenta con nuestro bot para recibir alertas críticas (Naranja y Roja) gratis, con la inmediatez de un mensaje directo y sin las limitaciones de WhatsApp.', en: 'This service is now primarily delivered via Telegram. Link your account with our bot to receive critical alerts (Orange and Red) for free, with the immediacy of a direct message and without the limitations of WhatsApp.' },
+    'about.notif.telegram.title': { es: 'Telegram Bot Oficial', en: 'Official Telegram Bot' },
+    'about.notif.telegram.desc': { es: 'Nuestro bot es el canal más robusto. Vincula tu perfil en un clic para recibir avisos personalizados, el mapa de alertas y la previsión diaria: https://t.me/alertasMeteoBot', en: 'Our bot is the most robust channel. Link your profile in one click to receive personalized warnings, the alert map, and the daily forecast: https://t.me/alertasMeteoBot' },
 
     // Timeline
     'timeline.title': { es: 'Línea de Tiempo', en: 'Alert Timeline' },

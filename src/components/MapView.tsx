@@ -8,6 +8,7 @@ import 'leaflet/dist/leaflet.css';
 
 interface MapViewProps {
     alerts: WeatherAlert[];
+    onSelectAlert?: (alert: WeatherAlert) => void;
 }
 
 const severityColorsMap: Record<string, string> = {
@@ -46,7 +47,7 @@ const parsePolygon = (polygonStr: string): LatLngTuple[] => {
     }
 };
 
-export const MapView = ({ alerts }: MapViewProps) => {
+export const MapView = ({ alerts, onSelectAlert }: MapViewProps) => {
     const [hoveredAlert, setHoveredAlert] = useState<WeatherAlert | null>(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -93,7 +94,7 @@ export const MapView = ({ alerts }: MapViewProps) => {
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                 />
 
                 {mapAlerts.map(alert => {
@@ -118,7 +119,12 @@ export const MapView = ({ alerts }: MapViewProps) => {
                                 eventHandlers={{
                                     mouseover: (e) => handleMouseOver(e, alert),
                                     mouseout: handleMouseOut,
-                                    mousemove: handleMouseMove
+                                    mousemove: handleMouseMove,
+                                    click: () => {
+                                        if (onSelectAlert) {
+                                            onSelectAlert(alert);
+                                        }
+                                    }
                                 }}
                             >
                                 <Popup className="text-slate-900">

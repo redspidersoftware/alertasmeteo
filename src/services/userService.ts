@@ -10,6 +10,7 @@ export interface UserData {
     isVerified?: boolean;
     preferredSeverities?: string[];
     preferredEventTypes?: string[];
+    dailyForecast?: boolean;
 }
 
 // Validation logic remains the same
@@ -45,7 +46,8 @@ export const saveUser = async (userData: UserData): Promise<void> => {
                 postal_code: userData.postalCode,
                 language: userData.language || 'es',
                 preferred_severities: ['yellow', 'orange', 'red', 'green'],
-                preferred_event_types: []
+                preferred_event_types: [],
+                daily_forecast: true
             }
         }
     });
@@ -75,7 +77,8 @@ export const getUsers = async (): Promise<UserData[]> => {
         language: u.language,
         isVerified: u.is_verified,
         preferredSeverities: u.preferred_severities || ['yellow', 'orange', 'red', 'green'],
-        preferredEventTypes: u.preferred_event_types || []
+        preferredEventTypes: u.preferred_event_types || [],
+        dailyForecast: u.daily_forecast ?? true
     }));
 };
 
@@ -97,7 +100,8 @@ export const getUserProfile = async (uid: string): Promise<UserData | null> => {
         language: data.language,
         isVerified: data.is_verified,
         preferredSeverities: data.preferred_severities || ['yellow', 'orange', 'red', 'green'],
-        preferredEventTypes: data.preferred_event_types || []
+        preferredEventTypes: data.preferred_event_types || [],
+        dailyForecast: data.daily_forecast ?? true
     };
 };
 
@@ -110,6 +114,7 @@ export const updateUser = async (uid: string, userData: Partial<UserData>): Prom
     if (userData.language !== undefined) updateData.language = userData.language;
     if (userData.preferredSeverities !== undefined) updateData.preferred_severities = userData.preferredSeverities;
     if (userData.preferredEventTypes !== undefined) updateData.preferred_event_types = userData.preferredEventTypes;
+    if (userData.dailyForecast !== undefined) updateData.daily_forecast = userData.dailyForecast;
 
     const { error: dbError } = await supabase
         .from('users')
@@ -163,7 +168,8 @@ export const updateUser = async (uid: string, userData: Partial<UserData>): Prom
                 appUrl: window.location.origin,
                 preferences: {
                     preferredSeverities: userData.preferredSeverities,
-                    preferredEventTypes: userData.preferredEventTypes
+                    preferredEventTypes: userData.preferredEventTypes,
+                    dailyForecast: userData.dailyForecast ?? true
                 }
             }
         });

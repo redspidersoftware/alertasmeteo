@@ -52,10 +52,24 @@ serve(async (req: Request) => {
             } else {
                 email = payload.email
                 const preferences = payload.preferences || {}
-                const severities = preferences.preferredSeverities?.join(', ') || 'Todas'
+
+                // Mapeo a castellano
+                const severityMap: Record<string, string> = {
+                    'red': 'Rojo (Extremo)',
+                    'orange': 'Naranja (Importante)',
+                    'yellow': 'Amarillo (Riesgo)',
+                    'green': 'Sin riesgo'
+                }
+
+                const severities = preferences.preferredSeverities
+                    ?.map((s: string) => severityMap[s] || s)
+                    .join(', ') || 'Todas'
+
                 const eventTypes = preferences.preferredEventTypes && preferences.preferredEventTypes.length > 0
                     ? preferences.preferredEventTypes.sort().join(', ')
                     : 'Todos'
+
+                const dailyForecast = preferences.dailyForecast !== false ? 'Activado' : 'Desactivado'
                 const appUrl = payload.appUrl || "https://alertas-meteo.vercel.app"
 
                 subject = "Tus preferencias de alertas han sido actualizadas"
@@ -64,12 +78,14 @@ serve(async (req: Request) => {
                         <h2 style="color: #2563eb;">¡Hola ${name}!</h2>
                         <p>Te confirmamos que hemos actualizado tus preferencias de visualización de alertas meteorológicas.</p>
                         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                            <p><strong>Niveles de gravedad:</strong> ${severities}</p>
-                            <p><strong>Tipos de avisos:</strong> ${eventTypes}</p>
+                            <p style="margin: 5px 0;"><strong>Resumen diario WhatsApp:</strong> ${dailyForecast}</p>
+                            <p style="margin: 5px 0;"><strong>Niveles de gravedad:</strong> ${severities}</p>
+                            <p style="margin: 5px 0;"><strong>Tipos de avisos:</strong> ${eventTypes}</p>
                         </div>
                         <p>A partir de ahora, verás los avisos filtrados según esta configuración cuando inicies sesión.</p>
                         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                         <p style="font-size: 12px; color: #64748b;">¿Ya no deseas recibir estas alertas? <a href="${appUrl}/unsubscribe" style="color: #2563eb;">Darme de baja aquí</a>.</p>
+                        <p style="font-size: 10px; color: #94a3b8; text-align: center; margin-top: 20px;">Este es un mensaje automático de Alertas Meteo.</p>
                     </div>
                 `
             }
