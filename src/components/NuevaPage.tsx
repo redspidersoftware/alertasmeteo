@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getAlerts, getNationalPrediction } from '../services/aemet';
 import { updateUser, saveUser } from '../services/userService';
+import { supabase } from '../lib/supabase';
 import type { WeatherAlert, NationalPrediction } from '../types';
 import { MapView } from './MapView';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -36,7 +37,6 @@ export const NuevaPage = () => {
 
   // Alerts State
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
 
   // National Prediction State
   const [prediction, setPrediction] = useState<NationalPrediction | null>(null);
@@ -45,6 +45,7 @@ export const NuevaPage = () => {
   const [prefSeverities, setPrefSeverities] = useState<string[]>(['yellow', 'orange', 'red']);
   const [prefPhenomena, setPrefPhenomena] = useState<string[]>(['viento', 'lluvia', 'nieve']);
   const [postalCodeInput, setPostalCodeInput] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // Inject Hanken Grotesk & Material Symbols dynamically
   useEffect(() => {
@@ -96,6 +97,14 @@ export const NuevaPage = () => {
       if (user.postalCode) {
         setPostalCodeInput(user.postalCode);
       }
+      
+      supabase.auth.getUser().then(({ data }) => {
+        if (data.user?.user_metadata?.avatar_url) {
+          setAvatarUrl(data.user.user_metadata.avatar_url);
+        } else if (data.user?.user_metadata?.picture) {
+          setAvatarUrl(data.user.user_metadata.picture);
+        }
+      });
     }
   }, [user]);
 
@@ -221,16 +230,7 @@ export const NuevaPage = () => {
   };
 
   // Filter alerts by search query (e.g. municipality or province)
-  const filteredAlerts = useMemo(() => {
-    if (!searchQuery) return alerts;
-    const query = searchQuery.toLowerCase();
-    return alerts.filter(
-      (alert) =>
-        alert.area.toLowerCase().includes(query) ||
-        alert.event.toLowerCase().includes(query) ||
-        (alert.headline && alert.headline.toLowerCase().includes(query))
-    );
-  }, [alerts, searchQuery]);
+  const filteredAlerts = alerts;
 
 
 
@@ -283,7 +283,64 @@ export const NuevaPage = () => {
           background: rgba(255, 255, 255, 0.75);
           backdrop-filter: blur(8px);
         }
+        .urgent-pulse {
+            animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-border {
+            0%, 100% { border-color: rgba(255, 152, 0, 0.4); }
+            50% { border-color: rgba(255, 152, 0, 1); }
+        }
+        .raindrop {
+            position: absolute;
+            background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(172,199,255,0.4) 100%);
+            width: 1.5px;
+            height: 40px;
+            top: -50px;
+            animation: fall linear infinite;
+        }
+        @keyframes fall {
+            to {
+                transform: translateY(350px) translateX(15px);
+            }
+        }
+        .snowdrop {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            width: 4px;
+            height: 4px;
+            top: -10px;
+            animation: fall-snow linear infinite;
+            opacity: 0.8;
+            box-shadow: 0 0 4px rgba(255,255,255,0.8);
+        }
+        @keyframes fall-snow {
+            to { transform: translateY(350px) translateX(30px) rotate(360deg); }
+        }
+        .windline {
+            position: absolute;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            height: 2px;
+            width: 80px;
+            left: -100px;
+            animation: blow-wind linear infinite;
+        }
+        @keyframes blow-wind {
+            to { transform: translateX(800px); }
+        }
+        @keyframes lightning {
+            0%, 95%, 98% { background-color: transparent; }
+            96%, 99% { background-color: rgba(255, 255, 255, 0.4); }
+        }
+        .lightning-flash {
+            animation: lightning 6s infinite;
+        }
       `}</style>
+
+      {/* Helper Component for Rain */}
+      {currentTab === 'alertas' && selectedAlert?.event?.toLowerCase().includes('lluvia') && (
+        <div style={{ display: 'none' }}></div>
+      )}
 
       <AnimatePresence mode="wait">
         {!user ? (
@@ -653,37 +710,8 @@ export const NuevaPage = () => {
           /* ======================================================== */
           <div key="app-shell" className="flex flex-col flex-grow w-full min-h-screen">
             
-            {/* ── TOP FULL WIDTH APP BAR ── */}
-            <header className="bg-white border-b border-[#c2c6d4]/30 sticky top-0 z-50 flex justify-between items-center w-full px-5 h-16 shadow-sm">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[#003f87] text-[26px]">warning</span>
-                <h1 className="text-lg font-extrabold text-[#003f87] tracking-tight">MeteoAlerta España</h1>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const query = prompt('¿Qué municipio o provincia desea buscar?');
-                    if (query !== null) setSearchQuery(query);
-                  }}
-                  className="hover:bg-[#ebeef3] transition-colors p-2 rounded-full flex items-center"
-                  title="Buscar"
-                >
-                  <span className="material-symbols-outlined text-[#424752]">search</span>
-                </button>
-                <button
-                  onClick={() => setCurrentTab('settings')}
-                  className={`transition-colors p-2 rounded-full flex items-center ${
-                    currentTab === 'settings' ? 'bg-[#d7e2ff] text-[#001a40]' : 'hover:bg-[#ebeef3] text-[#424752]'
-                  }`}
-                  title="Ajustes"
-                >
-                  <span className="material-symbols-outlined">settings</span>
-                </button>
-              </div>
-            </header>
-
             {/* Content Body: Sidebar Navigation + Tab Contents */}
-            <div className="flex-grow flex flex-row relative h-[calc(100vh-64px)]">
+            <div className="flex-grow flex flex-row relative h-[100dvh]">
               
               {/* ── LEFT DESKTOP SIDEBAR NAVIGATION (ICON-ONLY) ── */}
               <aside className="hidden md:flex flex-col bg-[#f1f4f9] border-r border-[#c2c6d4]/20 w-20 py-6 items-center justify-between flex-shrink-0 z-10">
@@ -767,48 +795,63 @@ export const NuevaPage = () => {
                       exit={{ opacity: 0, x: -10 }}
                       className="flex flex-col lg:flex-row gap-6 h-full"
                     >
-                      {/* Map Container */}
-                      <section className="flex-grow w-full lg:w-2/3 h-[400px] lg:h-auto min-h-[350px] relative rounded-xl overflow-hidden shadow-md bg-[#ebeef3] border border-[#c2c6d4]/30">
-                        <div className="absolute inset-0 z-0">
-                          <MapView 
-                            alerts={filteredAlerts} 
-                            onSelectAlert={(alert) => {
-                              setSelectedAlert(alert);
-                              setCurrentTab('alertas');
-                            }} 
-                          />
-                        </div>
-                        <div className="absolute right-4 bottom-4 z-10 flex flex-col gap-2">
-                          <button className="w-10 h-10 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all">
-                            <span className="material-symbols-outlined">add</span>
-                          </button>
-                          <button className="w-10 h-10 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all">
-                            <span className="material-symbols-outlined">remove</span>
-                          </button>
-                          <button className="w-10 h-10 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all">
-                            <span className="material-symbols-outlined">my_location</span>
-                          </button>
-                        </div>
-                        <div className="absolute left-4 bottom-4 z-10 glass-overlay px-4 py-2.5 rounded-xl shadow-sm border border-white/20">
-                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-[#424752] mb-1.5">
-                            RIESGO METEOROLÓGICO
-                          </h4>
-                          <div className="flex gap-4">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a]"></div>
-                              <span className="text-[9px] font-extrabold uppercase text-[#ba1a1a]">EXTREMO</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-2.5 h-2.5 rounded-full bg-[#f97316]"></div>
-                              <span className="text-[9px] font-extrabold uppercase text-[#f97316]">IMPORTANTE</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-2.5 h-2.5 rounded-full bg-[#eab308]"></div>
-                              <span className="text-[9px] font-extrabold uppercase text-[#eab308]">RIESGO</span>
+                      <div className="flex-grow w-full lg:w-2/3 flex flex-col gap-6">
+                        {/* Map Container */}
+                        <section className="w-full h-[400px] lg:h-[500px] relative rounded-xl overflow-hidden shadow-md bg-[#ebeef3] border border-[#c2c6d4]/30">
+                          <div className="absolute inset-0 z-0">
+                            <MapView 
+                              alerts={filteredAlerts} 
+                              onSelectAlert={(alert) => {
+                                setSelectedAlert(alert);
+                                setCurrentTab('alertas');
+                              }} 
+                            />
+                          </div>
+                          <div className="absolute right-4 bottom-4 z-10 flex flex-col gap-2">
+                            <button className="w-10 h-10 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all">
+                              <span className="material-symbols-outlined">add</span>
+                            </button>
+                            <button className="w-10 h-10 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all">
+                              <span className="material-symbols-outlined">remove</span>
+                            </button>
+                            <button className="w-10 h-10 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all">
+                              <span className="material-symbols-outlined">my_location</span>
+                            </button>
+                          </div>
+                          <div className="absolute left-4 bottom-4 z-10 glass-overlay px-4 py-2.5 rounded-xl shadow-sm border border-white/20">
+                            <h4 className="text-[10px] font-bold uppercase tracking-widest text-[#424752] mb-1.5">
+                              RIESGO METEOROLÓGICO
+                            </h4>
+                            <div className="flex gap-4">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a]"></div>
+                                <span className="text-[9px] font-extrabold uppercase text-[#ba1a1a]">EXTREMO</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#f97316]"></div>
+                                <span className="text-[9px] font-extrabold uppercase text-[#f97316]">IMPORTANTE</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#eab308]"></div>
+                                <span className="text-[9px] font-extrabold uppercase text-[#eab308]">RIESGO</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </section>
+                        </section>
+
+                        {/* Radar Satelital */}
+                        <section className="w-full">
+                          <div className="flex justify-between items-end mb-2">
+                            <h2 className="text-xl font-bold text-[#003f87]">Radar Satelital</h2>
+                          </div>
+                          <div className="relative rounded-lg overflow-hidden shadow-lg bg-[#ebeef3] border border-[#c2c6d4]/30">
+                            <video autoPlay className="w-full h-auto block" loop muted playsInline>
+                              <source src="https://api.met.no/weatherapi/geosatellite/1.4/europe.mp4" type="video/mp4"/>
+                              Tu navegador no soporta videos.
+                            </video>
+                          </div>
+                        </section>
+                      </div>
 
                       {/* Alerts list */}
                       <aside className="w-full lg:w-1/3 flex flex-col gap-4">
@@ -829,22 +872,27 @@ export const NuevaPage = () => {
                               let severityBg = 'bg-[#eab308]';
                               let badgeText = 'NIVEL AMARILLO';
                               let badgeTextColors = 'text-[#001a40] bg-[#ffea85]';
-                              let iconName = 'thunderstorm';
                               let iconColor = 'text-[#eab308]';
 
                               if (alert.severity === 'red') {
                                 severityBg = 'bg-[#ba1a1a]';
                                 badgeText = 'NIVEL ROJO';
                                 badgeTextColors = 'text-white bg-[#ba1a1a]';
-                                iconName = 'flood';
                                 iconColor = 'text-[#ba1a1a]';
                               } else if (alert.severity === 'orange') {
                                 severityBg = 'bg-[#f97316]';
                                 badgeText = 'NIVEL NARANJA';
                                 badgeTextColors = 'text-white bg-[#f97316]';
-                                iconName = 'air';
                                 iconColor = 'text-[#f97316]';
                               }
+
+                              let iconName = 'warning';
+                              const evt = alert.event?.toLowerCase() || '';
+                              if (evt.includes('lluvia')) iconName = 'rainy';
+                              else if (evt.includes('tormenta')) iconName = 'thunderstorm';
+                              else if (evt.includes('nieve') || evt.includes('nevad')) iconName = 'ac_unit';
+                              else if (evt.includes('temperatura') || evt.includes('calor') || evt.includes('frío') || evt.includes('hielo')) iconName = 'device_thermostat';
+                              else if (evt.includes('viento') || evt.includes('costero') || evt.includes('galerna') || evt.includes('oleaje')) iconName = 'air';
 
                               return (
                                 <article
@@ -1075,7 +1123,7 @@ export const NuevaPage = () => {
                           </div>
                           <div className="space-y-3">
                             <a
-                              href="https://x.com"
+                              href="https://twitter.com/AlertasMeteoES"
                               target="_blank"
                               rel="noreferrer"
                               className="flex items-center justify-between p-4 bg-white border border-[#c2c6d4]/30 rounded-2xl hover:bg-[#f7f9ff] transition-all shadow-sm group"
@@ -1088,14 +1136,14 @@ export const NuevaPage = () => {
                                 </div>
                                 <div>
                                   <p className="font-bold text-xs text-[#181c20]">X (Twitter)</p>
-                                  <p className="text-[10px] text-[#727784] font-semibold">@MeteoAlertaES</p>
+                                  <p className="text-[10px] text-[#727784] font-semibold">@AlertasMeteoES</p>
                                 </div>
                               </div>
                               <span className="material-symbols-outlined text-[#727784] text-sm group-hover:text-[#003f87]">open_in_new</span>
                             </a>
                             
                             <a
-                              href="https://telegram.org"
+                              href="https://t.me/alertasMeteoBot"
                               target="_blank"
                               rel="noreferrer"
                               className="flex items-center justify-between p-4 bg-white border border-[#c2c6d4]/30 rounded-2xl hover:bg-[#f7f9ff] transition-all shadow-sm group"
@@ -1108,7 +1156,7 @@ export const NuevaPage = () => {
                                 </div>
                                 <div>
                                   <p className="font-bold text-xs text-[#181c20]">Telegram</p>
-                                  <p className="text-[10px] text-[#727784] font-semibold">Alertas Inmediatas</p>
+                                  <p className="text-[10px] text-[#727784] font-semibold">@alertasMeteoBot</p>
                                 </div>
                               </div>
                               <span className="material-symbols-outlined text-[#727784] text-sm group-hover:text-[#003f87]">open_in_new</span>
@@ -1128,26 +1176,65 @@ export const NuevaPage = () => {
                       exit={{ opacity: 0, x: -10 }}
                       className="space-y-6 max-w-4xl mx-auto"
                     >
-                      <div className="flex justify-between items-center border-b border-[#c2c6d4]/20 pb-4">
+                      <div className="flex justify-between items-center mb-4">
                         <button
                           onClick={() => setCurrentTab('map')}
-                          className="flex items-center gap-1.5 text-[#003f87] font-bold text-xs hover:underline transition-all"
+                          className="flex items-center gap-1.5 text-[#003f87] font-bold text-xs hover:underline transition-all bg-white px-3 py-1.5 rounded-lg border border-[#c2c6d4]/30 shadow-sm"
                         >
                           <span className="material-symbols-outlined text-sm">arrow_back</span>
                           <span>Volver al Mapa</span>
                         </button>
-                        <h2 className="text-sm font-extrabold text-[#003f87] uppercase tracking-wider">Detalles del Aviso</h2>
                       </div>
 
                       {selectedAlert ? (
                         <div className="space-y-6">
                           {/* Hero Alert Card */}
-                          <section className="bg-white rounded-2xl border-2 border-l-[10px] shadow-sm overflow-hidden transition-all"
+                          <section className={`relative bg-white rounded-2xl border-2 border-l-[10px] shadow-sm overflow-hidden transition-all ${selectedAlert.severity === 'orange' || selectedAlert.severity === 'red' ? 'urgent-pulse' : ''}`}
                             style={{
                               borderColor: selectedAlert.severity === 'red' ? '#ba1a1a' : selectedAlert.severity === 'orange' ? '#f97316' : '#eab308'
                             }}
                           >
-                            <div className="px-5 py-3 flex justify-between items-center border-b border-[#c2c6d4]/10 bg-slate-50/50">
+                            {/* Effects Container */}
+                            <div className={`pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-2xl ${selectedAlert.event?.toLowerCase().includes('tormenta') ? 'lightning-flash' : ''}`}>
+                              {/* Rain Effect */}
+                              {(selectedAlert.event?.toLowerCase().includes('lluvia') || selectedAlert.event?.toLowerCase().includes('tormenta')) && (
+                                Array.from({ length: 30 }).map((_, i) => (
+                                  <div key={`rain-${i}`} className="raindrop" style={{
+                                    left: `${Math.random() * 100}%`,
+                                    animationDuration: `${0.4 + Math.random() * 0.5}s`,
+                                    animationDelay: `${Math.random() * 2}s`,
+                                    opacity: 0.2 + Math.random() * 0.4
+                                  }} />
+                                ))
+                              )}
+                              {/* Snow Effect */}
+                              {(selectedAlert.event?.toLowerCase().includes('nieve') || selectedAlert.event?.toLowerCase().includes('nevad')) && (
+                                Array.from({ length: 40 }).map((_, i) => (
+                                  <div key={`snow-${i}`} className="snowdrop" style={{
+                                    left: `${Math.random() * 100}%`,
+                                    animationDuration: `${2 + Math.random() * 3}s`,
+                                    animationDelay: `${Math.random() * 5}s`,
+                                    width: `${3 + Math.random() * 3}px`,
+                                    height: `${3 + Math.random() * 3}px`,
+                                    opacity: 0.4 + Math.random() * 0.6
+                                  }} />
+                                ))
+                              )}
+                              {/* Wind Effect */}
+                              {(selectedAlert.event?.toLowerCase().includes('viento') || selectedAlert.event?.toLowerCase().includes('costero') || selectedAlert.event?.toLowerCase().includes('galerna')) && (
+                                Array.from({ length: 15 }).map((_, i) => (
+                                  <div key={`wind-${i}`} className="windline" style={{
+                                    top: `${Math.random() * 100}%`,
+                                    animationDuration: `${0.5 + Math.random() * 1.5}s`,
+                                    animationDelay: `${Math.random() * 3}s`,
+                                    width: `${40 + Math.random() * 80}px`,
+                                    opacity: 0.3 + Math.random() * 0.5
+                                  }} />
+                                ))
+                              )}
+                            </div>
+                            
+                            <div className="relative z-10 px-5 py-3 flex justify-between items-center border-b border-[#c2c6d4]/10 bg-slate-50/50">
                               <div className="flex items-center gap-2">
                                 <span className="w-3.5 h-3.5 rounded-full animate-ping"
                                   style={{
@@ -1167,7 +1254,7 @@ export const NuevaPage = () => {
                                 <span>Expira: {new Date(selectedAlert.expires).toLocaleDateString('es-ES')} • {new Date(selectedAlert.expires).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                               </div>
                             </div>
-                            <div className="p-6 space-y-4">
+                            <div className="relative z-10 p-6 space-y-4">
                               <div>
                                 <h3 className="text-xl font-extrabold text-[#181c20] leading-tight">{selectedAlert.event}</h3>
                                 <div className="flex items-center gap-1.5 text-[#003f87] font-bold mt-1.5">
@@ -1176,13 +1263,13 @@ export const NuevaPage = () => {
                                 </div>
                               </div>
                               <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-[#f7f9ff] p-4 rounded-xl border border-[#c2c6d4]/30">
+                                <div className="bg-[#f7f9ff]/80 backdrop-blur-[2px] p-4 rounded-xl border border-[#c2c6d4]/30">
                                   <p className="text-[9px] font-bold uppercase text-[#727784] tracking-wider mb-1">Severidad</p>
                                   <p className="text-lg font-extrabold text-[#003f87] capitalize">
                                     {selectedAlert.severity === 'red' ? 'Rojo' : selectedAlert.severity === 'orange' ? 'Naranja' : 'Amarillo'}
                                   </p>
                                 </div>
-                                <div className="bg-[#f7f9ff] p-4 rounded-xl border border-[#c2c6d4]/30">
+                                <div className="bg-[#f7f9ff]/80 backdrop-blur-[2px] p-4 rounded-xl border border-[#c2c6d4]/30">
                                   <p className="text-[9px] font-bold uppercase text-[#727784] tracking-wider mb-1">Fenómeno</p>
                                   <p className="text-lg font-extrabold text-[#003f87] capitalize">{selectedAlert.event || 'Meteorológico'}</p>
                                 </div>
@@ -1291,8 +1378,12 @@ export const NuevaPage = () => {
                       <section className="mb-6">
                         <div className="glass-card rounded-xl p-6 flex flex-col md:flex-row items-center gap-4 shadow-sm border-l-4 border-[#003f87]">
                           <div className="relative">
-                            <div className="w-20 h-20 rounded-full bg-[#d7e2ff]/50 border-2 border-[#d7e2ff] shadow-md flex items-center justify-center">
-                              <span className="material-symbols-outlined text-[#003f87] text-[40px]">account_circle</span>
+                            <div className="w-20 h-20 rounded-full bg-[#d7e2ff]/50 border-2 border-[#d7e2ff] shadow-md flex items-center justify-center overflow-hidden">
+                              {avatarUrl ? (
+                                <img src={avatarUrl} alt="User Avatar" className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="material-symbols-outlined text-[#003f87] text-[40px]">account_circle</span>
+                              )}
                             </div>
                             <div className="absolute bottom-0 right-0 bg-[#003f87] text-white p-1 rounded-full border-2 border-white">
                               <span className="material-symbols-outlined text-[16px]">edit</span>
