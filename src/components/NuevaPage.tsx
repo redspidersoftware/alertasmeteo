@@ -1377,55 +1377,29 @@ export const NuevaPage = () => {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-[#c2c6d4]/30">
-                              <h4 className="font-bold text-[#003f87] mb-4 flex items-center gap-2">
-                                <span className="material-symbols-outlined">storm</span>
-                                Fenómenos Meteorológicos
-                              </h4>
-                              <div className="space-y-4">
-                                {['viento', 'lluvia', 'tormentas', 'nieve', 'temperaturas', 'costeros', 'polvo en suspensión', 'galernas', 'rissagas', 'aludes', 'visibilidad'].map(p => (
-                                  <label key={p} className="flex items-center justify-between cursor-pointer group">
-                                    <span className="text-base text-[#181c20] capitalize group-hover:text-[#003f87] transition-colors">{p}</span>
-                                    <input 
-                                      type="checkbox" 
-                                      checked={prefPhenomena.includes(p)}
-                                      onChange={() => handlePhenomenonToggle(p)}
-                                      className="rounded border-[#727784] text-[#003f87] focus:ring-[#003f87] h-5 w-5" 
-                                    />
-                                  </label>
-                                ))}
-                              </div>
-                              <div className="mt-6 pt-4 border-t border-[#c2c6d4]/30 flex justify-end">
-                                <button onClick={handleSaveChanges} className="bg-[#003f87] text-white px-6 py-2 rounded-full font-bold text-xs hover:opacity-90 transition-all active:scale-95 shadow-md flex items-center gap-2">
-                                  <span className="material-symbols-outlined text-[18px]">save</span>
-                                  Guardar Cambios
-                                </button>
-                              </div>
+                          <div className="bg-white p-6 rounded-xl shadow-sm border border-[#c2c6d4]/30">
+                            <h4 className="font-bold text-[#003f87] mb-4 flex items-center gap-2">
+                              <span className="material-symbols-outlined">storm</span>
+                              Fenómenos Meteorológicos
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                              {['viento', 'lluvia', 'tormentas', 'nieve', 'temperaturas', 'costeros', 'polvo en suspensión', 'galernas', 'rissagas', 'aludes', 'visibilidad'].map(p => (
+                                <label key={p} className="flex items-center justify-between cursor-pointer group bg-[#ebeef3]/30 p-3 rounded-lg border border-[#c2c6d4]/20 hover:border-[#003f87]/50 transition-all">
+                                  <span className="text-base text-[#181c20] capitalize group-hover:text-[#003f87] transition-colors">{p}</span>
+                                  <input 
+                                    type="checkbox" 
+                                    checked={prefPhenomena.includes(p)}
+                                    onChange={() => handlePhenomenonToggle(p)}
+                                    className="rounded border-[#727784] text-[#003f87] focus:ring-[#003f87] h-5 w-5" 
+                                  />
+                                </label>
+                              ))}
                             </div>
-                            
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-[#c2c6d4]/30 flex flex-col justify-between">
-                              <div>
-                                <h4 className="font-bold text-[#003f87] mb-4 flex items-center gap-2">
-                                  <span className="material-symbols-outlined">location_on</span>
-                                  Provincias Activas
-                                </h4>
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                  <span className="bg-[#d7e2ff] text-[#001a40] px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-sm">
-                                    Madrid <button className="material-symbols-outlined text-[14px] ml-0.5 hover:text-[#ba1a1a] transition-colors">close</button>
-                                  </span>
-                                  <span className="bg-[#d7e2ff] text-[#001a40] px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-sm">
-                                    Barcelona <button className="material-symbols-outlined text-[14px] ml-0.5 hover:text-[#ba1a1a] transition-colors">close</button>
-                                  </span>
-                                  <span className="bg-[#d7e2ff] text-[#001a40] px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-sm">
-                                    Valencia <button className="material-symbols-outlined text-[14px] ml-0.5 hover:text-[#ba1a1a] transition-colors">close</button>
-                                  </span>
-                                </div>
-                                <button className="w-full border-2 border-dashed border-[#c2c6d4] text-[#727784] hover:border-[#003f87] hover:text-[#003f87] transition-colors py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1">
-                                  <span className="material-symbols-outlined text-sm">add_location</span>
-                                  <span>Añadir Provincia</span>
-                                </button>
-                              </div>
+                            <div className="mt-6 pt-4 border-t border-[#c2c6d4]/30 flex justify-end">
+                              <button onClick={handleSaveChanges} className="bg-[#003f87] text-white px-6 py-2 rounded-full font-bold text-xs hover:opacity-90 transition-all active:scale-95 shadow-md flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[18px]">save</span>
+                                Guardar Cambios
+                              </button>
                             </div>
                           </div>
                         </div>
