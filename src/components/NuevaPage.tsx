@@ -767,10 +767,10 @@ export const NuevaPage = () => {
           <div key="app-shell" className="flex flex-col flex-grow w-full min-h-screen">
             
             {/* Content Body: Sidebar Navigation + Tab Contents */}
-            <div className="flex-grow flex flex-row relative h-[100dvh]">
+            <div className="flex-grow flex flex-row relative min-h-[100dvh]">
               
               {/* ── LEFT DESKTOP SIDEBAR NAVIGATION (ICON-ONLY) ── */}
-              <aside className="hidden md:flex flex-col bg-[#f1f4f9] border-r border-[#c2c6d4]/20 w-20 py-6 items-center justify-between flex-shrink-0 z-10">
+              <aside className="hidden md:flex flex-col bg-[#f1f4f9] border-r border-[#c2c6d4]/20 w-16 lg:w-20 py-6 items-center justify-between flex-shrink-0 z-10">
                 <nav className="flex flex-col gap-5 items-center w-full">
                   <button
                     onClick={() => setCurrentTab('map')}
@@ -840,7 +840,7 @@ export const NuevaPage = () => {
               </aside>
 
               {/* ── TAB VIEW CONTENTS ── */}
-              <div className="flex-grow p-4 sm:p-6 pb-20 md:pb-6 overflow-y-auto w-full">
+              <div className="flex-grow p-4 sm:p-6 lg:p-8 pb-20 md:pb-6 overflow-y-auto w-full max-w-[1600px] mx-auto">
                 <AnimatePresence mode="wait">
                   {currentTab === 'map' && (
                     /* ───────────────── TAB: MAP ───────────────── */
@@ -853,7 +853,7 @@ export const NuevaPage = () => {
                     >
                       <div className="flex-grow w-full lg:w-2/3 flex flex-col gap-6">
                         {/* Map Container */}
-                        <section className="w-full h-[400px] lg:h-[500px] relative rounded-xl overflow-hidden shadow-md bg-[#ebeef3] border border-[#c2c6d4]/30">
+                        <section className="w-full h-[400px] md:h-[500px] lg:h-[600px] relative rounded-xl overflow-hidden shadow-md bg-[#ebeef3] border border-[#c2c6d4]/30">
                           <div className="absolute inset-0 z-0">
                             <MapView 
                               alerts={filteredAlerts} 
@@ -916,7 +916,7 @@ export const NuevaPage = () => {
                           <span className="text-[11px] font-bold text-[#424752]">{getFormattedDate()}</span>
                         </div>
 
-                        <div className="flex flex-col gap-3 overflow-y-auto max-h-[350px] lg:max-h-[500px] pr-1.5 custom-scrollbar">
+                        <div className="flex flex-col gap-3 overflow-y-auto max-h-[350px] md:max-h-[450px] lg:max-h-[600px] pr-1.5 custom-scrollbar">
                           {filteredAlerts.length === 0 ? (
                             <div className="bg-[#ebeef3]/60 border border-[#c2c6d4]/40 rounded-xl p-8 text-center text-[#424752]">
                               <span className="material-symbols-outlined text-3xl text-[#727784] mb-2">check_circle</span>
