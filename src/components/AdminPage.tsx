@@ -80,8 +80,14 @@ const BTN = 'inline-flex items-center justify-center gap-2 rounded-xl text-xs fo
 const parseV = (v: unknown): Date | null => {
     if (v === null || v === undefined || v === '') return null;
     if (typeof v === 'number') { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
-    const s = String(v);
+    const s = String(v).trim();
     if (/^\d{10,}$/.test(s)) { const d = new Date(Number(s)); return isNaN(d.getTime()) ? null : d; }
+    // Formato español dd/MM/yyyy (opcionalmente con hora) → interpretado en UTC para no desplazar el día
+    const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[\s,]+(\d{1,2}):(\d{1,2}))?$/);
+    if (dmy) {
+        const d = new Date(Date.UTC(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]), Number(dmy[4] || 0), Number(dmy[5] || 0)));
+        return isNaN(d.getTime()) ? null : d;
+    }
     const d = new Date(s);
     return isNaN(d.getTime()) ? null : d;
 };
@@ -631,21 +637,26 @@ export const AdminPage = () => {
                         </Card>
 
                         <Card icon="monitor_heart" title="Estado del sistema" sub="Última actividad de cada servicio automatizado">
-                            <div className="grid sm:grid-cols-3 gap-3">
+                            <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
                                 {[
-                                    { icon: 'cloud_sync', label: 'AEMET', time: cfg.last_alerts_check_time, color: '#f97316' },
-                                    { icon: 'send', label: 'Telegram', time: cfg.last_telegram_report_time, color: '#0088cc' },
-                                    { icon: 'alternate_email', label: 'Twitter / X', time: cfg.last_daily_sent_date, color: '#475569' },
+                                    { icon: 'cloud_sync', label: 'AEMET', value: rel(cfg.last_alerts_check_time), hint: fmtDT(cfg.last_alerts_check_time), color: '#f97316' },
+                                    { icon: 'send', label: 'Telegram', value: rel(cfg.last_telegram_report_time), hint: fmtDT(cfg.last_telegram_report_time), color: '#0088cc' },
+                                    { icon: 'summarize', label: 'Resumen diario', value: rel(cfg.last_daily_summary_date), hint: fmtDT(cfg.last_daily_summary_date), color: '#7c3aed' },
+                                    {
+                                        icon: 'alternate_email', label: 'Twitter / X', color: '#475569',
+                                        value: `${parseHours(cfg.twitter_forecast_hours, [8, 10, 20]).join('h · ')}h`,
+                                        hint: 'Publicación automática',
+                                    },
                                 ].map(sv => (
-                                    <div key={sv.label} className="p-3.5 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30">
+                                    <div key={sv.label} className="p-3.5 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30 min-w-0">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <span className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${sv.color}20` }}>
+                                            <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: `${sv.color}20` }}>
                                                 <span className="material-symbols-outlined" style={{ fontSize: 16, color: sv.color }}>{sv.icon}</span>
                                             </span>
-                                            <p className="text-xs font-extrabold text-[#181c20]">{sv.label}</p>
+                                            <p className="text-xs font-extrabold text-[#181c20] truncate">{sv.label}</p>
                                         </div>
-                                        <p className="text-[11px] text-[#424752] font-semibold">{rel(sv.time)}</p>
-                                        <p className="text-[10px] text-[#727784] mt-0.5">{fmtDT(sv.time)}</p>
+                                        <p className="text-[11px] text-[#424752] font-semibold break-words">{sv.value}</p>
+                                        <p className="text-[10px] text-[#727784] mt-0.5 break-words">{sv.hint}</p>
                                     </div>
                                 ))}
                             </div>

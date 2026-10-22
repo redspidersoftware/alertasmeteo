@@ -46,23 +46,7 @@ export const UnsubscribePage = () => {
         }
     };
 
-    // Inject fonts and icons dynamically
-    useEffect(() => {
-        const fontLink = document.createElement('link');
-        fontLink.href = 'https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&display=swap';
-        fontLink.rel = 'stylesheet';
-        document.head.appendChild(fontLink);
-
-        const iconLink = document.createElement('link');
-        iconLink.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap';
-        iconLink.rel = 'stylesheet';
-        document.head.appendChild(iconLink);
-
-        return () => {
-            document.head.removeChild(fontLink);
-            document.head.removeChild(iconLink);
-        };
-    }, []);
+    // Fonts & Material Symbols are loaded globally from index.html
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
