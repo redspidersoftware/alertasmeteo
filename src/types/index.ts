@@ -68,3 +68,16 @@ export interface NationalPrediction {
     temperatures: string;
     wind: string;
 }
+
+export interface UserData {
+    id?: string;
+    email: string;
+    name: string;
+    phone: string;
+    postalCode: string;
+    language: 'es' | 'en' | 'ca' | 'gl' | 'eu';
+    isVerified?: boolean;
+    preferredSeverities?: string[];
+    preferredEventTypes?: string[];
+    dailyForecast?: boolean;
+}

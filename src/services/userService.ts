@@ -1,17 +1,7 @@
 import { supabase } from '../lib/supabase';
+import type { UserData } from '../types';
+export type { UserData };
 
-export interface UserData {
-    id?: string; // Supabase UUID
-    name: string;
-    email: string;
-    phone: string;
-    postalCode: string;
-    language?: 'es' | 'en';
-    isVerified?: boolean;
-    preferredSeverities?: string[];
-    preferredEventTypes?: string[];
-    dailyForecast?: boolean;
-}
 
 // Validation logic remains the same
 export const validateEmail = (email: string): boolean => {
@@ -30,14 +20,14 @@ export const validatePostalCode = (cp: string): boolean => {
 
 // --- SUPABASE INTEGRATION ---
 
-export const saveUser = async (userData: UserData): Promise<void> => {
-    // 1. Sign Up the user in Supabase Auth
-    // We treat the "Phone" as the password for this specific app request
+export const saveUser = async (userData: UserData, password: string): Promise<void> => {
+    // Sign Up the user in Supabase Auth
+    // Password is a dedicated field, separate from phone
     // IMPORTANT: The profile is now created automatically by a Database Trigger in Supabase!
 
     const { error: authError } = await supabase.auth.signUp({
         email: userData.email,
-        password: userData.phone, // Password = Phone
+        password: password,
         options: {
             emailRedirectTo: window.location.origin,
             data: {
@@ -126,30 +116,8 @@ export const updateUser = async (uid: string, userData: Partial<UserData>): Prom
         throw new Error(dbError.message);
     }
 
-    // 2. If phone is updated, update Supabase Auth password
-    // In this app, phone acts as the password
-    if (userData.phone) {
-        // Only update if it's different to avoid "New password should be different from the old password" error
-        await supabase.auth.getUser();
-
-        // We need to check the phone in the public.users table for the current user to compare
-        const { data: currentUser } = await supabase
-            .from('users')
-            .select('phone')
-            .eq('id', uid)
-            .single();
-
-        if (currentUser && currentUser.phone !== userData.phone) {
-            const { error: authError } = await supabase.auth.updateUser({
-                password: userData.phone
-            });
-
-            if (authError) {
-                console.error("Error updating auth password:", authError);
-                throw new Error(`Profile updated, but password sync failed: ${authError.message}`);
-            }
-        }
-    }
+    // Note: Phone is now a contact-only field. Password is managed
+    // exclusively by Supabase Auth (via login/reset password flows).
 
     // 3. Send confirmation email via Edge Function
     // We fetch the latest name/email to ensure accuracy

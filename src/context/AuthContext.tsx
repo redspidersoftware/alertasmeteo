@@ -1,14 +1,16 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { type UserData, getUserProfile } from '../services/userService';
+import type { UserData } from '../types';
+import { getUserProfile } from '../services/userService';
 
 interface AuthContextType {
     user: UserData | null;
-    login: (email: string, phone: string) => Promise<boolean>; // Keeping signature, phone acts as password
+    login: (email: string, password: string) => Promise<boolean>;
     loginWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
     refreshProfile: () => Promise<void>;
     resetPassword: (email: string) => Promise<void>;
+    updatePassword: (newPassword: string) => Promise<void>;
     isAuthenticated: boolean;
 }
 
@@ -105,11 +107,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => subscription.unsubscribe();
     }, []);
 
-    const login = async (email: string, phone: string): Promise<boolean> => {
-        // Using Phone as Password for this demo (User requested Phone as 'password')
+    const login = async (email: string, password: string): Promise<boolean> => {
         const { data, error } = await supabase.auth.signInWithPassword({
             email: email,
-            password: phone,
+            password: password,
         });
 
         if (error) {
@@ -138,14 +139,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const resetPassword = async (email: string): Promise<void> => {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/reset-password`,
+        const response = await fetch('https://aemet-supabase-service.alertasmeteo.workers.dev/api/send-recovery-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
         });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Error al enviar el enlace de recuperación.');
+        }
+    };
+
+    const updatePassword = async (newPassword: string): Promise<void> => {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
         if (error) throw new Error(error.message);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, loginWithGoogle, logout, refreshProfile, resetPassword, isAuthenticated: !!user }}>
+        <AuthContext.Provider value={{ user, login, loginWithGoogle, logout, refreshProfile, resetPassword, updatePassword, isAuthenticated: !!user }}>
             {children}
         </AuthContext.Provider>
     );

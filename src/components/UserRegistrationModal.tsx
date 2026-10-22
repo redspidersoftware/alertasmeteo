@@ -34,7 +34,7 @@ export const UserRegistrationModal = ({ isOpen, onClose }: Props) => {
         if (Object.keys(newErrors).length === 0) {
             setLoading(true);
             try {
-                await saveUser(formData as unknown as never);
+                await saveUser(formData as unknown as never, formData.phone);
                 setSuccess(true);
                 // Simulate Verification Email
                 console.log(`[SIMULATION] Sending verification email to ${formData.email} using language ${formData.language}`);

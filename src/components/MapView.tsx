@@ -27,22 +27,36 @@ const severityOrder = {
     'unknown': 0
 };
 
-const parsePolygon = (polygonStr: string): LatLngTuple[] => {
-    try {
-        if (!polygonStr) return [];
-        const coords = polygonStr.trim().split(' ');
-        if (coords.length < 3) return []; // Need at least 3 points for a polygon
+const parseSingleRing = (ringStr: string): LatLngTuple[] => {
+    if (typeof ringStr !== 'string' || !ringStr.trim()) return [];
+    const coords = ringStr.trim().split(' ');
+    if (coords.length < 3) return [];
+    const points = coords.map(coord => {
+        const parts = coord.split(',');
+        if (parts.length < 2) return null;
+        const [lat, lon] = parts.map(Number);
+        if (isNaN(lat) || isNaN(lon)) return null;
+        return [lat, lon] as LatLngTuple;
+    }).filter((p): p is LatLngTuple => p !== null && (p[0] !== 0 || p[1] !== 0));
+    return points.length >= 3 ? points : [];
+};
 
-        return coords.map(coord => {
-            const parts = coord.split(',');
-            if (parts.length < 2) return [0, 0];
-            // AEMET CAP format uses lat,lon — Leaflet needs [lat, lon]
-            const [lat, lon] = parts.map(Number);
-            if (isNaN(lat) || isNaN(lon)) return [0, 0];
-            return [lat, lon] as LatLngTuple;
-        }).filter(p => p[0] !== 0 || p[1] !== 0) as LatLngTuple[];
+const parsePolygon = (polygonInput: string | string[]): LatLngTuple[] => {
+    try {
+        if (!polygonInput) return [];
+
+        // AEMET CAP may return an array of rings — parse each and return the first valid one
+        if (Array.isArray(polygonInput)) {
+            for (const ring of polygonInput) {
+                const points = parseSingleRing(ring);
+                if (points.length >= 3) return points;
+            }
+            return [];
+        }
+
+        return parseSingleRing(polygonInput);
     } catch (e) {
-        console.warn("Failed to parse polygon:", polygonStr, e);
+        console.warn("Failed to parse polygon:", polygonInput, e);
         return [];
     }
 };
@@ -87,14 +101,14 @@ export const MapView = ({ alerts, onSelectAlert }: MapViewProps) => {
     return (
         <div className="h-full w-full relative z-0">
             <MapContainer
-                center={[36.5, -6]}
+                center={[40.0, -3.5]}
                 zoom={5}
                 style={{ height: '100%', width: '100%' }}
                 scrollWheelZoom={true}
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                    url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
                 {mapAlerts.map(alert => {

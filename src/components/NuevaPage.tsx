@@ -7,13 +7,22 @@ import { supabase } from '../lib/supabase';
 import type { WeatherAlert, NationalPrediction } from '../types';
 import { MapView } from './MapView';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePushNotifications } from '../hooks/usePushNotifications';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
 
 type Tab = 'map' | 'info' | 'alertas' | 'settings';
 type AuthState = 'login' | 'register';
 
 export const NuevaPage = () => {
   const { user, login, loginWithGoogle, logout, refreshProfile } = useAuth();
+  const { status: pushStatus, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe } = usePushNotifications(user?.id ?? null);
+  const { installState, install: installApp, isIOS } = useInstallPrompt();
   const { t } = useLanguage();
+
+  // Modales de servicio
+  const [showToSModal, setShowToSModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
   
   // Navigation State
   const [currentTab, setCurrentTab] = useState<Tab>('map');
@@ -37,6 +46,8 @@ export const NuevaPage = () => {
 
   // Alerts State
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
+  // Alerts in the user's own postal code zone
+  const [userZoneAlerts, setUserZoneAlerts] = useState<WeatherAlert[]>([]);
 
   // National Prediction State
   const [prediction, setPrediction] = useState<NationalPrediction | null>(null);
@@ -77,6 +88,51 @@ export const NuevaPage = () => {
       return () => clearInterval(interval);
     }
   }, [user]);
+
+  // When alerts or user postal code change, compute user zone alerts
+  useEffect(() => {
+    if (!user?.postalCode || alerts.length === 0) {
+      setUserZoneAlerts([]);
+      return;
+    }
+    (async () => {
+      const { data: mappingData } = await supabase
+        .from('postal_code_mapping')
+        .select('aemet_zone_name')
+        .eq('postal_code', user.postalCode);
+      if (!mappingData || mappingData.length === 0) {
+        setUserZoneAlerts([]);
+        return;
+      }
+      const userZones = new Set(mappingData.map((m: { aemet_zone_name: string }) => m.aemet_zone_name.toLowerCase()));
+      setUserZoneAlerts(alerts.filter(a => userZones.has((a.area || '').toLowerCase())));
+    })();
+  }, [alerts, user?.postalCode]);
+
+  // Deep-link from push notification: read ?alert=ID or ?tab=alertas
+  useEffect(() => {
+    if (!alerts || alerts.length === 0) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const alertId = params.get('alert');
+    const tab = params.get('tab');
+
+    if (alertId) {
+      const found = alerts.find(a => a.id === alertId);
+      if (found) {
+        setSelectedAlert(found);
+        setCurrentTab('alertas');
+      } else {
+        // Alert ID not found in filtered list, just go to alertas tab
+        setCurrentTab('alertas');
+      }
+      // Clean URL params so it doesn't re-trigger on refresh
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (tab === 'alertas') {
+      setCurrentTab('alertas');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [alerts]);
 
   // Fetch National Prediction when info tab is active
   useEffect(() => {
@@ -157,10 +213,10 @@ export const NuevaPage = () => {
       await saveUser({
         name: regName,
         email: regEmail,
-        phone: regPassword, // In this app phone acts as password
-        postalCode: '28001', // Default code
+        phone: '', 
+        postalCode: '28001',
         language: 'es',
-      });
+      }, regPassword);
       setRegSuccess(true);
       setTimeout(() => {
         setAuthState('login');
@@ -514,15 +570,15 @@ export const NuevaPage = () => {
                 {/* Footer Links */}
                 <footer className="mt-4 flex flex-col items-center gap-2">
                   <div className="flex gap-4 flex-wrap justify-center text-xs">
-                    <a href="#" className="text-[#727784] hover:text-[#424752] transition-colors">
+                    <button onClick={() => setShowToSModal(true)} className="text-[#727784] hover:text-[#424752] transition-colors cursor-pointer bg-transparent border-none p-0 font-inherit text-xs">
                       Términos de servicio
-                    </a>
-                    <a href="#" className="text-[#727784] hover:text-[#424752] transition-colors">
+                    </button>
+                    <button onClick={() => setShowPrivacyModal(true)} className="text-[#727784] hover:text-[#424752] transition-colors cursor-pointer bg-transparent border-none p-0 font-inherit text-xs">
                       Política de privacidad
-                    </a>
-                    <a href="#" className="text-[#727784] hover:text-[#424752] transition-colors">
+                    </button>
+                    <button onClick={() => setShowSupportModal(true)} className="text-[#727784] hover:text-[#424752] transition-colors cursor-pointer bg-transparent border-none p-0 font-inherit text-xs">
                       Soporte técnico
-                    </a>
+                    </button>
                   </div>
                   <p className="text-[10px] text-[#c2c6d4] font-medium">
                     © 2026 MeteoAlerta España. Todos los derechos reservados.
@@ -1344,11 +1400,11 @@ export const NuevaPage = () => {
                               Puedes pulsar sobre cualquier alerta en el mapa o en la lista de avisos del mapa para ver sus detalles específicos.
                             </p>
                           </div>
-                          {filteredAlerts.length > 0 && (
+                          {userZoneAlerts.length > 0 && (
                             <div className="pt-4 max-w-md mx-auto space-y-3">
-                              <p className="text-[10px] font-bold uppercase text-[#727784] tracking-wider text-left border-b pb-1.5">Alertas vigentes</p>
+                              <p className="text-[10px] font-bold uppercase text-[#727784] tracking-wider text-left border-b pb-1.5">Alertas activas en tu zona</p>
                               <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
-                                {filteredAlerts.slice(0, 3).map((a) => (
+                                {userZoneAlerts.map((a) => (
                                   <button
                                     key={a.id}
                                     onClick={() => setSelectedAlert(a)}
@@ -1408,6 +1464,137 @@ export const NuevaPage = () => {
 
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         <div className="lg:col-span-8 space-y-6">
+
+                          {/* Install App Card */}
+                          {installState !== 'installed' && (
+                            <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-[#c2c6d4]/30">
+                              <div className="bg-[#ebeef3] px-6 py-4 border-b border-[#c2c6d4]/30">
+                                <h3 className="text-xl font-semibold text-[#003f87] flex items-center gap-2">
+                                  <span className="material-symbols-outlined">install_mobile</span>
+                                  Instalar Aplicación
+                                </h3>
+                              </div>
+                              <div className="p-6 space-y-4">
+                                <p className="text-sm text-[#424752]">
+                                  Instala MeteoAlerta en tu dispositivo para acceder más rápido, recibir notificaciones y usarla sin conexión.
+                                </p>
+
+                                {/* Android / Chrome / Edge — un solo clic */}
+                                {installState === 'installable' && (
+                                  <button
+                                    id="install-app-btn"
+                                    onClick={installApp}
+                                    className="w-full flex items-center justify-center gap-3 bg-[#003f87] hover:bg-[#0056b3] active:scale-95 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all duration-200"
+                                  >
+                                    <span className="material-symbols-outlined text-[22px]">download</span>
+                                    Instalar ahora
+                                  </button>
+                                )}
+
+                                {/* iOS — instrucciones manuales */}
+                                {installState === 'ios' && (
+                                  <div className="bg-[#f0f4ff] border border-[#003f87]/20 rounded-xl p-4 space-y-3">
+                                    <p className="text-sm font-bold text-[#003f87] flex items-center gap-2">
+                                      <span className="material-symbols-outlined text-[18px]">info</span>
+                                      Cómo instalar en iPhone / iPad:
+                                    </p>
+                                    <ol className="text-sm text-[#424752] space-y-2 list-none">
+                                      <li className="flex items-start gap-2">
+                                        <span className="bg-[#003f87] text-white rounded-full w-5 h-5 flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5">1</span>
+                                        Abre esta página en <strong>Safari</strong>
+                                      </li>
+                                      <li className="flex items-start gap-2">
+                                        <span className="bg-[#003f87] text-white rounded-full w-5 h-5 flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5">2</span>
+                                        Pulsa el botón <strong>Compartir</strong> <span className="material-symbols-outlined text-[16px] align-middle">ios_share</span>
+                                      </li>
+                                      <li className="flex items-start gap-2">
+                                        <span className="bg-[#003f87] text-white rounded-full w-5 h-5 flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5">3</span>
+                                        Selecciona <strong>"Añadir a pantalla de inicio"</strong>
+                                      </li>
+                                    </ol>
+                                  </div>
+                                )}
+
+                                {/* Navegador no compatible */}
+                                {installState === 'unsupported' && !isIOS && (
+                                  <p className="text-xs text-[#727784] flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[16px]">info</span>
+                                    Usa Chrome o Edge en Android para instalar la app con un clic.
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Push Notifications Card */}
+                          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-[#c2c6d4]/30">
+                            <div className="bg-[#ebeef3] px-6 py-4 border-b border-[#c2c6d4]/30">
+                              <h3 className="text-xl font-semibold text-[#003f87] flex items-center gap-2">
+                                <span className="material-symbols-outlined">notifications</span>
+                                Notificaciones Push
+                              </h3>
+                            </div>
+                            <div className="p-6 space-y-3">
+                              <p className="text-sm text-[#424752] mb-4">
+                                Recibe alertas meteorológicas directamente en tu dispositivo, incluso con la app cerrada.
+                                {pushStatus === 'unsupported' && <span className="ml-1 text-[#ba1a1a] font-semibold">Tu navegador no soporta notificaciones push.</span>}
+                                {pushStatus === 'denied' && <span className="ml-1 text-[#ba1a1a] font-semibold">Has bloqueado los permisos. Actívalos en los ajustes del navegador.</span>}
+                              </p>
+                              <div className={`flex items-center justify-between p-4 rounded-lg border ${
+                                pushStatus === 'subscribed'
+                                  ? 'bg-[#e8f0fe]/40 border-[#003f87]/20'
+                                  : 'bg-[#e1e3e4]/30 border-[#c2c6d4]/30'
+                              }`}>
+                                <div className="flex items-center gap-3">
+                                  <span className={`w-4 h-4 rounded-full flex-shrink-0 ${
+                                    pushStatus === 'subscribed' ? 'bg-[#003f87]' : 'bg-[#727784]'
+                                  }`} />
+                                  <div>
+                                    <span className={`font-bold block text-sm ${
+                                      pushStatus === 'subscribed' ? 'text-[#003f87]' : 'text-[#181c20]'
+                                    }`}>
+                                      {pushStatus === 'subscribed' ? 'Notificaciones activas' :
+                                       pushStatus === 'loading' ? 'Activando...' :
+                                       pushStatus === 'denied' ? 'Bloqueadas por el navegador' :
+                                       pushStatus === 'unsupported' ? 'No disponible' :
+                                       'Notificaciones desactivadas'}
+                                    </span>
+                                    <span className={`text-xs italic ${
+                                      pushStatus === 'subscribed' ? 'text-[#003f87]/70' : 'text-[#424752]'
+                                    }`}>
+                                      {pushStatus === 'subscribed' ? 'Recibirás alertas aunque la app esté cerrada' : 'Activa para recibir alertas en este dispositivo'}
+                                    </span>
+                                  </div>
+                                </div>
+                                {pushStatus !== 'unsupported' && (
+                                  <div className="relative inline-block w-12 align-middle select-none transition duration-200 ease-in flex-shrink-0">
+                                    <input
+                                      id="push-toggle"
+                                      type="checkbox"
+                                      checked={pushStatus === 'subscribed'}
+                                      onChange={() => {
+                                        if (pushStatus === 'subscribed') {
+                                          pushUnsubscribe();
+                                        } else {
+                                          pushSubscribe();
+                                        }
+                                      }}
+                                      disabled={pushStatus === 'loading' || pushStatus === 'denied'}
+                                      className={`absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer ${pushStatus === 'subscribed' ? 'right-0 border-[#003f87]' : 'left-0 border-[#727784]'}`}
+                                    />
+                                    <label className={`block overflow-hidden h-6 rounded-full cursor-pointer ${pushStatus === 'subscribed' ? 'bg-[#0056b3]' : 'bg-[#e0e3e8]'}`} htmlFor="push-toggle"></label>
+                                  </div>
+                                )}
+                              </div>
+                              {pushStatus === 'subscribed' && (
+                                <p className="text-[10px] text-[#727784] flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[14px] text-[#22c55e]">check_circle</span>
+                                  Este dispositivo está registrado para recibir notificaciones push de MeteoAlerta.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
                           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-[#c2c6d4]/30">
                             <div className="bg-[#ebeef3] px-6 py-4 border-b border-[#c2c6d4]/30">
                               <h3 className="text-xl font-semibold text-[#003f87] flex items-center gap-2">
@@ -1535,23 +1722,23 @@ export const NuevaPage = () => {
                                   <span className="material-symbols-outlined text-[#003f87]">info</span>
                                   <span className="text-base text-[#181c20]">Versión de la App</span>
                                 </div>
-                                <span className="text-[#424752] font-bold">2.4.1</span>
+                                <span className="text-[#424752] font-bold">3.0.6</span>
                               </li>
-                              <li onClick={() => setCurrentTab('info')} className="flex items-center justify-between group cursor-pointer">
+                              <li onClick={() => setShowSupportModal(true)} className="flex items-center justify-between group cursor-pointer">
                                 <div className="flex items-center gap-3">
                                   <span className="material-symbols-outlined text-[#003f87]">contact_support</span>
                                   <span className="text-base text-[#181c20]">Contacto y Soporte</span>
                                 </div>
                                 <span className="material-symbols-outlined text-[#c2c6d4] group-hover:text-[#003f87]">chevron_right</span>
                               </li>
-                              <li className="flex items-center justify-between group cursor-pointer">
+                              <li onClick={() => setShowPrivacyModal(true)} className="flex items-center justify-between group cursor-pointer">
                                 <div className="flex items-center gap-3">
                                   <span className="material-symbols-outlined text-[#003f87]">security</span>
                                   <span className="text-base text-[#181c20]">Privacidad</span>
                                 </div>
                                 <span className="material-symbols-outlined text-[#c2c6d4] group-hover:text-[#003f87]">chevron_right</span>
                               </li>
-                              <li className="flex items-center justify-between group cursor-pointer">
+                              <li onClick={() => setCurrentTab('info')} className="flex items-center justify-between group cursor-pointer">
                                 <div className="flex items-center gap-3">
                                   <span className="material-symbols-outlined text-[#003f87]">help</span>
                                   <span className="text-base text-[#181c20]">Centro de Ayuda</span>
@@ -1633,6 +1820,411 @@ export const NuevaPage = () => {
 
             </div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Terms of Service Modal ────────────────────────────── */}
+      <AnimatePresence>
+        {showToSModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setShowToSModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+              style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[#ebedf3]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #003f87, #0066cc)' }}>
+                    <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>gavel</span>
+                  </div>
+                  <h2 className="text-base font-extrabold text-[#1a1c22]">Términos de Servicio</h2>
+                </div>
+                <button
+                  onClick={() => setShowToSModal(false)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#f2f3f7] transition-colors cursor-pointer bg-transparent border-none"
+                >
+                  <span className="material-symbols-outlined text-[#727784]" style={{ fontSize: 20 }}>close</span>
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="overflow-y-auto flex-1 px-5 py-4 text-[#424752] text-[13px] leading-relaxed space-y-4">
+                <p className="text-[10px] text-[#727784] font-semibold uppercase tracking-wider">Última actualización: 23 de junio de 2026</p>
+
+                <p>
+                  Por favor, lea atentamente estos Términos de Servicio (&ldquo;Términos&rdquo;) antes de utilizar el sitio web{' '}
+                  <a href="https://alertasmeteo.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#003f87] font-bold hover:underline">alertasmeteo.vercel.app</a>{' '}
+                  (el &ldquo;Servicio&rdquo;) operado por MeteoAlerta España (&ldquo;nosotros&rdquo;, &ldquo;nuestro&rdquo;).
+                </p>
+                <p>
+                  El acceso y uso del Servicio está condicionado a la aceptación y cumplimiento de estos Términos. Estos Términos se aplican a todos los visitantes, usuarios y otras personas que accedan o utilicen el Servicio.
+                </p>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
+                    <span className="text-[#003f87] font-bold">1.</span> Naturaleza del Servicio e Información Meteorológica
+                  </h3>
+                  <p>
+                    MeteoAlerta España es una plataforma independiente de carácter meramente informativo y de alerta temprana que recopila, procesa y retransmite avisos meteorológicos oficiales procedentes de la Agencia Estatal de Meteorología (AEMET).
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-[12px] pl-1">
+                    <li><strong>Origen de los datos:</strong> La información y avisos provienen directamente de fuentes públicas oficiales (AEMET).</li>
+                    <li><strong>Ausencia de consejo oficial:</strong> Este Servicio no sustituye a los canales de emergencia oficiales de las autoridades de Protección Civil, del Gobierno de España o de las respectivas Comunidades Autónomas. En caso de alertas de riesgo extremo (Nivel Rojo o Naranja), los usuarios deben priorizar siempre las instrucciones de las autoridades competentes.</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
+                    <span className="text-[#003f87] font-bold">2.</span> Registro de Cuentas y Seguridad
+                  </h3>
+                  <p>
+                    Para recibir alertas personalizadas, los usuarios deben registrarse proporcionando una dirección de correo electrónico válida y establecer una contraseña segura.
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-[12px] pl-1">
+                    <li><strong>Responsabilidad de la cuenta:</strong> Usted es responsable de salvaguardar la contraseña que utiliza para acceder al Servicio y de cualquier actividad o acción bajo su contraseña.</li>
+                    <li><strong>Precisión de datos:</strong> Al registrarse, se compromete a facilitar información verídica (como su Código Postal) para garantizar la correcta geolocalización de sus avisos.</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
+                    <span className="text-[#003f87] font-bold">3.</span> Servicios de Notificación (Telegram y Canales de Terceros)
+                  </h3>
+                  <p>
+                    MeteoAlerta España ofrece la posibilidad de sincronizar su cuenta con un Bot de Telegram oficial (<code className="bg-[#f2f3f7] px-1 py-0.5 rounded text-[11px] font-bold">@alertasMeteoBot</code>) para la recepción de alertas meteorológicas automatizadas y previsiones diarias.
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-[12px] pl-1">
+                    <li><strong>Configuración manual:</strong> El usuario es responsable de realizar la vinculación inicial a través del bot e introducir su número de teléfono de contacto en su panel de Ajustes si desea activar ciertas notificaciones.</li>
+                    <li><strong>Costes del servicio:</strong> El Servicio es gratuito, no obstante, MeteoAlerta España no se hace responsable de las tarifas de datos que su operador móvil pueda aplicar por la recepción de mensajes.</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
+                    <span className="text-[#003f87] font-bold">4.</span> Limitación de Responsabilidad e Interrupciones del Servicio
+                  </h3>
+                  <p>
+                    MeteoAlerta España se esfuerza por ofrecer un servicio de alta disponibilidad y entrega rápida de avisos, pero <strong>el Servicio se proporciona &ldquo;TAL CUAL&rdquo; y &ldquo;SEGÚN DISPONIBILIDAD&rdquo;</strong>.
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-[12px] pl-1">
+                    <li><strong>Retardos y fallos de entrega:</strong> No garantizamos que las alertas se entreguen de forma instantánea o ininterrumpida debido a factores ajenos a nuestro control (caídas de red de operadores de telefonía, cortes de servidores en la API de AEMET, limitaciones del API de Telegram, etc.).</li>
+                    <li><strong>Exclusión de daños:</strong> En ningún caso MeteoAlerta España, sus desarrolladores o colaboradores serán responsables de cualquier daño directo, indirecto, incidental o consecuente derivado de la falta de recepción de una alerta meteorológica, de decisiones tomadas basándose en la información del Servicio, o de la indisponibilidad temporal del sitio web.</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
+                    <span className="text-[#003f87] font-bold">5.</span> Baja del Servicio y Supresión de Datos
+                  </h3>
+                  <p>Respetamos plenamente su privacidad y el control de sus datos personales bajo el RGPD.</p>
+                  <ul className="list-disc list-inside space-y-1 text-[12px] pl-1">
+                    <li><strong>Derecho de exclusión:</strong> En cualquier momento, usted puede darse de baja del Servicio y solicitar la eliminación completa de su perfil accediendo a la página dedicada de baja.</li>
+                    <li><strong>Eliminación permanente:</strong> Al confirmar su correo electrónico y contraseña en dicha página, se eliminarán de forma inmediata e irreversible todos sus datos de nuestras bases de datos públicas y de autenticación, incluyendo preferencias de alertas, código postal, correo y número de teléfono.</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
+                    <span className="text-[#003f87] font-bold">6.</span> Modificaciones de los Términos
+                  </h3>
+                  <p>
+                    Nos reservamos el derecho, a nuestra sola discreción, de modificar o reemplazar estos Términos en cualquier momento. Si una revisión es importante, intentaremos proporcionar un aviso con al menos 15 días de antelación a la entrada en vigor de los nuevos términos.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
+                    <span className="text-[#003f87] font-bold">7.</span> Contacto
+                  </h3>
+                  <p>
+                    Si tiene alguna pregunta sobre estos Términos, por favor póngase en contacto con nosotros a través de los canales de soporte indicados en la pestaña de Información del panel principal de la aplicación.
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-5 py-3.5 border-t border-[#ebedf3] flex justify-end">
+                <button
+                  onClick={() => setShowToSModal(false)}
+                  className="px-5 py-2 rounded-lg text-white text-sm font-bold cursor-pointer border-none transition-all duration-200 hover:shadow-lg"
+                  style={{ background: 'linear-gradient(135deg, #003f87, #0066cc)' }}
+                >
+                  Entendido
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Privacy Policy Modal ────────────────────────────────── */}
+      <AnimatePresence>
+        {showPrivacyModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setShowPrivacyModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+              style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[#ebedf3]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #003f87, #0066cc)' }}>
+                    <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>security</span>
+                  </div>
+                  <h2 className="text-base font-extrabold text-[#1a1c22]">Política de Privacidad</h2>
+                </div>
+                <button
+                  onClick={() => setShowPrivacyModal(false)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#f2f3f7] transition-colors cursor-pointer bg-transparent border-none"
+                >
+                  <span className="material-symbols-outlined text-[#727784]" style={{ fontSize: 20 }}>close</span>
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="overflow-y-auto flex-1 px-5 py-4 text-[#424752] text-[13px] leading-relaxed space-y-4">
+                <p className="text-[10px] text-[#727784] font-semibold uppercase tracking-wider">Última actualización: 30 de junio de 2026</p>
+
+                <p>
+                  En MeteoAlerta España nos tomamos muy en serio la seguridad y confidencialidad de tus datos. De acuerdo con el Reglamento General de Protección de Datos (RGPD) de la UE, esta Política describe cómo gestionamos tu información.
+                </p>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
+                    <span className="text-[#003f87] font-bold">1.</span> Datos que recopilamos
+                  </h3>
+                  <p>
+                    Para prestar el servicio recopilamos exclusivamente los datos mínimos necesarios:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-[12px] pl-1">
+                    <li><strong>Correo electrónico:</strong> Utilizado como identificador de inicio de sesión y canal para el envío opcional de alertas por email.</li>
+                    <li><strong>Preferencia geográfica (Código Postal/Provincia):</strong> Exclusivamente para filtrar los avisos y alertas meteorológicas relevantes para tu zona.</li>
+                    <li><strong>Suscripción Push:</strong> Para enviarte notificaciones web directas al navegador, guardamos el endpoint de red y las llaves criptográficas públicas correspondientes en Supabase de forma segura.</li>
+                    <li><strong>Número de teléfono y Telegram ID (Opcional):</strong> Si decides activar voluntariamente las alertas por SMS o a través de nuestro bot de Telegram.</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
+                    <span className="text-[#003f87] font-bold">2.</span> Uso y Almacenamiento de Datos
+                  </h3>
+                  <p>
+                    Tus datos se almacenan de forma segura en las bases de datos de **Supabase** (bajo estrictos estándares de encriptación). Los datos se procesan con la única finalidad de automatizar la entrega de las alertas meteorológicas procedentes de AEMET. **Nunca** vendemos, alquilamos ni compartimos tu información personal con anunciantes o terceros.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
+                    <span className="text-[#003f87] font-bold">3.</span> Cookies y almacenamiento local
+                  </h3>
+                  <p>
+                    Utilizamos cookies técnicas del sistema y el almacenamiento local del navegador (`localStorage`) únicamente para mantener tu sesión activa de forma segura y guardar tus preferencias de diseño (como el filtro de alertas preferidas) en el dispositivo. No utilizamos cookies de rastreo comercial.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
+                    <span className="text-[#003f87] font-bold">4.</span> Derechos del usuario (RGPD)
+                  </h3>
+                  <p>
+                    Tienes derecho a acceder, rectificar o solicitar la supresión de tus datos. Puedes ejercer tu derecho de supresión de forma automática dándote de baja del servicio en tu pestaña de Ajustes o en el enlace correspondiente de la web, lo cual eliminará de forma irreversible toda tu información.
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-5 py-3.5 border-t border-[#ebedf3] flex justify-end">
+                <button
+                  onClick={() => setShowPrivacyModal(false)}
+                  className="px-5 py-2 rounded-lg text-white text-sm font-bold cursor-pointer border-none transition-all duration-200 hover:shadow-lg"
+                  style={{ background: 'linear-gradient(135deg, #003f87, #0066cc)' }}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Technical Support Modal ──────────────────────────────── */}
+      <AnimatePresence>
+        {showSupportModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setShowSupportModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
+              style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[#ebedf3]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #003f87, #0066cc)' }}>
+                    <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>contact_support</span>
+                  </div>
+                  <h2 className="text-base font-extrabold text-[#1a1c22]">Soporte Técnico</h2>
+                </div>
+                <button
+                  onClick={() => setShowSupportModal(false)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#f2f3f7] transition-colors cursor-pointer bg-transparent border-none"
+                >
+                  <span className="material-symbols-outlined text-[#727784]" style={{ fontSize: 20 }}>close</span>
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="overflow-y-auto flex-1 px-5 py-4 text-[#424752] text-[13px] leading-relaxed space-y-5">
+                <p>
+                  ¿Tienes algún problema con las notificaciones push o la localización? Puedes enviarnos un reporte directamente o contactar por nuestras redes oficiales.
+                </p>
+
+                {/* Contact Form */}
+                <div className="space-y-3">
+                  <h3 className="font-bold text-xs text-[#1a1c22] uppercase tracking-wider flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-[#003f87]">mail</span>
+                    Enviar Mensaje
+                  </h3>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      alert('Tu reporte se ha registrado correctamente. Analizaremos tu caso en las próximas horas.');
+                      setShowSupportModal(false);
+                    }}
+                    className="bg-[#f7f9ff] p-4 rounded-xl border border-[#c2c6d4]/30 space-y-3"
+                  >
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-[#424752] uppercase tracking-wider ml-1" htmlFor="modal-asunto">
+                        Asunto
+                      </label>
+                      <input
+                        className="w-full bg-white border border-[#c2c6d4] rounded-lg px-3 py-2 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87]"
+                        id="modal-asunto"
+                        placeholder="Ej: Error al activar notificaciones"
+                        type="text"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-[#424752] uppercase tracking-wider ml-1" htmlFor="modal-mensaje">
+                        Mensaje
+                      </label>
+                      <textarea
+                        className="w-full bg-white border border-[#c2c6d4] rounded-lg px-3 py-2 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87]"
+                        id="modal-mensaje"
+                        placeholder="Explica qué problema experimentas..."
+                        rows={3}
+                        required
+                      />
+                    </div>
+                    <button
+                      className="w-full bg-[#003f87] hover:bg-[#0056b3] text-white font-bold text-xs py-2.5 rounded-lg shadow-sm transition-all active:scale-[0.98]"
+                      type="submit"
+                    >
+                      Enviar reporte
+                    </button>
+                  </form>
+                </div>
+
+                {/* Social Channels */}
+                <div className="space-y-3">
+                  <h3 className="font-bold text-xs text-[#1a1c22] uppercase tracking-wider flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-[#003f87]">share</span>
+                    Canales de Contacto Directo
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <a
+                      href="https://t.me/alertasMeteoBot"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between p-3 bg-white border border-[#c2c6d4]/30 rounded-xl hover:bg-[#f7f9ff] transition-all shadow-sm group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-[#0088cc]/10 flex items-center justify-center text-[#0088cc] flex-shrink-0">
+                          <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.75 3.81-1.65 6.35-2.75 7.61-3.3 3.61-1.56 4.36-1.83 4.85-1.84.11 0 .35.03.5.16.13.12.17.28.18.39.01.07.01.14 0 .2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[10px] text-[#181c20]">Telegram</p>
+                          <p className="text-[8px] text-[#727784]">@alertasMeteoBot</p>
+                        </div>
+                      </div>
+                      <span className="material-symbols-outlined text-[#727784] text-[12px] group-hover:text-[#003f87]">open_in_new</span>
+                    </a>
+
+                    <a
+                      href="https://twitter.com/AlertasMeteoES"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between p-3 bg-white border border-[#c2c6d4]/30 rounded-xl hover:bg-[#f7f9ff] transition-all shadow-sm group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-[#1DA1F2]/10 flex items-center justify-center text-[#1DA1F2] flex-shrink-0">
+                          <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[10px] text-[#181c20]">X (Twitter)</p>
+                          <p className="text-[8px] text-[#727784]">@AlertasMeteoES</p>
+                        </div>
+                      </div>
+                      <span className="material-symbols-outlined text-[#727784] text-[12px] group-hover:text-[#003f87]">open_in_new</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-5 py-3.5 border-t border-[#ebedf3] flex justify-end">
+                <button
+                  onClick={() => setShowSupportModal(false)}
+                  className="px-5 py-2 rounded-lg text-white text-sm font-bold cursor-pointer border-none transition-all duration-200 hover:shadow-lg"
+                  style={{ background: 'linear-gradient(135deg, #003f87, #0066cc)' }}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

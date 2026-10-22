@@ -104,7 +104,7 @@ const translations: Record<string, Record<Language, string>> = {
     // Unsubscribe Page
     'unsub.title': { es: 'Darse de Baja', en: 'Unsubscribe' },
     'unsub.subtitle': { es: 'Esta acción eliminará tu cuenta de forma permanente.', en: 'This action will permanently delete your account.' },
-    'unsub.password': { es: 'Contraseña (Teléfono)', en: 'Password (Phone)' },
+    'unsub.password': { es: 'Contraseña', en: 'Password' },
     'unsub.submit': { es: 'Eliminar mi cuenta', en: 'Delete my account' },
     'unsub.success.title': { es: 'Cuenta eliminada', en: 'Account deleted' },
     'unsub.success.desc': { es: 'Tu cuenta ha sido eliminada correctamente. Sentimos verte marchar.', en: 'Your account has been permanently deleted. We are sorry to see you go.' },

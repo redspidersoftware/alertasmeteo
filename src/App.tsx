@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageProvider';
 import { EulaPage } from './components/EulaPage';
 import { NuevaPage } from './components/NuevaPage';
+import { DonationSection } from './components/DonationSection';
 
 
 
@@ -29,10 +30,10 @@ function App() {
     <LanguageProvider>
       <AuthProvider>
         <NuevaPage />
+        <DonationSection isFixed={true} />
       </AuthProvider>
     </LanguageProvider>
   );
 }
 
 export default App;
-

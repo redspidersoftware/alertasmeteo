@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserX, AlertTriangle, CheckCircle, ArrowLeft, Loader2, ShieldAlert } from 'lucide-react';
 
 export const UnsubscribePage = () => {
     const { t } = useLanguage();
@@ -10,6 +9,25 @@ export const UnsubscribePage = () => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
+
+    // Inject fonts and icons dynamically
+    useEffect(() => {
+        const fontLink = document.createElement('link');
+        fontLink.href = 'https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&display=swap';
+        fontLink.rel = 'stylesheet';
+        document.head.appendChild(fontLink);
+
+        const iconLink = document.createElement('link');
+        iconLink.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap';
+        iconLink.rel = 'stylesheet';
+        document.head.appendChild(iconLink);
+
+        return () => {
+            document.head.removeChild(fontLink);
+            document.head.removeChild(iconLink);
+        };
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -17,11 +35,10 @@ export const UnsubscribePage = () => {
         setLoading(true);
 
         try {
-            // We call the edge function that handles the deletion from both tables
             const { data, error: funcError } = await supabase.functions.invoke('delete-user', {
                 body: {
                     email: formData.email,
-                    password: formData.phone // Phone acts as password
+                    password: formData.phone
                 }
             });
 
@@ -40,130 +57,152 @@ export const UnsubscribePage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#030712] flex items-center justify-center p-4 selection:bg-red-500/30">
+        <div className="min-h-screen bg-[#f7f9ff] flex items-center justify-center p-5 font-['Hanken_Grotesk',sans-serif]">
             <AnimatePresence mode="wait">
                 {!success ? (
                     <motion.div
                         key="form"
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="w-full max-w-md"
+                        exit={{ opacity: 0, y: -15 }}
+                        transition={{ duration: 0.4 }}
+                        className="w-full max-w-[460px] flex flex-col gap-6"
                     >
-                        <div className="glass-dark rounded-[2.5rem] p-8 sm:p-10 border border-white/5 shadow-2xl overflow-hidden relative">
-                            {/* Decorative Background */}
-                            <div className="absolute -top-24 -right-24 w-48 h-48 bg-red-600/10 rounded-full blur-3xl"></div>
+                        <header className="flex flex-col items-center text-center gap-3">
+                            <div className="w-16 h-16 bg-red-50 rounded-3xl flex items-center justify-center shadow-md border border-red-100">
+                                <span className="material-symbols-outlined text-red-600" style={{ fontSize: 32 }}>person_off</span>
+                            </div>
+                            <h1 className="text-2xl font-extrabold text-[#181c20] tracking-tight">
+                                {t('unsub.title')}
+                            </h1>
+                            <p className="text-sm text-[#424752] max-w-[320px]">
+                                {t('unsub.subtitle')}
+                            </p>
+                        </header>
 
-                            <div className="relative z-10">
-                                <div className="bg-red-500/10 p-4 rounded-3xl w-fit mb-6 border border-red-500/20 shadow-inner">
-                                    <UserX size={32} className="text-red-400" />
+                        <section className="bg-white rounded-2xl shadow-lg border border-[#ebeef3] p-6 sm:p-8 flex flex-col gap-5">
+                            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                                
+                                {/* Warning Box */}
+                                <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3">
+                                    <span className="material-symbols-outlined text-red-500 mt-0.5" style={{ fontSize: 20 }}>warning</span>
+                                    <p className="text-xs text-red-800 leading-relaxed font-semibold">
+                                        {t('unsub.warning')}
+                                    </p>
                                 </div>
 
-                                <h1 className="text-3xl font-black text-white mb-2 tracking-tight">
-                                    {t('unsub.title')}
-                                </h1>
-                                <p className="text-slate-400 mb-8 font-medium">
-                                    {t('unsub.subtitle')}
-                                </p>
+                                {error && (
+                                    <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                                        <span className="material-symbols-outlined text-red-500" style={{ fontSize: 18 }}>error</span>
+                                        <p className="text-xs text-red-700">{error}</p>
+                                    </div>
+                                )}
 
-                                <form onSubmit={handleSubmit} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-300 mb-2 px-1">
-                                            {t('form.email')}
-                                        </label>
+                                {/* Correo electrónico */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-semibold text-[#181c20] ml-1">
+                                        {t('form.email')}
+                                    </label>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#727784] group-focus-within:text-red-500 transition-colors">
+                                            mail
+                                        </span>
                                         <input
                                             type="email"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                             required
-                                            className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-red-500/50 focus:ring-4 focus:ring-red-500/10 transition-all duration-300 placeholder:text-slate-600"
-                                            placeholder="example@mail.com"
+                                            placeholder="tu@email.com"
+                                            className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#c2c6d4] bg-[#f7f9ff] text-sm text-[#181c20] placeholder:text-[#727784] outline-none transition-all focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
                                         />
                                     </div>
+                                </div>
 
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-300 mb-2 px-1">
-                                            {t('unsub.password')}
-                                        </label>
+                                {/* Contraseña */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-semibold text-[#181c20] ml-1">
+                                        {t('unsub.password')}
+                                    </label>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#727784] group-focus-within:text-red-500 transition-colors">
+                                            lock
+                                        </span>
                                         <input
-                                            type="password"
+                                            type={showPassword ? 'text' : 'password'}
                                             value={formData.phone}
                                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                             required
-                                            className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-red-500/50 focus:ring-4 focus:ring-red-500/10 transition-all duration-300"
                                             placeholder="••••••••"
+                                            className="w-full h-12 pl-12 pr-12 rounded-xl border border-[#c2c6d4] bg-[#f7f9ff] text-sm text-[#181c20] placeholder:text-[#727784] outline-none transition-all focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
                                         />
-                                    </div>
-
-                                    <div className="bg-red-500/5 border border-red-500/10 rounded-2xl p-4 flex items-start gap-3">
-                                        <ShieldAlert size={18} className="text-red-400 mt-0.5 flex-shrink-0" />
-                                        <p className="text-xs text-red-300/80 leading-relaxed font-medium">
-                                            {t('unsub.warning')}
-                                        </p>
-                                    </div>
-
-                                    {error && (
-                                        <motion.div
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: 'auto' }}
-                                            className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 text-red-400 text-sm font-bold"
-                                        >
-                                            <AlertTriangle size={18} />
-                                            <p>{error}</p>
-                                        </motion.div>
-                                    )}
-
-                                    <div className="pt-4 flex flex-col gap-3">
                                         <button
-                                            type="submit"
-                                            disabled={loading}
-                                            className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-black tracking-widest uppercase text-sm shadow-xl shadow-red-600/20 hover:shadow-red-600/40 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-3"
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#727784] hover:text-[#181c20] transition-colors flex items-center"
                                         >
-                                            {loading ? <Loader2 className="animate-spin" size={20} /> : t('unsub.submit')}
+                                            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                                                {showPassword ? 'visibility_off' : 'visibility'}
+                                            </span>
                                         </button>
-
-                                        <a
-                                            href="/"
-                                            className="w-full py-4 rounded-2xl border border-white/5 bg-white/5 text-slate-300 font-bold text-center hover:bg-white/10 transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <ArrowLeft size={18} />
-                                            {t('unsub.back')}
-                                        </a>
                                     </div>
-                                </form>
-                            </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="h-12 w-full mt-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold text-sm shadow-md hover:shadow-lg disabled:opacity-60 transition-all flex items-center justify-center gap-2"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <span className="material-symbols-outlined animate-spin" style={{ fontSize: 18 }}>progress_activity</span>
+                                            Eliminando...
+                                        </>
+                                    ) : (
+                                        t('unsub.submit')
+                                    )}
+                                </button>
+                            </form>
+                        </section>
+
+                        <div className="text-center">
+                            <a
+                                href="/"
+                                className="text-sm text-[#003f87] font-bold hover:underline flex items-center gap-1 mx-auto w-fit"
+                            >
+                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
+                                {t('unsub.back')}
+                            </a>
                         </div>
                     </motion.div>
                 ) : (
                     <motion.div
                         key="success"
-                        initial={{ opacity: 0, scale: 0.9 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="w-full max-w-md"
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.4 }}
+                        className="w-full max-w-[460px] flex flex-col gap-6"
                     >
-                        <div className="glass-dark rounded-[2.5rem] p-10 border border-white/5 text-center relative overflow-hidden">
-                            <div className="absolute -top-24 -left-24 w-48 h-48 bg-green-600/10 rounded-full blur-3xl"></div>
-
-                            <div className="relative z-10 flex flex-col items-center">
-                                <div className="bg-green-500/10 p-6 rounded-full w-fit mb-8 border border-green-500/20 shadow-inner">
-                                    <CheckCircle size={48} className="text-green-400" />
-                                </div>
-
-                                <h2 className="text-3xl font-black text-white mb-4 tracking-tight">
-                                    {t('unsub.success.title')}
-                                </h2>
-                                <p className="text-slate-400 mb-10 text-lg font-medium leading-relaxed">
-                                    {t('unsub.success.desc')}
-                                </p>
-
-                                <a
-                                    href="/"
-                                    className="px-10 py-4 rounded-2xl bg-white text-black font-black tracking-widest uppercase text-sm shadow-2xl hover:scale-105 active:scale-95 transition-all"
-                                >
-                                    {t('unsub.back')}
-                                </a>
+                        <header className="flex flex-col items-center text-center gap-3">
+                            <div className="w-16 h-16 bg-[#e8f5e9] rounded-3xl flex items-center justify-center shadow-lg">
+                                <span className="material-symbols-outlined text-[#2e7d32]" style={{ fontSize: 32 }}>check_circle</span>
                             </div>
-                        </div>
+                            <h1 className="text-2xl font-extrabold text-[#181c20] tracking-tight">
+                                {t('unsub.success.title')}
+                            </h1>
+                            <p className="text-sm text-[#424752] max-w-[320px]">
+                                {t('unsub.success.desc')}
+                            </p>
+                        </header>
+
+                        <section className="bg-white rounded-2xl shadow-lg border border-[#ebeef3] p-6 text-center">
+                            <a
+                                href="/"
+                                className="h-12 w-full rounded-xl bg-gradient-to-r from-[#003f87] to-[#0056b3] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                            >
+                                {t('unsub.back')}
+                            </a>
+                        </section>
                     </motion.div>
                 )}
             </AnimatePresence>

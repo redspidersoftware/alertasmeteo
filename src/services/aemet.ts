@@ -1,17 +1,75 @@
 import axios from 'axios';
-import { XMLParser } from 'fast-xml-parser';
-// @ts-expect-error - js-untar types not available
-import untar from 'js-untar';
-import type { WeatherAlert, CapAlert, CapInfo, AemetApiResponse, NationalPrediction } from '../types';
+import type { WeatherAlert, CapInfo, AemetApiResponse, NationalPrediction } from '../types';
 
 const API_KEY = import.meta.env.VITE_AEMET_API_KEY;
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true' || !API_KEY;
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
-const parser = new XMLParser({
-    ignoreAttributes: false,
-    attributeNamePrefix: "@_"
-});
+// ─── Tipos de Supabase ───────────────────────────────────────────────────────
+interface SupabaseWeatherAlert {
+    id: string;
+    aemet_id: string;
+    event: string;
+    severity: string;
+    area_desc: string;
+    expires: string;
+    effective: string | null;
+    sent: string;
+    headline: string | null;
+    description: string | null;
+    instruction: string | null;
+    raw_json: {
+        language?: string;
+        polygon?: string | string[] | null;
+        polygons?: string[];
+        [key: string]: unknown;
+    } | null;
+}
 
+// Mapea una fila de Supabase al tipo WeatherAlert que usa la UI
+const mapDbAlertToWeatherAlert = (row: SupabaseWeatherAlert): WeatherAlert => {
+    const rawJson = row.raw_json || {};
+    
+    // Obtenemos los polígonos de raw_json
+    let polygonData: string | string[] | null = null;
+    if (rawJson.polygon) {
+        polygonData = rawJson.polygon;
+    } else if (rawJson.polygons && rawJson.polygons.length > 0) {
+        polygonData = rawJson.polygons;
+    }
+
+    // Normaliza la severidad AEMET → clave interna de la app
+    let severity: WeatherAlert['severity'] = 'unknown';
+    switch (row.severity?.toLowerCase()) {
+        case 'extreme': severity = 'red'; break;
+        case 'severe':  severity = 'orange'; break;
+        case 'moderate': severity = 'yellow'; break;
+        case 'minor':   severity = 'green'; break;
+    }
+
+    // El mapa espera que raw.area sea un objeto o un array de objetos con la propiedad 'polygon'
+    // Si hay múltiples polígonos (Array de strings), creamos un array de áreas
+    const areaData = Array.isArray(polygonData)
+        ? polygonData.map(p => ({ areaDesc: row.area_desc || '', polygon: p }))
+        : { areaDesc: row.area_desc || '', polygon: polygonData || '' };
+
+    return {
+        id: row.aemet_id || row.id,
+        sent: row.sent,
+        event: row.event || 'Desconocido',
+        severity,
+        headline: row.headline || '',
+        description: row.description || '',
+        instruction: row.instruction || '',
+        area: row.area_desc || '',
+        expires: row.expires || '',
+        language: rawJson.language || 'es-ES',
+        raw: {
+            area: areaData
+        } as unknown as CapInfo,
+    };
+};
+
+// ─── getAlerts: lee desde la API del Worker (evita problemas de RLS de Supabase) ─
 export const getAlerts = async (): Promise<WeatherAlert[]> => {
     if (USE_MOCK) {
         console.log("Using Mock Data");
@@ -19,91 +77,23 @@ export const getAlerts = async (): Promise<WeatherAlert[]> => {
     }
 
     try {
-        const initResponse = await axios.get<AemetApiResponse>(
-            'https://opendata.aemet.es/opendata/api/avisos_cap/ultimoelaborado/area/esp',
-            {
-                params: { api_key: API_KEY },
-                headers: { 'Accept': 'application/json' }
-            }
+        const response = await axios.get<{ success: boolean; alerts: SupabaseWeatherAlert[] }>(
+            'https://aemet-supabase-service.alertasmeteo.workers.dev/api/alerts'
         );
 
-        if (initResponse.data.estado !== 200) {
-            throw new Error(`AEMET API Error: ${initResponse.data.descripcion}`);
+        if (!response.data.success || !response.data.alerts) {
+            console.error("Failed to fetch alerts: Worker returned success false");
+            return [];
         }
 
-        const capResponse = await axios.get(initResponse.data.datos, {
-            responseType: 'arraybuffer'
-        });
-
-        if (!untar) {
-            throw new Error("Library js-untar failed to load");
-        }
-
-        const files = await untar(capResponse.data);
-        let allAlerts: WeatherAlert[] = [];
-
-        for (const file of files) {
-            if (!file.name.endsWith('.xml')) continue;
-
-            let xmlContent = "";
-            const decoder = new TextDecoder("utf-8");
-
-            if (file.buffer) {
-                xmlContent = decoder.decode(file.buffer);
-            } else if (file.readAsString) {
-                // As fallback, but try to fix encoding if possible
-                xmlContent = file.readAsString();
-            } else {
-                continue;
-            }
-
-            const jsonObj = parser.parse(xmlContent);
-            const alertRoot = jsonObj.alert;
-            const fileAlerts = parseCapToAlerts(alertRoot);
-            allAlerts = [...allAlerts, ...fileAlerts];
-        }
-
-        return allAlerts;
-
+        return response.data.alerts.map(mapDbAlertToWeatherAlert);
     } catch (error) {
         console.error("Failed to fetch alerts:", error);
         return [];
     }
 };
 
-const parseCapToAlerts = (cap: CapAlert): WeatherAlert[] => {
-    if (!cap || !cap.info) return [];
 
-    const infos = Array.isArray(cap.info) ? cap.info : [cap.info];
-
-    return infos.map(info => {
-        let severityColor: WeatherAlert['severity'] = 'unknown';
-        switch (info.severity) {
-            case 'Extreme': severityColor = 'red'; break;
-            case 'Severe': severityColor = 'orange'; break;
-            case 'Moderate': severityColor = 'yellow'; break;
-            case 'Minor': severityColor = 'green'; break;
-            default: severityColor = 'unknown';
-        }
-
-        const areas = Array.isArray(info.area) ? info.area : [info.area];
-        const areaDesc = areas.map(a => a.areaDesc).join(', ');
-
-        return {
-            id: cap.identifier,
-            sent: cap.sent,
-            event: info.event || 'Desconocido',
-            severity: severityColor,
-            headline: info.headline,
-            description: info.description,
-            instruction: info.instruction || '',
-            area: areaDesc,
-            expires: info.expires || '',
-            language: info.language || 'es', // Capture language
-            raw: info
-        };
-    });
-};
 
 export const getNationalPrediction = async (): Promise<NationalPrediction | null> => {
     if (USE_MOCK) {
