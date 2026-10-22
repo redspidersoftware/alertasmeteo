@@ -279,11 +279,11 @@ export const AdminPage = () => {
 
     const invoke = async (fn: string, body: Record<string, unknown>) => {
         const { data, error } = await supabase.functions.invoke(fn, { body: { ...body, token } });
-        if (error) throw error;
-        if (!data?.success) {
-            if (data?.error?.includes('Sesión')) logout();
-            throw new Error(data?.error || 'Error en la API');
+        if (data && data.success === false) {
+            if (String(data.error || '').includes('Sesión')) logout();
+            throw new Error(data.error || 'Error en la API');
         }
+        if (error) throw error;
         return data;
     };
     const callApi = (body: Record<string, unknown>) => invoke('admin-api', body);
