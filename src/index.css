@@ -328,8 +328,7 @@
   font-family: 'Outfit', 'Inter', system-ui, sans-serif;
   line-height: 1.6;
   font-weight: 400;
-  color-scheme: dark;
-  color: #f8fafc;
+  color: #181c20;
   background-color: transparent;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -343,3 +342,106 @@ body {
   overflow-x: hidden;
   @apply bg-transparent;
 }
+
+/* ── DARK MODE ── */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body,
+.dark #root {
+  background-color: #0f172a !important;
+}
+
+.dark {
+  color: #e2e8f0;
+}
+
+/* Main page background */
+.dark .font-\[\'Hanken_Grotesk\'\] {
+  background-color: #0f172a !important;
+  color: #e2e8f0;
+}
+
+/* Generic light backgrounds → dark */
+.dark .bg-\[\#f7f9ff\] { background-color: #1e293b !important; }
+.dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-\[\#f1f4f9\] { background-color: #1e293b !important; }
+.dark .bg-\[\#ebeef3\] { background-color: #334155 !important; }
+.dark .bg-\[\#e5e8ee\] { background-color: #334155 !important; }
+.dark .bg-\[\#e0e3e8\] { background-color: #334155 !important; }
+.dark .bg-\[\#e1e3e4\] { background-color: #334155 !important; }
+.dark .bg-slate-50\/50 { background-color: rgba(30, 41, 59, 0.8) !important; }
+
+/* Text colors */
+.dark .text-\[\#181c20\] { color: #f1f5f9 !important; }
+.dark .text-\[\#424752\] { color: #94a3b8 !important; }
+.dark .text-\[\#727784\] { color: #64748b !important; }
+.dark .text-\[\#003f87\] { color: #60a5fa !important; }
+
+/* Borders */
+.dark .border-\[\#c2c6d4\]\/30 { border-color: rgba(100, 116, 139, 0.3) !important; }
+.dark .border-\[\#c2c6d4\]\/20 { border-color: rgba(100, 116, 139, 0.2) !important; }
+.dark .border-\[\#c2c6d4\]\/40 { border-color: rgba(100, 116, 139, 0.4) !important; }
+.dark .border-\[\#c2c6d4\]\/10 { border-color: rgba(100, 116, 139, 0.1) !important; }
+.dark .border-\[\#c2c6d4\] { border-color: #475569 !important; }
+.dark .border-\[\#e9ecef\] { border-color: #334155 !important; }
+.dark .border-b { border-bottom-color: rgba(100, 116, 139, 0.3) !important; }
+.dark .border-r { border-right-color: rgba(100, 116, 139, 0.3) !important; }
+.dark .border-t { border-top-color: rgba(100, 116, 139, 0.3) !important; }
+
+/* Shadows */
+.dark .shadow-sm { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important; }
+.dark .shadow-md { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important; }
+.dark .shadow-lg { box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3) !important; }
+
+/* Login card */
+.dark .login-card { background-color: #1e293b !important; border-color: #334155 !important; }
+
+/* Inputs */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark textarea {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #f1f5f9 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder { color: #64748b !important; }
+
+/* Sidebar */
+.dark aside { background-color: #1e293b !important; }
+
+/* Bottom nav */
+.dark nav.fixed { background-color: #1e293b !important; }
+
+/* Scrollbar */
+.dark .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
+.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+
+/* Glass panels */
+.dark .glass-panel { background: rgba(30, 41, 59, 0.85) !important; border-color: rgba(100, 116, 139, 0.3) !important; }
+.dark .glass-overlay { background: rgba(30, 41, 59, 0.75) !important; }
+
+/* Prediction / info cards */
+.dark .border-l-4 { border-left-color: #3b82f6 !important; }
+
+/* Fix blue accent colors for dark mode */
+.dark .bg-\[\#003f87\] { background-color: #2563eb !important; }
+.dark .bg-\[\#0056b3\] { background-color: #3b82f6 !important; }
+.dark .hover\:bg-\[\#0056b3\]:hover { background-color: #3b82f6 !important; }
+.dark .bg-\[\#d7e2ff\] { background-color: rgba(59, 130, 246, 0.2) !important; }
+.dark .bg-\[\#acc7ff\]\/10 { background-color: rgba(59, 130, 246, 0.1) !important; }
+
+/* Buttons with white bg */
+.dark button.bg-white { background-color: #334155 !important; }
+
+/* Dropdown / select */
+.dark select {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-color: #475569 !important;
+}
+
+/* Alert severity backgrounds remain unchanged for visibility */
