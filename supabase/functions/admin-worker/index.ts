@@ -46,8 +46,11 @@ async function verifyToken(token: string): Promise<boolean> {
     return expected === parts[1]
 }
 
-// Login to the worker and return the session cookie value
+// Login to the worker and return the session cookie value (cached in isolate memory)
+let cachedCookie: { value: string; expires: number } | null = null
+
 async function getWorkerSession(): Promise<string> {
+    if (cachedCookie && cachedCookie.expires > Date.now()) return cachedCookie.value
     if (!WORKER_USER || !WORKER_PASS) {
         throw new Error("WORKER_USER / WORKER_PASS secrets no configurados")
     }
@@ -62,7 +65,9 @@ async function getWorkerSession(): Promise<string> {
     if (!match) {
         throw new Error("No se pudo autenticar contra el worker")
     }
-    return `session=${match[1]}`
+    const cookie = `session=${match[1]}`
+    cachedCookie = { value: cookie, expires: Date.now() + 9 * 60 * 1000 }
+    return cookie
 }
 
 async function workerGet(path: string, cookie: string): Promise<Response> {
@@ -70,6 +75,25 @@ async function workerGet(path: string, cookie: string): Promise<Response> {
         headers: { 'Cookie': cookie },
         redirect: 'manual',
     })
+}
+
+async function workerPost(path: string, cookie: string, body: unknown): Promise<Response> {
+    return await fetch(`${WORKER_URL}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Cookie': cookie },
+        body: JSON.stringify(body),
+    })
+}
+
+function buildQuery(params: Record<string, unknown> | undefined): string {
+    const qs = new URLSearchParams()
+    if (params && typeof params === 'object') {
+        for (const [k, v] of Object.entries(params)) {
+            if (v !== undefined && v !== null && String(v).length > 0) qs.append(k, String(v))
+        }
+    }
+    const s = qs.toString()
+    return s ? `?${s}` : ''
 }
 
 serve(async (req: Request) => {
@@ -125,6 +149,52 @@ serve(async (req: Request) => {
             const data = await resp.json()
             if (!data.success) throw new Error('Error leyendo alertas')
             return json({ success: true, alerts: data.alerts || [] })
+        }
+
+        if (action === 'get-weather-alerts') {
+            const resp = await workerGet(`/api/weather-alerts${buildQuery(params)}`, cookie)
+            const data = await resp.json()
+            if (!data.success) throw new Error(data.message || 'Error leyendo alertas meteorológicas')
+            return json({ success: true, stats: data.stats || {}, alerts: data.alerts || [] })
+        }
+
+        if (action === 'get-logs') {
+            const resp = await workerGet(`/api/notification-logs${buildQuery(params)}`, cookie)
+            const data = await resp.json()
+            if (!data.success) throw new Error(data.message || 'Error leyendo notificaciones')
+            return json({ success: true, stats: data.stats || {}, logs: data.logs || [] })
+        }
+
+        if (action === 'get-postal-codes') {
+            const page = Number(params?.page ?? 0)
+            if (!Number.isFinite(page) || page < 0 || page > 200) throw new Error('Página no válida')
+            const resp = await workerGet(`/api/postal-codes?page=${page}`, cookie)
+            const data = await resp.json()
+            if (!data.success) throw new Error(data.message || 'Error leyendo códigos postales')
+            return json({ success: true, mappings: data.mappings || [] })
+        }
+
+        if (action === 'save-postal-code') {
+            if (!params?.postal_code || !params?.aemet_zone_name || !params?.province) {
+                throw new Error('Faltan datos del código postal')
+            }
+            const resp = await workerPost('/api/save-postal-code', cookie, {
+                postal_code: params.postal_code,
+                aemet_zone_name: params.aemet_zone_name,
+                province: params.province,
+                old_postal_code: params.old_postal_code || params.postal_code,
+            })
+            const data = await resp.json()
+            if (!data.success) throw new Error(data.message || 'Error al guardar el código postal')
+            return json({ success: true })
+        }
+
+        if (action === 'delete-postal-code') {
+            if (!params?.postal_code) throw new Error('Falta el código postal')
+            const resp = await workerPost('/api/delete-postal-code', cookie, { postal_code: params.postal_code })
+            const data = await resp.json()
+            if (!data.success) throw new Error(data.message || 'Error al eliminar el código postal')
+            return json({ success: true })
         }
 
         if (action === 'run-test') {
