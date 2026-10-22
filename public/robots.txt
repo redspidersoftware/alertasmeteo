@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /unsubscribe
+Disallow: /admin
 
 Sitemap: https://alertas-meteo.vercel.app/sitemap.xml

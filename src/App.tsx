@@ -4,6 +4,7 @@ import { LanguageProvider } from './context/LanguageProvider';
 import { EulaPage } from './components/EulaPage';
 import { NuevaPage } from './components/NuevaPage';
 import { DonationSection } from './components/DonationSection';
+import { AdminPage } from './components/AdminPage';
 
 
 
@@ -24,6 +25,10 @@ function App() {
         <UnsubscribePage />
       </LanguageProvider>
     );
+  }
+
+  if (window.location.pathname === '/admin') {
+    return <AdminPage />;
   }
 
   return (
