@@ -3,4 +3,4 @@ Allow: /
 Disallow: /unsubscribe
 Disallow: /admin
 
-Sitemap: https://alertas-meteo.vercel.app/sitemap.xml
+Sitemap: https://alertasmeteo.vercel.app/sitemap.xml

@@ -275,7 +275,7 @@ export const NuevaPage = () => {
   // Share an alert
   const shareAlert = async (alert: WeatherAlert) => {
     const severityLabel = alert.severity === 'red' ? 'ROJA' : alert.severity === 'orange' ? 'NARANJA' : 'AMARILLA';
-    const text = `⚠️ ALERTA ${severityLabel}: ${alert.event}\n📍 ${alert.area}\n\n${alert.description ? alert.description.substring(0, 200) + '...' : ''}\n\n🔗 Ver en MeteoAlerta: https://alertas-meteo.vercel.app/?alert=${encodeURIComponent(alert.id)}`;
+    const text = `⚠️ ALERTA ${severityLabel}: ${alert.event}\n📍 ${alert.area}\n\n${alert.description ? alert.description.substring(0, 200) + '...' : ''}\n\n🔗 Ver en MeteoAlerta: https://alertasmeteo.vercel.app/?alert=${encodeURIComponent(alert.id)}`;
 
     if (navigator.share) {
       try {
@@ -292,18 +292,18 @@ export const NuevaPage = () => {
 
   const shareAlertWhatsApp = (alert: WeatherAlert) => {
     const severityLabel = alert.severity === 'red' ? 'ROJA' : alert.severity === 'orange' ? 'NARANJA' : 'AMARILLA';
-    const text = `⚠️ ALERTA ${severityLabel}: ${alert.event}\n📍 ${alert.area}\n\n🔗 Ver: https://alertas-meteo.vercel.app/?alert=${encodeURIComponent(alert.id)}`;
+    const text = `⚠️ ALERTA ${severityLabel}: ${alert.event}\n📍 ${alert.area}\n\n🔗 Ver: https://alertasmeteo.vercel.app/?alert=${encodeURIComponent(alert.id)}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const shareAlertTelegram = (alert: WeatherAlert) => {
     const severityLabel = alert.severity === 'red' ? 'ROJA' : alert.severity === 'orange' ? 'NARANJA' : 'AMARILLA';
-    const text = `⚠️ ALERTA ${severityLabel}: ${alert.event}\n📍 ${alert.area}\n\n🔗 Ver: https://alertas-meteo.vercel.app/?alert=${encodeURIComponent(alert.id)}`;
-    window.open(`https://t.me/share/url?url=${encodeURIComponent('https://alertas-meteo.vercel.app/?alert=' + alert.id)}&text=${encodeURIComponent(text)}`, '_blank');
+    const text = `⚠️ ALERTA ${severityLabel}: ${alert.event}\n📍 ${alert.area}\n\n🔗 Ver: https://alertasmeteo.vercel.app/?alert=${encodeURIComponent(alert.id)}`;
+    window.open(`https://t.me/share/url?url=${encodeURIComponent('https://alertasmeteo.vercel.app/?alert=' + alert.id)}&text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const copyAlertLink = (alert: WeatherAlert) => {
-    navigator.clipboard.writeText(`https://alertas-meteo.vercel.app/?alert=${encodeURIComponent(alert.id)}`);
+    navigator.clipboard.writeText(`https://alertasmeteo.vercel.app/?alert=${encodeURIComponent(alert.id)}`);
     window.alert('Enlace copiado al portapapeles.');
   };
 

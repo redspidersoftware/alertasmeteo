@@ -64,7 +64,7 @@ serve(async (req: Request) => {
             const payload = await req.json()
             const type = payload.type || 'confirmation'
             name = payload.name || 'Usuario'
-            const appUrl = payload.appUrl || "https://alertas-meteo.vercel.app"
+            const appUrl = payload.appUrl || "https://alertasmeteo.vercel.app"
 
             if (type === 'contact') {
                 const contactEmail = payload.email || 'No proporcionado'
