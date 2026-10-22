@@ -3,10 +3,39 @@ import nodemailer from "npm:nodemailer"
 
 const SMTP_USER = Deno.env.get('SMTP_USER')
 const SMTP_PASS = Deno.env.get('SMTP_PASS')
+const UNSUBSCRIBE_SECRET = Deno.env.get('UNSUBSCRIBE_SECRET')
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+async function generateToken(email: string): Promise<string> {
+    const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(UNSUBSCRIBE_SECRET),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+    )
+    const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(email.toLowerCase().trim()))
+    return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+function unsubscribeFooter(appUrl: string, email: string, token: string): string {
+    const link = `${appUrl}/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`
+    return `
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+        <p style="font-size: 12px; color: #64748b; text-align: center;">
+            ¿Ya no deseas recibir estos correos?
+            <a href="${link}" style="color: #dc2626; font-weight: bold; text-decoration: underline;">
+                Darse de baja y eliminar mi cuenta
+            </a>
+        </p>
+        <p style="font-size: 10px; color: #94a3b8; text-align: center; margin-top: 10px;">
+            Este es un mensaje automático de Alertas Meteo.
+        </p>
+    `
 }
 
 serve(async (req: Request) => {
@@ -20,6 +49,9 @@ serve(async (req: Request) => {
         if (!SMTP_USER || !SMTP_PASS) {
             throw new Error("SMTP_USER or SMTP_PASS secrets are not set in Supabase project settings.")
         }
+        if (!UNSUBSCRIBE_SECRET) {
+            throw new Error("UNSUBSCRIBE_SECRET secret is not set in Supabase project settings.")
+        }
 
         let email: string, name: string, subject: string, html: string;
 
@@ -32,10 +64,12 @@ serve(async (req: Request) => {
             const payload = await req.json()
             const type = payload.type || 'confirmation'
             name = payload.name || 'Usuario'
+            const appUrl = payload.appUrl || "https://alertas-meteo.vercel.app"
 
             if (type === 'contact') {
                 const contactEmail = payload.email || 'No proporcionado'
                 subject = `[Contacto] ${payload.subject || 'Sin asunto'}`
+                const token = await generateToken(contactEmail !== 'No proporcionado' ? contactEmail : 'admin@alertasmeteo')
                 html = `
                     <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
                         <h2 style="color: #2563eb;">Nuevo mensaje de contacto</h2>
@@ -45,15 +79,14 @@ serve(async (req: Request) => {
                         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
                             <p style="white-space: pre-wrap; color: #334155;">${payload.message || 'Sin mensaje'}</p>
                         </div>
-                        <p style="font-size: 12px; color: #64748b;">Mensaje enviado desde Alertas Meteo.</p>
+                        ${unsubscribeFooter(appUrl, contactEmail, token)}
                     </div>
                 `
-                email = "ochentainueve@gmail.com" // Recibir el contacto aquí
+                email = "ochentainueve@gmail.com"
             } else {
                 email = payload.email
                 const preferences = payload.preferences || {}
 
-                // Mapeo a castellano
                 const severityMap: Record<string, string> = {
                     'red': 'Rojo (Extremo)',
                     'orange': 'Naranja (Importante)',
@@ -70,7 +103,7 @@ serve(async (req: Request) => {
                     : 'Todos'
 
                 const dailyForecast = preferences.dailyForecast !== false ? 'Activado' : 'Desactivado'
-                const appUrl = payload.appUrl || "https://alertas-meteo.vercel.app"
+                const token = await generateToken(email)
 
                 subject = "Tus preferencias de alertas han sido actualizadas"
                 html = `
@@ -83,9 +116,7 @@ serve(async (req: Request) => {
                             <p style="margin: 5px 0;"><strong>Tipos de avisos:</strong> ${eventTypes}</p>
                         </div>
                         <p>A partir de ahora, verás los avisos filtrados según esta configuración cuando inicies sesión.</p>
-                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                        <p style="font-size: 12px; color: #64748b;">¿Ya no deseas recibir estas alertas? <a href="${appUrl}/unsubscribe" style="color: #2563eb;">Darme de baja aquí</a>.</p>
-                        <p style="font-size: 10px; color: #94a3b8; text-align: center; margin-top: 20px;">Este es un mensaje automático de Alertas Meteo.</p>
+                        ${unsubscribeFooter(appUrl, email, token)}
                     </div>
                 `
             }

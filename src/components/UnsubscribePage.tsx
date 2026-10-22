@@ -11,6 +11,41 @@ export const UnsubscribePage = () => {
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
 
+    // One-click unsubscribe via email link (email + token params)
+    const [linkEmail, setLinkEmail] = useState<string | null>(null);
+    const [linkToken, setLinkToken] = useState<string | null>(null);
+    const [linkError, setLinkError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const e = params.get('email');
+        const tok = params.get('token');
+        if (e && tok) {
+            setLinkEmail(e);
+            setLinkToken(tok);
+        }
+    }, []);
+
+    const handleDirectUnsubscribe = async () => {
+        if (!linkEmail || !linkToken) return;
+        setLoading(true);
+        setLinkError(null);
+        try {
+            const { data, error: funcError } = await supabase.functions.invoke('direct-unsubscribe', {
+                body: { email: linkEmail, token: linkToken }
+            });
+            if (funcError || !data?.success) {
+                setLinkError(data?.error || 'El enlace no es válido o ha caducado.');
+            } else {
+                setSuccess(true);
+            }
+        } catch {
+            setLinkError('Error al eliminar la cuenta. Inténtalo de nuevo.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Inject fonts and icons dynamically
     useEffect(() => {
         const fontLink = document.createElement('link');
@@ -59,7 +94,72 @@ export const UnsubscribePage = () => {
     return (
         <div className="min-h-screen bg-[#f7f9ff] flex items-center justify-center p-5 font-['Hanken_Grotesk',sans-serif]">
             <AnimatePresence mode="wait">
-                {!success ? (
+                {linkEmail && linkToken && !success ? (
+                    /* ── ONE-CLICK UNSUBSCRIBE FROM EMAIL LINK ── */
+                    <motion.div
+                        key="direct"
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -15 }}
+                        transition={{ duration: 0.4 }}
+                        className="w-full max-w-[460px] flex flex-col gap-6"
+                    >
+                        <header className="flex flex-col items-center text-center gap-3">
+                            <div className="w-16 h-16 bg-red-50 rounded-3xl flex items-center justify-center shadow-md border border-red-100">
+                                <span className="material-symbols-outlined text-red-600" style={{ fontSize: 32 }}>person_off</span>
+                            </div>
+                            <h1 className="text-2xl font-extrabold text-[#181c20] tracking-tight">
+                                Darse de baja
+                            </h1>
+                            <p className="text-sm text-[#424752] max-w-[340px]">
+                                Vas a eliminar tu cuenta y todos tus datos de forma permanente.
+                            </p>
+                        </header>
+
+                        <section className="bg-white rounded-2xl shadow-lg border border-[#ebeef3] p-6 sm:p-8 flex flex-col gap-5">
+                            <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3">
+                                <span className="material-symbols-outlined text-red-500 mt-0.5" style={{ fontSize: 20 }}>warning</span>
+                                <p className="text-xs text-red-800 leading-relaxed font-semibold">
+                                    Esta acción es <strong>irreversible</strong>. Se eliminarán tu perfil, preferencias, código postal, correo y suscripciones de notificaciones.
+                                </p>
+                            </div>
+
+                            <div className="bg-[#f7f9ff] border border-[#c2c6d4] rounded-xl p-4 text-center">
+                                <p className="text-[10px] font-bold uppercase text-[#727784] tracking-wider mb-1">Cuenta asociada</p>
+                                <p className="text-sm font-bold text-[#181c20] break-all">{linkEmail}</p>
+                            </div>
+
+                            {linkError && (
+                                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                                    <span className="material-symbols-outlined text-red-500" style={{ fontSize: 18 }}>error</span>
+                                    <p className="text-xs text-red-700">{linkError}</p>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={handleDirectUnsubscribe}
+                                disabled={loading}
+                                className="h-12 w-full rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold text-sm shadow-md hover:shadow-lg disabled:opacity-60 transition-all flex items-center justify-center gap-2"
+                            >
+                                {loading ? (
+                                    <>
+                                        <span className="material-symbols-outlined animate-spin" style={{ fontSize: 18 }}>progress_activity</span>
+                                        Eliminando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete_forever</span>
+                                        Eliminar mi cuenta definitivamente
+                                    </>
+                                )}
+                            </button>
+
+                            <a href="/" className="text-center text-sm text-[#003f87] font-bold hover:underline">
+                                Cancelar, volver a la app
+                            </a>
+                        </section>
+                    </motion.div>
+                ) : !success ? (
                     <motion.div
                         key="form"
                         initial={{ opacity: 0, y: 15 }}
