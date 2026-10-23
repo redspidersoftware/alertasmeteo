@@ -1235,7 +1235,7 @@ export const AdminPage = () => {
             </header>
 
             {/* Tabs */}
-            <div className="sticky top-[62px] z-20 bg-[#f7f9ff]/95 backdrop-blur border-b border-[#c2c6d4]/30">
+            <div className="sticky top-[68px] z-20 bg-[#f7f9ff]/95 backdrop-blur border-b border-[#c2c6d4]/30">
                 <div className="max-w-7xl mx-auto px-3 sm:px-7">
                     <div className="flex gap-1.5 py-2.5 overflow-x-auto">
                         {TABS.map(([id, icon, label]) => (
