@@ -68,7 +68,7 @@ export const AlertSidebar = ({ alerts }: AlertSidebarProps) => {
                             severityCounts[sev] > 0 ? (
                                 <div key={sev} className="flex items-center gap-1">
                                     <span className={`w-2 h-2 rounded-full ${severityColors[sev]}`} />
-                                    <span className="text-[9px] text-slate-400 font-bold">{severityCounts[sev]}</span>
+                                    <span className="text-[10px] text-slate-400 font-bold">{severityCounts[sev]}</span>
                                 </div>
                             ) : null
                         )}

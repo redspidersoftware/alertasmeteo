@@ -444,7 +444,7 @@ export const NuevaPage = () => {
                     <img
                       alt="MeteoAlerta España Logo"
                       className="w-full h-full object-contain"
-                      src="https://lh3.googleusercontent.com/aida/AP1WRLveR4U1EzLSoPjIP7wHXc7yfyOrWNt6p8d_2Msn90UcNJKUyVo8PLl1oWka4NG7Vmi957kC3R-2eLMGSReACq2DPgdvLGWqe0JaV_9_D4gRHezCk3CGUesVcH5bIkcrL_yPFR2NVjHw2gIkwli7vm-2P-RIV0NqAExALdE01vR73Q4gDeKzoqwsjQLzZcaeEsk7y5rcXwKLzS6ARyvJVGoUP5odV4kYOzUIU63TfOjH0u0iRhwSmCmbOg"
+                      src="/logo.png"
                     />
                   </div>
                   <div className="space-y-1">
@@ -505,7 +505,7 @@ export const NuevaPage = () => {
                           required
                         />
                         <button
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#727784] hover:text-[#424752] transition-colors"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 text-[#727784] hover:text-[#424752] transition-colors"
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                         >
@@ -605,7 +605,7 @@ export const NuevaPage = () => {
                       Soporte técnico
                     </button>
                   </div>
-                  <p className="text-[10px] text-[#c2c6d4] font-medium">
+                  <p className="text-[11px] text-[#727784] font-medium">
                     © 2026 MeteoAlerta España. Todos los derechos reservados.
                   </p>
                 </footer>
@@ -651,7 +651,7 @@ export const NuevaPage = () => {
                     <form onSubmit={handleRegisterSubmit} className="space-y-4">
                       {/* Name */}
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-[#424752] uppercase tracking-wider">
+                        <label className="ui-label">
                           Nombre Completo
                         </label>
                         <div className="relative group">
@@ -664,14 +664,14 @@ export const NuevaPage = () => {
                             placeholder="Ej: Juan Pérez"
                             value={regName}
                             onChange={(e) => setRegName(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#c2c6d4] bg-white text-sm focus:outline-none focus:border-[#003f87] transition-all"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm focus:outline-none focus:border-[#003f87] transition-all"
                           />
                         </div>
                       </div>
 
                       {/* Email */}
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-[#424752] uppercase tracking-wider">
+                        <label className="ui-label">
                           Email
                         </label>
                         <div className="relative group">
@@ -684,14 +684,14 @@ export const NuevaPage = () => {
                             placeholder="tu@email.com"
                             value={regEmail}
                             onChange={(e) => setRegEmail(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#c2c6d4] bg-white text-sm focus:outline-none focus:border-[#003f87] transition-all"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm focus:outline-none focus:border-[#003f87] transition-all"
                           />
                         </div>
                       </div>
 
                       {/* Postal Code */}
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-[#424752] uppercase tracking-wider">
+                        <label className="ui-label">
                           Código Postal
                         </label>
                         <div className="relative group">
@@ -707,7 +707,7 @@ export const NuevaPage = () => {
                             placeholder="Ej: 28001"
                             value={regPostalCode}
                             onChange={(e) => setRegPostalCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#c2c6d4] bg-white text-sm tracking-widest focus:outline-none focus:border-[#003f87] transition-all"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm tracking-widest focus:outline-none focus:border-[#003f87] transition-all"
                           />
                         </div>
                         <p className="text-[10px] text-[#727784] leading-snug">
@@ -718,7 +718,7 @@ export const NuevaPage = () => {
                       {/* Password inputs */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-[#424752] uppercase tracking-wider">
+                          <label className="ui-label">
                             Contraseña
                           </label>
                           <div className="relative group">
@@ -731,13 +731,13 @@ export const NuevaPage = () => {
                               placeholder="••••••••"
                               value={regPassword}
                               onChange={(e) => setRegPassword(e.target.value)}
-                              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#c2c6d4] bg-white text-sm focus:outline-none focus:border-[#003f87] transition-all"
+                              className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm focus:outline-none focus:border-[#003f87] transition-all"
                             />
                           </div>
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-[#424752] uppercase tracking-wider">
+                          <label className="ui-label">
                             Confirmar
                           </label>
                           <div className="relative group">
@@ -750,7 +750,7 @@ export const NuevaPage = () => {
                               placeholder="••••••••"
                               value={regConfirmPassword}
                               onChange={(e) => setRegConfirmPassword(e.target.value)}
-                              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#c2c6d4] bg-white text-sm focus:outline-none focus:border-[#003f87] transition-all"
+                              className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm focus:outline-none focus:border-[#003f87] transition-all"
                             />
                           </div>
                         </div>
@@ -831,6 +831,7 @@ export const NuevaPage = () => {
                         : 'text-[#424752] hover:bg-[#ebeef3] hover:text-[#181c20]'
                     }`}
                     title="Mapa de Alertas"
+                    aria-label="Mapa de Alertas"
                   >
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'map' ? 1 : 0}` }}>map</span>
                   </button>
@@ -843,6 +844,7 @@ export const NuevaPage = () => {
                         : 'text-[#424752] hover:bg-[#ebeef3] hover:text-[#181c20]'
                     }`}
                     title="Información y Soporte"
+                    aria-label="Información y Soporte"
                   >
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'info' ? 1 : 0}` }}>info</span>
                   </button>
@@ -855,6 +857,7 @@ export const NuevaPage = () => {
                         : 'text-[#424752] hover:bg-[#ebeef3] hover:text-[#181c20]'
                     }`}
                     title="Detalle de Alertas"
+                    aria-label="Detalle de Alertas"
                   >
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'alertas' ? 1 : 0}` }}>notifications_active</span>
                     {filteredAlerts.length > 0 && (
@@ -870,6 +873,7 @@ export const NuevaPage = () => {
                         : 'text-[#424752] hover:bg-[#ebeef3] hover:text-[#181c20]'
                     }`}
                     title="Ajustes"
+                    aria-label="Ajustes"
                   >
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'settings' ? 1 : 0}` }}>settings</span>
                   </button>
@@ -878,8 +882,9 @@ export const NuevaPage = () => {
                 <div className="flex flex-col gap-4 items-center">
                   <button
                     onClick={toggleDarkMode}
-                    className="w-10 h-10 rounded-xl hover:bg-[#ebeef3] text-[#424752] flex items-center justify-center transition-colors"
+                    className="w-11 h-11 rounded-xl hover:bg-[#ebeef3] text-[#424752] flex items-center justify-center transition-colors"
                     title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+                    aria-label={darkMode ? 'Desactivar modo oscuro' : 'Activar modo oscuro'}
                   >
                     <span className="material-symbols-outlined">{darkMode ? 'light_mode' : 'dark_mode'}</span>
                   </button>
@@ -889,8 +894,9 @@ export const NuevaPage = () => {
                         await logout();
                       }
                     }}
-                    className="w-10 h-10 rounded-xl hover:bg-[#ffdad6] text-[#ba1a1a] flex items-center justify-center transition-colors"
+                    className="w-11 h-11 rounded-xl hover:bg-[#ffdad6] text-[#ba1a1a] flex items-center justify-center transition-colors"
                     title="Cerrar sesión"
+                    aria-label="Cerrar sesión"
                   >
                     <span className="material-symbols-outlined">logout</span>
                   </button>
@@ -898,7 +904,7 @@ export const NuevaPage = () => {
               </aside>
 
               {/* ── TAB VIEW CONTENTS ── */}
-              <div className="flex-grow p-4 sm:p-6 lg:p-8 pb-20 md:pb-6 overflow-y-auto w-full max-w-[1600px] mx-auto">
+              <div className="flex-grow p-4 sm:p-6 lg:p-8 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6 overflow-y-auto w-full max-w-[1600px] mx-auto">
                 <AnimatePresence mode="wait">
                   {currentTab === 'map' && (
                     /* ───────────────── TAB: MAP ───────────────── */
@@ -921,14 +927,14 @@ export const NuevaPage = () => {
                               }} 
                             />
                           </div>
-                          <div className="absolute right-4 bottom-4 z-10 flex flex-col gap-2">
-                            <button className="w-10 h-10 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all">
+                            <div className="absolute right-4 bottom-12 z-10 flex flex-col gap-2">
+                            <button className="w-11 h-11 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all" aria-label="Acercar mapa">
                               <span className="material-symbols-outlined">add</span>
                             </button>
-                            <button className="w-10 h-10 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all">
+                            <button className="w-11 h-11 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all" aria-label="Alejar mapa">
                               <span className="material-symbols-outlined">remove</span>
                             </button>
-                            <button className="w-10 h-10 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all">
+                            <button className="w-11 h-11 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all" aria-label="Mi ubicación">
                               <span className="material-symbols-outlined">my_location</span>
                             </button>
                           </div>
@@ -939,15 +945,15 @@ export const NuevaPage = () => {
                             <div className="flex gap-4">
                               <div className="flex items-center gap-1.5">
                                 <div className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a]"></div>
-                                <span className="text-[9px] font-extrabold uppercase text-[#ba1a1a]">EXTREMO</span>
+                                <span className="text-[10px] font-extrabold uppercase text-[#ba1a1a]">EXTREMO</span>
                               </div>
                               <div className="flex items-center gap-1.5">
                                 <div className="w-2.5 h-2.5 rounded-full bg-[#f97316]"></div>
-                                <span className="text-[9px] font-extrabold uppercase text-[#f97316]">IMPORTANTE</span>
+                                <span className="text-[10px] font-extrabold uppercase text-[#f97316]">IMPORTANTE</span>
                               </div>
                               <div className="flex items-center gap-1.5">
                                 <div className="w-2.5 h-2.5 rounded-full bg-[#eab308]"></div>
-                                <span className="text-[9px] font-extrabold uppercase text-[#eab308]">RIESGO</span>
+                                <span className="text-[10px] font-extrabold uppercase text-[#eab308]">RIESGO</span>
                               </div>
                             </div>
                           </div>
@@ -1011,17 +1017,27 @@ export const NuevaPage = () => {
                               return (
                                 <article
                                   key={alert.id}
+                                  role="button"
+                                  tabIndex={0}
+                                  aria-label={`Alerta de ${alert.event} en ${alert.area}`}
                                   onClick={() => {
                                     setSelectedAlert(alert);
                                     setCurrentTab('alertas');
                                   }}
-                                  className="bg-white rounded-xl shadow-sm border border-[#c2c6d4]/30 flex flex-shrink-0 min-h-[120px] overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer active:scale-[0.98]"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      setSelectedAlert(alert);
+                                      setCurrentTab('alertas');
+                                    }
+                                  }}
+                                  className="bg-white rounded-xl shadow-sm border border-[#c2c6d4]/30 flex flex-shrink-0 min-h-[120px] overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-offset-2"
                                 >
                                   <div className={`active-alert-indicator ${severityBg}`}></div>
                                   <div className="p-4 flex-grow flex flex-col justify-between">
                                     <div>
                                       <div className="flex justify-between items-start mb-2">
-                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider ${badgeTextColors}`}>
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider ${badgeTextColors}`}>
                                           {badgeText}
                                         </span>
                                         <span className={`material-symbols-outlined ${iconColor} group-hover:scale-110 transition-transform`}>
@@ -1131,7 +1147,7 @@ export const NuevaPage = () => {
                                 }
                                 setCurrentTab('alertas');
                               }}
-                              className="mt-6 w-full bg-[#003f87] hover:bg-[#0056b3] text-white font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                              className="mt-6 w-full ui-btn-primary text-white font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                             >
                               <span>Ver Detalles</span>
                               <span className="material-symbols-outlined text-xs">arrow_forward</span>
@@ -1147,7 +1163,7 @@ export const NuevaPage = () => {
                             <img
                               alt="Centro Meteorológico"
                               className="absolute inset-0 w-full h-full object-cover"
-                              src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4VI4qMDzzJo1rivyrXn0b6D8fvxeRuCOejODN9lgTKiWW1_u9CUVzR5cM1NzGzNdJGvwizFd0SEQFhm7mK1nN5aJZxMpYnWQPpEXFi9S8aH6FxQ2PtmiAckv1oV-mKpIL7Em0ZZTlMbJDisV9GFqj4yg1qrHHhwm0UoGn1ob2wAnYs3ZK7DiPPtduv1NoVT0Qz4N5tCmpP9eRl6ItStpfW5tWKMifZX3KdttFyjc9iSzU2VA8J5HLGWo1KaQ1_ltX2hAhuu3pm-8"
+                              src="/weather_center.png"
                             />
                             <div className="absolute inset-0 bg-[#003f87]/20 backdrop-grayscale-[0.4]"></div>
                           </div>
@@ -1197,7 +1213,7 @@ export const NuevaPage = () => {
                             className="bg-white p-6 rounded-2xl border border-[#c2c6d4]/30 space-y-4 shadow-sm"
                           >
                             <div className="space-y-1">
-                              <label className="text-[10px] font-bold text-[#424752] uppercase tracking-wider ml-1" htmlFor="asunto">
+                              <label className="ui-label ml-1" htmlFor="asunto">
                                 Asunto
                               </label>
                               <input
@@ -1209,7 +1225,7 @@ export const NuevaPage = () => {
                               />
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[10px] font-bold text-[#424752] uppercase tracking-wider ml-1" htmlFor="mensaje">
+                              <label className="ui-label ml-1" htmlFor="mensaje">
                                 Mensaje
                               </label>
                               <textarea
@@ -1221,7 +1237,7 @@ export const NuevaPage = () => {
                               />
                             </div>
                             <button
-                              className="w-full bg-[#003f87] hover:bg-[#0056b3] text-white font-bold text-xs py-3 rounded-xl shadow-sm transition-all active:scale-[0.98]"
+                              className="w-full ui-btn-primary text-white font-bold text-xs py-3 rounded-xl shadow-sm transition-all active:scale-[0.98]"
                               type="submit"
                             >
                               Enviar Mensaje
@@ -1348,7 +1364,7 @@ export const NuevaPage = () => {
                               )}
                             </div>
                             
-                            <div className="relative z-10 px-5 py-3 flex justify-between items-center border-b border-[#c2c6d4]/10 bg-slate-50/50">
+                            <div className="relative z-10 px-5 py-3 flex flex-wrap justify-between items-center gap-2 border-b border-[#c2c6d4]/10 bg-slate-50/50">
                               <div className="flex items-center gap-2">
                                 <span className="w-3.5 h-3.5 rounded-full animate-ping"
                                   style={{
@@ -1389,13 +1405,13 @@ export const NuevaPage = () => {
                               </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="bg-[#f7f9ff]/80 backdrop-blur-[2px] p-4 rounded-xl border border-[#c2c6d4]/30">
-                                  <p className="text-[9px] font-bold uppercase text-[#727784] tracking-wider mb-1">Severidad</p>
+                                  <p className="text-[10px] font-bold uppercase text-[#727784] tracking-wider mb-1">Severidad</p>
                                   <p className="text-lg font-extrabold text-[#003f87] capitalize">
                                     {selectedAlert.severity === 'red' ? 'Rojo' : selectedAlert.severity === 'orange' ? 'Naranja' : 'Amarillo'}
                                   </p>
                                 </div>
                                 <div className="bg-[#f7f9ff]/80 backdrop-blur-[2px] p-4 rounded-xl border border-[#c2c6d4]/30">
-                                  <p className="text-[9px] font-bold uppercase text-[#727784] tracking-wider mb-1">Fenómeno</p>
+                                  <p className="text-[10px] font-bold uppercase text-[#727784] tracking-wider mb-1">Fenómeno</p>
                                   <p className="text-lg font-extrabold text-[#003f87] capitalize">{selectedAlert.event || 'Meteorológico'}</p>
                                 </div>
                               </div>
@@ -1458,8 +1474,8 @@ export const NuevaPage = () => {
                               {selectedAlert.instruction || 'Manténgase informado y siga las indicaciones de los servicios de Protección Civil y emergencias en su localidad.'}
                             </div>
                             <div className="flex flex-wrap gap-2">
-                              <span className="bg-white/20 px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider">Evite zonas inundables</span>
-                              <span className="bg-white/20 px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider">Cierre puertas y ventanas</span>
+                              <span className="bg-white/20 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">Evite zonas inundables</span>
+                              <span className="bg-white/20 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">Cierre puertas y ventanas</span>
                             </div>
                           </section>
 
@@ -1536,7 +1552,7 @@ export const NuevaPage = () => {
                       className="w-full max-w-7xl mx-auto space-y-6"
                     >
                       <section className="mb-6">
-                        <div className="glass-card rounded-xl p-6 flex flex-col md:flex-row items-center gap-4 shadow-sm border-l-4 border-[#003f87]">
+                        <div className="ui-card rounded-xl p-6 flex flex-col md:flex-row items-center gap-4 border-l-4 border-l-[#003f87]">
                           <div className="relative">
                             <div className="w-20 h-20 rounded-full bg-[#d7e2ff]/50 border-2 border-[#d7e2ff] shadow-md flex items-center justify-center overflow-hidden">
                               {avatarUrl ? (
@@ -1588,7 +1604,7 @@ export const NuevaPage = () => {
                                   <button
                                     id="install-app-btn"
                                     onClick={installApp}
-                                    className="w-full flex items-center justify-center gap-3 bg-[#003f87] hover:bg-[#0056b3] active:scale-95 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all duration-200"
+                                    className="w-full flex items-center justify-center gap-3 ui-btn-primary active:scale-95 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all duration-200"
                                   >
                                     <span className="material-symbols-outlined text-[22px]">download</span>
                                     Instalar ahora
@@ -1807,21 +1823,21 @@ export const NuevaPage = () => {
                           <div className="bg-[#e5e8ee] p-6 rounded-xl shadow-sm space-y-4">
                             <h3 className="text-xl font-semibold text-[#424752] border-b border-[#c2c6d4]/30 pb-2">Información</h3>
                             <ul className="space-y-4">
-                              <li onClick={() => setCurrentTab('info')} className="flex items-center justify-between group cursor-pointer">
+                              <li onClick={() => setCurrentTab('info')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCurrentTab('info'); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-inset rounded-lg">
                                 <div className="flex items-center gap-3">
                                   <span className="material-symbols-outlined text-[#003f87]">online_prediction</span>
                                   <span className="text-base text-[#181c20]">Predicción Nacional</span>
                                 </div>
                                 <span className="material-symbols-outlined text-[#c2c6d4] group-hover:text-[#003f87]">chevron_right</span>
                               </li>
-                              <li onClick={() => setCurrentTab('info')} className="flex items-center justify-between group cursor-pointer">
+                              <li onClick={() => setCurrentTab('info')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCurrentTab('info'); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-inset rounded-lg">
                                 <div className="flex items-center gap-3">
                                   <span className="material-symbols-outlined text-[#003f87]">info_i</span>
                                   <span className="text-base text-[#181c20]">Qué hacemos</span>
                                 </div>
                                 <span className="material-symbols-outlined text-[#c2c6d4] group-hover:text-[#003f87]">chevron_right</span>
                               </li>
-                              <li onClick={toggleDarkMode} className="flex items-center justify-between group cursor-pointer">
+                              <li className="flex items-center justify-between group">
                                 <div className="flex items-center gap-3">
                                   <span className="material-symbols-outlined text-[#003f87]">{darkMode ? 'light_mode' : 'dark_mode'}</span>
                                   <span className="text-base text-[#181c20]">Modo oscuro</span>
@@ -1831,6 +1847,7 @@ export const NuevaPage = () => {
                                     type="checkbox"
                                     checked={darkMode}
                                     onChange={toggleDarkMode}
+                                    aria-label="Modo oscuro"
                                     className={`absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer ${darkMode ? 'right-0 border-[#003f87]' : 'left-0 border-[#727784]'}`}
                                     id="toggle-dark"
                                   />
@@ -1844,21 +1861,21 @@ export const NuevaPage = () => {
                                 </div>
                                 <span className="text-[#424752] font-bold">3.0.6</span>
                               </li>
-                              <li onClick={() => setShowSupportModal(true)} className="flex items-center justify-between group cursor-pointer">
+                              <li onClick={() => setShowSupportModal(true)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowSupportModal(true); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-inset rounded-lg">
                                 <div className="flex items-center gap-3">
                                   <span className="material-symbols-outlined text-[#003f87]">contact_support</span>
                                   <span className="text-base text-[#181c20]">Contacto y Soporte</span>
                                 </div>
                                 <span className="material-symbols-outlined text-[#c2c6d4] group-hover:text-[#003f87]">chevron_right</span>
                               </li>
-                              <li onClick={() => setShowPrivacyModal(true)} className="flex items-center justify-between group cursor-pointer">
+                              <li onClick={() => setShowPrivacyModal(true)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowPrivacyModal(true); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-inset rounded-lg">
                                 <div className="flex items-center gap-3">
                                   <span className="material-symbols-outlined text-[#003f87]">security</span>
                                   <span className="text-base text-[#181c20]">Privacidad</span>
                                 </div>
                                 <span className="material-symbols-outlined text-[#c2c6d4] group-hover:text-[#003f87]">chevron_right</span>
                               </li>
-                              <li onClick={() => setCurrentTab('info')} className="flex items-center justify-between group cursor-pointer">
+                              <li onClick={() => setCurrentTab('info')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCurrentTab('info'); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-inset rounded-lg">
                                 <div className="flex items-center gap-3">
                                   <span className="material-symbols-outlined text-[#003f87]">help</span>
                                   <span className="text-base text-[#181c20]">Centro de Ayuda</span>
@@ -1896,7 +1913,7 @@ export const NuevaPage = () => {
               </div>
 
               {/* ── BOTTOM MOBILE NAVIGATION BAR ── */}
-              <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 pb-safe bg-white border-t border-[#c2c6d4]/30 shadow-lg md:hidden">
+              <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-white border-t border-[#c2c6d4]/30 shadow-lg md:hidden">
                 <button
                   onClick={() => setCurrentTab('map')}
                   className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-all ${
@@ -1974,7 +1991,8 @@ export const NuevaPage = () => {
                 </div>
                 <button
                   onClick={() => setShowToSModal(false)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#f2f3f7] transition-colors cursor-pointer bg-transparent border-none"
+                  aria-label="Cerrar"
+                  className="ui-btn w-11 h-11 rounded-lg flex items-center justify-center hover:bg-[#f2f3f7] transition-colors cursor-pointer bg-transparent border-none"
                 >
                   <span className="material-symbols-outlined text-[#727784]" style={{ fontSize: 20 }}>close</span>
                 </button>
@@ -2121,7 +2139,8 @@ export const NuevaPage = () => {
                 </div>
                 <button
                   onClick={() => setShowPrivacyModal(false)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#f2f3f7] transition-colors cursor-pointer bg-transparent border-none"
+                  aria-label="Cerrar"
+                  className="ui-btn w-11 h-11 rounded-lg flex items-center justify-center hover:bg-[#f2f3f7] transition-colors cursor-pointer bg-transparent border-none"
                 >
                   <span className="material-symbols-outlined text-[#727784]" style={{ fontSize: 20 }}>close</span>
                 </button>
@@ -2224,7 +2243,8 @@ export const NuevaPage = () => {
                 </div>
                 <button
                   onClick={() => setShowSupportModal(false)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#f2f3f7] transition-colors cursor-pointer bg-transparent border-none"
+                  aria-label="Cerrar"
+                  className="ui-btn w-11 h-11 rounded-lg flex items-center justify-center hover:bg-[#f2f3f7] transition-colors cursor-pointer bg-transparent border-none"
                 >
                   <span className="material-symbols-outlined text-[#727784]" style={{ fontSize: 20 }}>close</span>
                 </button>
@@ -2251,7 +2271,7 @@ export const NuevaPage = () => {
                     className="bg-[#f7f9ff] p-4 rounded-xl border border-[#c2c6d4]/30 space-y-3"
                   >
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-[#424752] uppercase tracking-wider ml-1" htmlFor="modal-asunto">
+                      <label className="ui-label ml-1" htmlFor="modal-asunto">
                         Asunto
                       </label>
                       <input
@@ -2263,7 +2283,7 @@ export const NuevaPage = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-[#424752] uppercase tracking-wider ml-1" htmlFor="modal-mensaje">
+                      <label className="ui-label ml-1" htmlFor="modal-mensaje">
                         Mensaje
                       </label>
                       <textarea
@@ -2275,7 +2295,7 @@ export const NuevaPage = () => {
                       />
                     </div>
                     <button
-                      className="w-full bg-[#003f87] hover:bg-[#0056b3] text-white font-bold text-xs py-2.5 rounded-lg shadow-sm transition-all active:scale-[0.98]"
+                      className="w-full ui-btn-primary text-white font-bold text-xs py-2.5 rounded-lg shadow-sm transition-all active:scale-[0.98]"
                       type="submit"
                     >
                       Enviar reporte
@@ -2304,7 +2324,7 @@ export const NuevaPage = () => {
                         </div>
                         <div>
                           <p className="font-bold text-[10px] text-[#181c20]">Telegram</p>
-                          <p className="text-[8px] text-[#727784]">@alertasMeteoBot</p>
+                          <p className="text-[10px] text-[#727784]">@alertasMeteoBot</p>
                         </div>
                       </div>
                       <span className="material-symbols-outlined text-[#727784] text-[12px] group-hover:text-[#003f87]">open_in_new</span>
@@ -2324,7 +2344,7 @@ export const NuevaPage = () => {
                         </div>
                         <div>
                           <p className="font-bold text-[10px] text-[#181c20]">X (Twitter)</p>
-                          <p className="text-[8px] text-[#727784]">@AlertasMeteoES</p>
+                          <p className="text-[10px] text-[#727784]">@AlertasMeteoES</p>
                         </div>
                       </div>
                       <span className="material-symbols-outlined text-[#727784] text-[12px] group-hover:text-[#003f87]">open_in_new</span>

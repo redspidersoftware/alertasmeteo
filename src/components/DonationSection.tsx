@@ -12,7 +12,14 @@ export const DonationSection = ({ isFixed = false }: DonationSectionProps) => {
     if (!isFixed) return null;
 
     return (
-        <div style={{ position: 'fixed', bottom: '80px', left: '16px', zIndex: 9999 }}>
+        <div
+            style={{
+                position: 'fixed',
+                bottom: 'calc(76px + env(safe-area-inset-bottom))',
+                right: '16px',
+                zIndex: 40,
+            }}
+        >
             <AnimatePresence>
                 {open && (
                     <motion.div
@@ -23,7 +30,7 @@ export const DonationSection = ({ isFixed = false }: DonationSectionProps) => {
                         style={{
                             position: 'absolute',
                             bottom: '56px',
-                            left: 0,
+                            right: 0,
                             background: 'linear-gradient(135deg, #1e293b, #0f172a)',
                             borderRadius: '16px',
                             padding: '16px',
@@ -116,6 +123,8 @@ export const DonationSection = ({ isFixed = false }: DonationSectionProps) => {
                     transition: 'background 0.2s',
                 }}
                 title="Apoya el proyecto"
+                aria-label={open ? 'Cerrar donaciones' : 'Apoya el proyecto'}
+                aria-expanded={open}
             >
                 {open ? '✕' : '☕'}
             </motion.button>

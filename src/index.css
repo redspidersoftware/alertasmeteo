@@ -325,7 +325,7 @@
 }
 
 :root {
-  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  font-family: 'Hanken Grotesk', system-ui, sans-serif;
   line-height: 1.6;
   font-weight: 400;
   color: #181c20;
@@ -334,6 +334,25 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* ── Design tokens (claro) ── */
+  --brand: #003f87;
+  --brand-strong: #004a9c;
+  --brand-soft: #0056b3;
+  --brand-tint: #d7e2ff;
+  --bg: #f7f9ff;
+  --surface: #ffffff;
+  --surface-2: #ebeef3;
+  --surface-3: #f1f4f9;
+  --text: #181c20;
+  --text-muted: #424752;
+  --text-faint: #727784;
+  --border: rgba(194, 198, 212, 0.45);
+  --border-strong: #c2c6d4;
+  --focus: #003f87;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 6px 16px -8px rgba(15, 23, 42, 0.10);
+  --danger: #ba1a1a;
+  --danger-tint: #ffdad6;
 }
 
 body {
@@ -366,6 +385,115 @@ body {
 /* ── DARK MODE ── */
 .dark {
   color-scheme: dark;
+
+  /* ── Design tokens (oscuro) ── */
+  --brand: #2563eb;
+  --brand-strong: #2563eb;
+  --brand-soft: #3b82f6;
+  --brand-tint: rgba(59, 130, 246, 0.22);
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-2: #334155;
+  --surface-3: #1e293b;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-faint: #64748b;
+  --border: rgba(100, 116, 139, 0.35);
+  --border-strong: #475569;
+  --focus: #60a5fa;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px -8px rgba(0, 0, 0, 0.5);
+  --danger: #ff8a80;
+  --danger-tint: rgba(185, 28, 28, 0.28);
+}
+
+/* ── Componentes base (design system) ──
+   Las capas de Tailwind los dejan por debajo de las utilidades,
+   así el markup puede seguir ajustando tamaños/padding sin choques. */
+@layer components {
+  .ui-card {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-card);
+  }
+
+  .ui-card-header {
+    background-color: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ui-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+  }
+
+  .ui-btn-primary {
+    background-color: var(--brand);
+    color: #ffffff;
+  }
+
+  .ui-btn-primary:hover {
+    background-color: var(--brand-soft);
+  }
+
+  .ui-btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .ui-btn-ghost {
+    background-color: var(--surface-2);
+    color: var(--brand);
+  }
+
+  .ui-btn-ghost:hover {
+    background-color: var(--surface-3);
+  }
+
+  .ui-input {
+    width: 100%;
+    background-color: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 0.5rem;
+    color: var(--text);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    transition: border-color 0.15s ease;
+  }
+
+  .ui-input:focus {
+    outline: none;
+    border-color: var(--focus);
+  }
+
+  .ui-input::placeholder {
+    color: var(--text-faint);
+  }
+
+  .ui-label {
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+
+  .ui-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background-color: var(--surface-2);
+    color: var(--text-muted);
+  }
 }
 
 .dark body,
@@ -465,3 +593,104 @@ body {
 }
 
 /* Alert severity backgrounds remain unchanged for visibility */
+
+/* ──────────────────────────────────────────────────────────────
+   Auditoría de oscuro — superficies claras que quedaban intactas
+   (generada con scripts: revisar tras añadir clases nuevas al src)
+   ────────────────────────────────────────────────────────────── */
+
+/* Superficies */
+.dark .bg-\[\#f0f4ff\] { background-color: rgba(37, 99, 235, 0.14) !important; }
+.dark .bg-\[\#f7f9ff\]\/80 { background-color: rgba(30, 41, 59, 0.85) !important; }
+.dark .bg-\[\#f7f9ff\]\/95 { background-color: rgba(15, 23, 42, 0.95) !important; }
+.dark .bg-\[\#f7f9ff\]\/60 { background-color: rgba(30, 41, 59, 0.65) !important; }
+.dark .bg-\[\#f1f4f9\]\/50 { background-color: rgba(30, 41, 59, 0.7) !important; }
+.dark .bg-\[\#f2f3f7\] { background-color: #334155 !important; }
+.dark .bg-\[\#e8f0fe\]\/40 { background-color: rgba(37, 99, 235, 0.18) !important; }
+.dark .bg-\[\#e8f5e9\] { background-color: rgba(34, 197, 94, 0.12) !important; }
+.dark .bg-\[\#e1e3e4\]\/30 { background-color: rgba(71, 85, 105, 0.55) !important; }
+.dark .bg-\[\#ebeef3\]\/30 { background-color: rgba(51, 65, 85, 0.5) !important; }
+.dark .bg-\[\#ebeef3\]\/60 { background-color: rgba(51, 65, 85, 0.75) !important; }
+.dark .bg-\[\#c2c6d4\]\/50 { background-color: rgba(100, 116, 139, 0.5) !important; }
+.dark .bg-\[\#ffea85\] { background-color: rgba(234, 179, 8, 0.22) !important; }
+.dark .bg-\[\#d7e2ff\]\/50 { background-color: rgba(37, 99, 235, 0.3) !important; }
+.dark .bg-\[\#727784\] { background-color: #475569 !important; }
+
+/* Tints de aviso / error */
+.dark .bg-\[\#ffdad6\] { background-color: rgba(185, 28, 28, 0.3) !important; }
+.dark .bg-\[\#ffdad6\]\/20 { background-color: rgba(185, 28, 28, 0.25) !important; }
+.dark .bg-\[\#ffdbcc\]\/20 { background-color: rgba(153, 27, 27, 0.3) !important; }
+
+/* Tints de marca y redes */
+.dark .bg-\[\#003f87\]\/20 { background-color: rgba(37, 99, 235, 0.32) !important; }
+.dark .bg-\[\#0056b3\]\/20 { background-color: rgba(37, 99, 235, 0.32) !important; }
+.dark .bg-\[\#0088cc\]\/10 { background-color: rgba(56, 189, 248, 0.16) !important; }
+.dark .bg-\[\#1DA1F2\]\/10 { background-color: rgba(56, 189, 248, 0.16) !important; }
+.dark .bg-\[\#25d366\]\/10 { background-color: rgba(34, 197, 94, 0.18) !important; }
+.dark .hover\:bg-\[\#0088cc\]\/20:hover { background-color: rgba(56, 189, 248, 0.26) !important; }
+.dark .hover\:bg-\[\#25d366\]\/20:hover { background-color: rgba(34, 197, 94, 0.26) !important; }
+
+/* Hovers claros → superficie oscura */
+.dark .hover\:bg-\[\#e5e8ee\]:hover { background-color: #334155 !important; }
+.dark .hover\:bg-\[\#ebeef3\]:hover { background-color: #334155 !important; }
+.dark .hover\:bg-\[\#f1f4f9\]:hover { background-color: #334155 !important; }
+.dark .hover\:bg-\[\#f2f3f7\]:hover { background-color: #334155 !important; }
+.dark .hover\:bg-\[\#f7f9ff\]:hover { background-color: #334155 !important; }
+.dark .hover\:bg-\[\#f7f9ff\]\/50:hover { background-color: rgba(51, 65, 85, 0.75) !important; }
+.dark .hover\:bg-\[\#ffdad6\]:hover { background-color: rgba(185, 28, 28, 0.38) !important; }
+.dark .hover\:bg-\[\#d7e2ff\]:hover { background-color: rgba(37, 99, 235, 0.35) !important; }
+
+/* Textos oscuros → claros */
+.dark .text-\[\#1a1c22\] { color: #f1f5f9 !important; }
+.dark .text-\[\#001a40\] { color: #e2e8f0 !important; }
+.dark .text-\[\#c2c6d4\] { color: #94a3b8 !important; }
+.dark .text-\[\#93000a\] { color: #ff8a80 !important; }
+.dark .text-\[\#93000a\]\/70 { color: rgba(255, 138, 128, 0.9) !important; }
+.dark .text-\[\#7b2f00\] { color: #fdba74 !important; }
+.dark .text-\[\#7b2f00\]\/70 { color: rgba(253, 186, 116, 0.9) !important; }
+.dark .text-\[\#2e7d32\] { color: #86efac !important; }
+.dark .text-\[\#ba1a1a\] { color: #ff8a80 !important; }
+.dark .text-\[\#e65100\] { color: #fb923c !important; }
+.dark .text-\[\#0088cc\] { color: #38bdf8 !important; }
+.dark .text-\[\#128c7e\] { color: #4ade80 !important; }
+.dark .text-\[\#003f87\]\/70 { color: rgba(96, 165, 250, 0.9) !important; }
+
+/* Bordes claros → neutros / azul de marca */
+.dark .border-\[\#003f87\] { border-color: rgba(59, 130, 246, 0.55) !important; }
+.dark .border-\[\#003f87\]\/20 { border-color: rgba(59, 130, 246, 0.35) !important; }
+.dark .border-\[\#003f87\]\/25 { border-color: rgba(59, 130, 246, 0.4) !important; }
+.dark .border-\[\#003f87\]\/30 { border-color: rgba(59, 130, 246, 0.45) !important; }
+.dark .border-\[\#d7e2ff\] { border-color: rgba(59, 130, 246, 0.45) !important; }
+.dark .border-\[\#ebeef3\] { border-color: #334155 !important; }
+.dark .border-\[\#ebedf3\] { border-color: #334155 !important; }
+.dark .hover\:border-\[\#c2c6d4\]\/40:hover { border-color: rgba(100, 116, 139, 0.5) !important; }
+.dark .hover\:border-\[\#003f87\]\/40:hover { border-color: rgba(96, 165, 250, 0.55) !important; }
+.dark .hover\:border-\[\#003f87\]\/50:hover { border-color: rgba(96, 165, 250, 0.6) !important; }
+.dark .focus\:border-\[\#003f87\]:focus { border-color: #60a5fa !important; }
+.dark .ring-\[\#003f87\] { --tw-ring-color: #60a5fa !important; }
+.dark .focus-visible\:ring-offset-2 { --tw-ring-offset-color: #0f172a !important; }
+
+/* Acentos en hover / focus / group-hover */
+.dark .hover\:text-\[\#181c20\]:hover { color: #f1f5f9 !important; }
+.dark .hover\:text-\[\#424752\]:hover { color: #cbd5e1 !important; }
+.dark .hover\:text-\[\#003f87\]:hover { color: #60a5fa !important; }
+.dark .focus-within\:text-\[\#003f87\]:focus-within { color: #60a5fa !important; }
+.dark .group-hover\:text-\[\#003f87\] { color: #60a5fa !important; }
+
+/* Colores de severidad/dejados a propósito (legibles sobre oscuro):
+   bg-[#ba1a1a] bg-[#eab308] bg-[#f97316] bg-[#0088cc] bg-[#06b6d4]
+   bg-[#0ea5e9] bg-[#475569] bg-[#5e35b1] text-[#eab308] text-[#f97316]
+   text-[#22c55e] text-[#acc7ff] text-[#bbd0ff] text-[#1DA1F2] */
+
+/* ── Accesibilidad: movimiento reducido ──
+   framer-motion se respeta con <MotionConfig reducedMotion="user"> en App.tsx */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

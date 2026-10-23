@@ -749,7 +749,7 @@ export const AdminPage = () => {
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <p className="text-sm font-bold text-[#181c20]">{a.event}</p>
-                                                <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: s.bg, color: s.fg }}>{s.label}</span>
+                                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: s.bg, color: s.fg }}>{s.label}</span>
                                             </div>
                                             <p className="text-[11px] text-[#727784] truncate">{a.area_desc || 'España'}</p>
                                         </div>
@@ -1389,7 +1389,7 @@ interface TestCardProps {
 const TestCard = ({ badge, badgeClass, title, desc, btnClass, label, onClick, result, selectLabel, selectId, options, select2Label, select2Id, options2, isImage }: TestCardProps) => (
     <div className="p-5 hover:bg-[#f7f9ff]/50 transition-colors">
         <div className="flex items-center gap-2 mb-2">
-            <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${badgeClass}`}>{badge}</span>
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${badgeClass}`}>{badge}</span>
             <span className="font-extrabold text-sm text-[#181c20]">{title}</span>
         </div>
         <p className="text-xs text-[#727784] leading-relaxed mb-3">{desc}</p>

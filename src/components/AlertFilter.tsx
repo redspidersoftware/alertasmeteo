@@ -180,7 +180,7 @@ export const AlertFilter = ({ alerts, selectedType, selectedSeverity, onFilterCh
                                                                 </span>
                                                                 <span className="truncate capitalize">{cleanName}</span>
                                                             </div>
-                                                            <span className="text-[9px] opacity-40 font-black bg-black/30 px-1.5 py-0.5 rounded">
+                                                            <span className="text-[10px] opacity-60 font-black bg-black/30 px-1.5 py-0.5 rounded">
                                                                 {count}
                                                             </span>
                                                         </button>

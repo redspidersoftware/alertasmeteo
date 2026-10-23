@@ -17,6 +17,9 @@ export function useDarkMode() {
       root.classList.remove('dark');
     }
     localStorage.setItem(STORAGE_KEY, String(dark));
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', dark ? '#0f172a' : '#003f87');
   }, [dark]);
 
   const toggle = () => setDark(d => !d);

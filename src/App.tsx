@@ -5,10 +5,7 @@ import { EulaPage } from './components/EulaPage';
 import { NuevaPage } from './components/NuevaPage';
 import { DonationSection } from './components/DonationSection';
 import { AdminPage } from './components/AdminPage';
-
-
-
-
+import { MotionConfig } from 'framer-motion';
 
 function App() {
   if (window.location.pathname === '/eula') {
@@ -28,17 +25,22 @@ function App() {
   }
 
   if (window.location.pathname === '/admin') {
-    return <AdminPage />;
+    return (
+      <MotionConfig reducedMotion="user">
+        <AdminPage />
+      </MotionConfig>
+    );
   }
 
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <NuevaPage />
-        <DonationSection isFixed={true} />
-      </AuthProvider>
-    </LanguageProvider>
+    <MotionConfig reducedMotion="user">
+      <LanguageProvider>
+        <AuthProvider>
+          <NuevaPage />
+          <DonationSection isFixed={true} />
+        </AuthProvider>
+      </LanguageProvider>
+    </MotionConfig>
   );
 }
-
 export default App;
