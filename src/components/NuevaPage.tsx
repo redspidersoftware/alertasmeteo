@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getAlerts, getNationalPrediction } from '../services/aemet';
-import { updateUser, saveUser } from '../services/userService';
+import { updateUser, saveUser, validatePostalCode } from '../services/userService';
 import { supabase } from '../lib/supabase';
 import type { WeatherAlert, NationalPrediction } from '../types';
 import { MapView } from './MapView';
@@ -41,6 +41,7 @@ export const NuevaPage = () => {
   // Register Form State
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
+  const [regPostalCode, setRegPostalCode] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regTerms, setRegTerms] = useState(false);
@@ -191,6 +192,10 @@ export const NuevaPage = () => {
       setAuthError('Debe aceptar los términos de servicio.');
       return;
     }
+    if (!validatePostalCode(regPostalCode)) {
+      setAuthError('Introduce un código postal español válido (5 dígitos).');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -198,7 +203,7 @@ export const NuevaPage = () => {
         name: regName,
         email: regEmail,
         phone: '', 
-        postalCode: '28001',
+        postalCode: regPostalCode,
         language: 'es',
       }, regPassword);
       setRegSuccess(true);
@@ -209,6 +214,7 @@ export const NuevaPage = () => {
         setRegSuccess(false);
         setRegName('');
         setRegEmail('');
+        setRegPostalCode('');
         setRegPassword('');
         setRegConfirmPassword('');
         setAuthError(null);
@@ -681,6 +687,32 @@ export const NuevaPage = () => {
                             className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#c2c6d4] bg-white text-sm focus:outline-none focus:border-[#003f87] transition-all"
                           />
                         </div>
+                      </div>
+
+                      {/* Postal Code */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-[#424752] uppercase tracking-wider">
+                          Código Postal
+                        </label>
+                        <div className="relative group">
+                          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#727784] group-focus-within:text-[#003f87] transition-colors">
+                            pin_drop
+                          </span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="postal-code"
+                            required
+                            maxLength={5}
+                            placeholder="Ej: 28001"
+                            value={regPostalCode}
+                            onChange={(e) => setRegPostalCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#c2c6d4] bg-white text-sm tracking-widest focus:outline-none focus:border-[#003f87] transition-all"
+                          />
+                        </div>
+                        <p className="text-[10px] text-[#727784] leading-snug">
+                          Zona donde quieres recibir los avisos de Protección Civil.
+                        </p>
                       </div>
 
                       {/* Password inputs */}
