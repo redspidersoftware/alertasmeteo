@@ -1,15 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getAlerts, getNationalPrediction } from '../services/aemet';
+import { saveAlertsCache, loadAlertsCache } from '../services/alertsCache';
+import { formatRelativeTime } from '../utils/relativeTime';
 import { updateUser, saveUser, validatePostalCode } from '../services/userService';
 import { supabase } from '../lib/supabase';
 import type { WeatherAlert, NationalPrediction } from '../types';
-import { MapView } from './MapView';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import { useDarkMode } from '../hooks/useDarkMode';
+import { useModalFocus } from '../hooks/useModalFocus';
+
+// Leaflet pesa ~150 kB: se carga solo cuando toca pintar el mapa
+const MapView = lazy(() => import('./MapView').then((m) => ({ default: m.MapView })));
 
 type Tab = 'map' | 'info' | 'alertas' | 'settings';
 type AuthState = 'login' | 'register';
@@ -25,6 +30,17 @@ export const NuevaPage = () => {
   const [showToSModal, setShowToSModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
+
+  // Accesibilidad de los modales (Escape, foco atrapado, foco de vuelta)
+  const tosPanelRef = useRef<HTMLDivElement>(null);
+  const privacyPanelRef = useRef<HTMLDivElement>(null);
+  const supportPanelRef = useRef<HTMLDivElement>(null);
+  const closeToSModal = useCallback(() => setShowToSModal(false), []);
+  const closePrivacyModal = useCallback(() => setShowPrivacyModal(false), []);
+  const closeSupportModal = useCallback(() => setShowSupportModal(false), []);
+  useModalFocus(showToSModal, closeToSModal, tosPanelRef);
+  useModalFocus(showPrivacyModal, closePrivacyModal, privacyPanelRef);
+  useModalFocus(showSupportModal, closeSupportModal, supportPanelRef);
   
   // Navigation State
   const [currentTab, setCurrentTab] = useState<Tab>('map');
@@ -49,6 +65,11 @@ export const NuevaPage = () => {
 
   // Alerts State
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
+  const [alertsLoading, setAlertsLoading] = useState(true);
+  const [alertsError, setAlertsError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   // Alerts in the user's own postal code zone
   const [userZoneAlerts, setUserZoneAlerts] = useState<WeatherAlert[]>([]);
 
@@ -63,16 +84,52 @@ export const NuevaPage = () => {
 
   // Fonts & Material Symbols are loaded globally from index.html
 
-  // Fetch real AEMET alerts (exclude green/Minor and non-Spanish)
+  // Reloj para el "actualizado hace X min"
   useEffect(() => {
-    if (user) {
-      getAlerts().then(data => setAlerts(data.filter(a => a.severity !== 'green' && a.language.startsWith('es'))));
-      const interval = setInterval(() => {
-        getAlerts().then(data => setAlerts(data.filter(a => a.severity !== 'green' && a.language.startsWith('es'))));
-      }, 5 * 60 * 1000);
-      return () => clearInterval(interval);
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Fetch real AEMET alerts (exclude green/Minor and non-Spanish).
+  // Si falla (sin conexión, worker caído) se usa la última copia guardada.
+  const loadAlerts = useCallback(async () => {
+    try {
+      const data = await getAlerts();
+      const relevant = data.filter(a => a.severity !== 'green' && a.language.startsWith('es'));
+      setAlerts(relevant);
+      setAlertsError(false);
+      const updatedAt = Date.now();
+      setLastUpdatedAt(updatedAt);
+      setNow(updatedAt);
+      saveAlertsCache(relevant);
+    } catch (error) {
+      console.error('[Alerts] No se pudieron cargar las alertas:', error);
+      const cached = loadAlertsCache();
+      if (cached) {
+        setAlerts(cached.alerts);
+        setLastUpdatedAt(cached.savedAt);
+      }
+      setAlertsError(true);
+    } finally {
+      setAlertsLoading(false);
     }
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    void loadAlerts();
+    const interval = setInterval(() => void loadAlerts(), 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [user, loadAlerts]);
+
+  const handleRefreshAlerts = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadAlerts();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadAlerts]);
 
   // When alerts or user postal code change, compute user zone alerts
   useEffect(() => {
@@ -155,8 +212,8 @@ export const NuevaPage = () => {
     setLoading(true);
     try {
       await loginWithGoogle();
-    } catch (err: any) {
-      setAuthError(err.message || 'Error al iniciar sesión con Google.');
+    } catch (err) {
+      setAuthError(err instanceof Error && err.message ? err.message : 'Error al iniciar sesión con Google.');
       setLoading(false);
     }
   };
@@ -443,8 +500,10 @@ export const NuevaPage = () => {
                   <div className="w-20 h-20 rounded-xl bg-[#e0e3e8] flex items-center justify-center p-1 overflow-hidden shadow-sm">
                     <img
                       alt="MeteoAlerta España Logo"
+                      width={1024}
+                      height={1024}
                       className="w-full h-full object-contain"
-                      src="/logo.png"
+                      src="/logo.webp"
                     />
                   </div>
                   <div className="space-y-1">
@@ -518,7 +577,7 @@ export const NuevaPage = () => {
 
                     {/* Error Alert */}
                     {authError && (
-                      <div className="bg-[#ffdad6] border border-[#ba1a1a]/20 p-3 rounded-lg flex items-start gap-2 text-[#93000a] text-xs font-semibold">
+                      <div role="alert" className="bg-[#ffdad6] border border-[#ba1a1a]/20 p-3 rounded-lg flex items-start gap-2 text-[#93000a] text-xs font-semibold">
                         <span className="material-symbols-outlined text-sm flex-shrink-0 mt-0.5">error</span>
                         <p>{authError}</p>
                       </div>
@@ -773,7 +832,7 @@ export const NuevaPage = () => {
 
                       {/* Error Alert */}
                       {authError && (
-                        <div className="bg-[#ffdad6] border border-[#ba1a1a]/20 p-3 rounded-lg flex items-start gap-2 text-[#93000a] text-xs font-semibold">
+                        <div role="alert" className="bg-[#ffdad6] border border-[#ba1a1a]/20 p-3 rounded-lg flex items-start gap-2 text-[#93000a] text-xs font-semibold">
                           <span className="material-symbols-outlined text-sm flex-shrink-0 mt-0.5">error</span>
                           <p>{authError}</p>
                         </div>
@@ -816,7 +875,14 @@ export const NuevaPage = () => {
           /* ─────────────── MAIN VIEW CONTAINER (WITH TABS) ───────── */
           /* ======================================================== */
           <div key="app-shell" className="flex flex-col flex-grow w-full min-h-screen">
-            
+            {/* Skip-link: primer elemento enfocable con Tab */}
+            <a
+              href="#contenido"
+              className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[60] focus:bg-white focus:text-[#003f87] focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-bold"
+            >
+              Saltar al contenido principal
+            </a>
+
             {/* Content Body: Sidebar Navigation + Tab Contents */}
             <div className="flex-grow flex flex-row relative min-h-[100dvh]">
               
@@ -832,6 +898,7 @@ export const NuevaPage = () => {
                     }`}
                     title="Mapa de Alertas"
                     aria-label="Mapa de Alertas"
+                    aria-current={currentTab === 'map' ? 'page' : undefined}
                   >
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'map' ? 1 : 0}` }}>map</span>
                   </button>
@@ -845,6 +912,7 @@ export const NuevaPage = () => {
                     }`}
                     title="Información y Soporte"
                     aria-label="Información y Soporte"
+                    aria-current={currentTab === 'info' ? 'page' : undefined}
                   >
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'info' ? 1 : 0}` }}>info</span>
                   </button>
@@ -858,6 +926,7 @@ export const NuevaPage = () => {
                     }`}
                     title="Detalle de Alertas"
                     aria-label="Detalle de Alertas"
+                    aria-current={currentTab === 'alertas' ? 'page' : undefined}
                   >
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'alertas' ? 1 : 0}` }}>notifications_active</span>
                     {filteredAlerts.length > 0 && (
@@ -874,6 +943,7 @@ export const NuevaPage = () => {
                     }`}
                     title="Ajustes"
                     aria-label="Ajustes"
+                    aria-current={currentTab === 'settings' ? 'page' : undefined}
                   >
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'settings' ? 1 : 0}` }}>settings</span>
                   </button>
@@ -904,7 +974,7 @@ export const NuevaPage = () => {
               </aside>
 
               {/* ── TAB VIEW CONTENTS ── */}
-              <div className="flex-grow p-4 sm:p-6 lg:p-8 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6 overflow-y-auto w-full max-w-[1600px] mx-auto">
+              <main id="contenido" tabIndex={-1} className="flex-grow p-4 sm:p-6 lg:p-8 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6 overflow-y-auto w-full max-w-[1600px] mx-auto focus:outline-none">
                 <AnimatePresence mode="wait">
                   {currentTab === 'map' && (
                     /* ───────────────── TAB: MAP ───────────────── */
@@ -919,13 +989,22 @@ export const NuevaPage = () => {
                         {/* Map Container */}
                         <section className="w-full h-[400px] md:h-[500px] lg:h-[600px] relative rounded-xl overflow-hidden shadow-md bg-[#ebeef3] border border-[#c2c6d4]/30">
                           <div className="absolute inset-0 z-0">
-                            <MapView 
-                              alerts={filteredAlerts} 
-                              onSelectAlert={(alert) => {
-                                setSelectedAlert(alert);
-                                setCurrentTab('alertas');
-                              }} 
-                            />
+                            <Suspense
+                              fallback={
+                                <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-[#ebeef3]">
+                                  <span className="material-symbols-outlined text-[#003f87] animate-spin text-3xl">progress_activity</span>
+                                  <p className="text-xs font-bold text-[#727784]">Cargando mapa…</p>
+                                </div>
+                              }
+                            >
+                              <MapView
+                                alerts={filteredAlerts}
+                                onSelectAlert={(alert) => {
+                                  setSelectedAlert(alert);
+                                  setCurrentTab('alertas');
+                                }}
+                              />
+                            </Suspense>
                           </div>
                             <div className="absolute right-4 bottom-12 z-10 flex flex-col gap-2">
                             <button className="w-11 h-11 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all" aria-label="Acercar mapa">
@@ -975,13 +1054,67 @@ export const NuevaPage = () => {
 
                       {/* Alerts list */}
                       <aside className="w-full lg:w-1/3 flex flex-col gap-4">
-                        <div className="flex justify-between items-end border-b border-[#c2c6d4]/20 pb-2">
-                          <h2 className="text-sm font-extrabold text-[#003f87] tracking-tight uppercase">Alertas Activas</h2>
-                          <span className="text-[11px] font-bold text-[#424752]">{getFormattedDate()}</span>
+                        <div className="flex justify-between items-center gap-2 border-b border-[#c2c6d4]/20 pb-2">
+                          <div className="min-w-0">
+                            <h2 className="text-sm font-extrabold text-[#003f87] tracking-tight uppercase">Alertas Activas</h2>
+                            <p className="text-[11px] font-bold text-[#727784] truncate">
+                              {alertsLoading
+                                ? 'Cargando alertas…'
+                                : lastUpdatedAt !== null
+                                  ? `Actualizado ${formatRelativeTime(lastUpdatedAt, now)} · ${getFormattedDate()}`
+                                  : getFormattedDate()}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void handleRefreshAlerts()}
+                            disabled={refreshing || alertsLoading}
+                            aria-label="Actualizar alertas ahora"
+                            className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl border border-[#c2c6d4]/40 text-[#003f87] hover:bg-[#ebeef3] transition-all disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87]"
+                          >
+                            <span className={`material-symbols-outlined text-lg ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
+                          </button>
                         </div>
+                        <p className="sr-only" role="status" aria-live="polite">
+                          {alertsLoading
+                            ? 'Cargando alertas'
+                            : alertsError && alerts.length === 0
+                              ? 'No se pudieron cargar las alertas'
+                              : `${filteredAlerts.length} alertas activas`}
+                        </p>
 
                         <div className="flex flex-col gap-3 overflow-y-auto max-h-[350px] md:max-h-[450px] lg:max-h-[600px] pr-1.5 custom-scrollbar">
-                          {filteredAlerts.length === 0 ? (
+                          {alertsError && alerts.length > 0 && (
+                            <div role="status" className="bg-[#ffea85]/60 border border-[#eab308]/40 text-[#001a40] rounded-xl px-3 py-2 text-[11px] font-bold flex items-center gap-2">
+                              <span className="material-symbols-outlined text-sm">cloud_off</span>
+                              Sin conexión · mostrando datos guardados
+                            </div>
+                          )}
+                          {alertsLoading ? (
+                            <>
+                              {[0, 1, 2].map((i) => (
+                                <div key={i} className="animate-pulse bg-[#ebeef3]/60 border border-[#c2c6d4]/30 rounded-xl p-4 space-y-2">
+                                  <div className="h-3 w-1/3 bg-[#c2c6d4]/60 rounded" />
+                                  <div className="h-3 w-2/3 bg-[#c2c6d4]/40 rounded" />
+                                  <div className="h-3 w-1/2 bg-[#c2c6d4]/40 rounded" />
+                                </div>
+                              ))}
+                            </>
+                          ) : alertsError && alerts.length === 0 ? (
+                            <div className="bg-[#ffdad6]/40 border border-[#ba1a1a]/25 rounded-xl p-8 text-center text-[#93000a]">
+                              <span className="material-symbols-outlined text-3xl text-[#ba1a1a] mb-2">cloud_off</span>
+                              <p className="text-sm font-semibold">No se pudo conectar</p>
+                              <p className="text-xs text-[#93000a]/80 mt-1">Comprueba tu conexión e inténtalo de nuevo.</p>
+                              <button
+                                type="button"
+                                onClick={() => void handleRefreshAlerts()}
+                                disabled={refreshing}
+                                className="mt-4 px-4 py-2 rounded-xl bg-[#003f87] text-white text-xs font-bold hover:bg-[#0050ad] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-offset-2"
+                              >
+                                {refreshing ? 'Reintentando…' : 'Reintentar'}
+                              </button>
+                            </div>
+                          ) : filteredAlerts.length === 0 ? (
                             <div className="bg-[#ebeef3]/60 border border-[#c2c6d4]/40 rounded-xl p-8 text-center text-[#424752]">
                               <span className="material-symbols-outlined text-3xl text-[#727784] mb-2">check_circle</span>
                               <p className="text-sm font-semibold">Sin alertas activas</p>
@@ -1162,8 +1295,12 @@ export const NuevaPage = () => {
                           <div className="relative min-h-[220px] md:h-auto">
                             <img
                               alt="Centro Meteorológico"
+                              width={1024}
+                              height={1024}
+                              loading="lazy"
+                              decoding="async"
                               className="absolute inset-0 w-full h-full object-cover"
-                              src="/weather_center.png"
+                              src="/weather_center.webp"
                             />
                             <div className="absolute inset-0 bg-[#003f87]/20 backdrop-grayscale-[0.4]"></div>
                           </div>
@@ -1910,12 +2047,13 @@ export const NuevaPage = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
+              </main>
 
               {/* ── BOTTOM MOBILE NAVIGATION BAR ── */}
               <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-white border-t border-[#c2c6d4]/30 shadow-lg md:hidden">
                 <button
                   onClick={() => setCurrentTab('map')}
+                  aria-current={currentTab === 'map' ? 'page' : undefined}
                   className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-all ${
                     currentTab === 'map' ? 'text-[#003f87]' : 'text-[#727784]'
                   }`}
@@ -1926,6 +2064,7 @@ export const NuevaPage = () => {
 
                 <button
                   onClick={() => setCurrentTab('info')}
+                  aria-current={currentTab === 'info' ? 'page' : undefined}
                   className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-all ${
                     currentTab === 'info' ? 'text-[#003f87]' : 'text-[#727784]'
                   }`}
@@ -1936,6 +2075,7 @@ export const NuevaPage = () => {
 
                 <button
                   onClick={() => setCurrentTab('alertas')}
+                  aria-current={currentTab === 'alertas' ? 'page' : undefined}
                   className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-all ${
                     currentTab === 'alertas' ? 'text-[#003f87]' : 'text-[#727784]'
                   }`}
@@ -1946,6 +2086,7 @@ export const NuevaPage = () => {
 
                 <button
                   onClick={() => setCurrentTab('settings')}
+                  aria-current={currentTab === 'settings' ? 'page' : undefined}
                   className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-all ${
                     currentTab === 'settings' ? 'text-[#003f87]' : 'text-[#727784]'
                   }`}
@@ -1970,15 +2111,20 @@ export const NuevaPage = () => {
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
             style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
-            onClick={() => setShowToSModal(false)}
+            onClick={closeToSModal}
           >
             <motion.div
+              ref={tosPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="tos-modal-title"
+              tabIndex={-1}
               initial={{ opacity: 0, scale: 0.92, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden focus:outline-none"
               style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}
             >
               {/* Header */}
@@ -1987,7 +2133,7 @@ export const NuevaPage = () => {
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #003f87, #0066cc)' }}>
                     <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>gavel</span>
                   </div>
-                  <h2 className="text-base font-extrabold text-[#1a1c22]">Términos de Servicio</h2>
+                  <h2 id="tos-modal-title" className="text-base font-extrabold text-[#1a1c22]">Términos de Servicio</h2>
                 </div>
                 <button
                   onClick={() => setShowToSModal(false)}
@@ -2118,15 +2264,20 @@ export const NuevaPage = () => {
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
             style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
-            onClick={() => setShowPrivacyModal(false)}
+            onClick={closePrivacyModal}
           >
             <motion.div
+              ref={privacyPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="privacy-modal-title"
+              tabIndex={-1}
               initial={{ opacity: 0, scale: 0.92, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden focus:outline-none"
               style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}
             >
               {/* Header */}
@@ -2135,7 +2286,7 @@ export const NuevaPage = () => {
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #003f87, #0066cc)' }}>
                     <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>security</span>
                   </div>
-                  <h2 className="text-base font-extrabold text-[#1a1c22]">Política de Privacidad</h2>
+                  <h2 id="privacy-modal-title" className="text-base font-extrabold text-[#1a1c22]">Política de Privacidad</h2>
                 </div>
                 <button
                   onClick={() => setShowPrivacyModal(false)}
@@ -2222,15 +2373,20 @@ export const NuevaPage = () => {
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
             style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
-            onClick={() => setShowSupportModal(false)}
+            onClick={closeSupportModal}
           >
             <motion.div
+              ref={supportPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="support-modal-title"
+              tabIndex={-1}
               initial={{ opacity: 0, scale: 0.92, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden focus:outline-none"
               style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}
             >
               {/* Header */}
@@ -2239,7 +2395,7 @@ export const NuevaPage = () => {
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #003f87, #0066cc)' }}>
                     <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>contact_support</span>
                   </div>
-                  <h2 className="text-base font-extrabold text-[#1a1c22]">Soporte Técnico</h2>
+                  <h2 id="support-modal-title" className="text-base font-extrabold text-[#1a1c22]">Soporte Técnico</h2>
                 </div>
                 <button
                   onClick={() => setShowSupportModal(false)}

@@ -68,7 +68,7 @@ export function usePushNotifications(userId: string | null): UsePushNotification
             const reg = await navigator.serviceWorker.ready;
             const subscription = await reg.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(publicKey) as any
+                applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource
             });
 
             const keys = subscription.toJSON().keys;
@@ -89,8 +89,8 @@ export function usePushNotifications(userId: string | null): UsePushNotification
 
             setStatus('subscribed');
             console.log('[Push] Successfully subscribed to push notifications.');
-        } catch (e: any) {
-            console.error('[Push] Error subscribing:', e.message);
+        } catch (e) {
+            console.error('[Push] Error subscribing:', e instanceof Error ? e.message : e);
             setStatus('unsubscribed');
         }
     }, [userId]);
@@ -114,8 +114,8 @@ export function usePushNotifications(userId: string | null): UsePushNotification
 
             setStatus('unsubscribed');
             console.log('[Push] Successfully unsubscribed from push notifications.');
-        } catch (e: any) {
-            console.error('[Push] Error unsubscribing:', e.message);
+        } catch (e) {
+            console.error('[Push] Error unsubscribing:', e instanceof Error ? e.message : e);
             setStatus('unsubscribed');
         }
     }, []);

@@ -1,58 +1,93 @@
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import { cleanupOutdatedCaches, precacheAndRoute, type PrecacheEntry } from 'workbox-precaching';
 
-// Workbox precache (auto-injected by vite-plugin-pwa)
+// Tipos locales: el tsconfig usa lib DOM (la app es una SPA) y ServiceWorkerGlobalScope
+// solo existe en la lib "webworker", así que declaramos exactamente lo que usamos.
+interface PushPayload {
+    title?: string;
+    body?: string;
+    icon?: string;
+    badge?: string;
+    tag?: string;
+    renotify?: boolean;
+    data?: { url?: string };
+}
+
+interface PushEventLike {
+    data: { json(): unknown; text(): string } | null;
+    waitUntil(promise: Promise<unknown>): void;
+}
+
+interface NotificationClickEventLike {
+    action: string;
+    notification: { close(): void; data: unknown };
+    waitUntil(promise: Promise<unknown>): void;
+}
+
+interface ServiceWorkerScopeLike {
+    addEventListener(type: 'push', listener: (event: PushEventLike) => void): void;
+    addEventListener(type: 'notificationclick', listener: (event: NotificationClickEventLike) => void): void;
+    registration: { showNotification(title: string, options?: NotificationOptions & { renotify?: boolean; vibrate?: number[] }): Promise<void> };
+    clients: {
+        matchAll(options: { type: 'window'; includeUncontrolled: boolean }): Promise<Array<{
+            url: string;
+            navigate(url: string): Promise<unknown>;
+            focus(): Promise<unknown>;
+        }>>;
+        openWindow(url: string): Promise<unknown>;
+    };
+    location: { origin: string };
+}
+
+const swSelf = self as unknown as ServiceWorkerScopeLike;
+
+// Workbox precache (auto-inyectado por vite-plugin-pwa)
 cleanupOutdatedCaches();
-precacheAndRoute((self as any).__WB_MANIFEST);
-
-const swSelf = self as any;
+const precacheManifest = (self as unknown as { __WB_MANIFEST: PrecacheEntry[] }).__WB_MANIFEST;
+precacheAndRoute(precacheManifest);
 
 // ─── Push Notifications ───────────────────────────────────────────────────────
-swSelf.addEventListener('push', (event: any) => {
-  if (!event.data) return;
+swSelf.addEventListener('push', (event) => {
+    if (!event.data) return;
 
-  let data: any;
-  try {
-    data = event.data.json();
-  } catch {
-    data = { title: 'MeteoAlerta', body: event.data.text() };
-  }
+    let data: PushPayload;
+    try {
+        const parsed: unknown = event.data.json();
+        data = parsed && typeof parsed === 'object' ? (parsed as PushPayload) : {};
+    } catch {
+        data = { title: 'MeteoAlerta', body: event.data.text() };
+    }
 
-  const options: any = {
-    body: data.body || 'Nuevo aviso meteorológico de AEMET.',
-    icon: data.icon || '/icons/icon-192x192.png',
-    badge: data.badge || '/icons/icon-72x72.png',
-    tag: data.tag || 'aemet-alert',
-    renotify: data.renotify ?? true,
-    data: data.data || { url: '/' },
-    vibrate: [200, 100, 200],
-  };
-
-  event.waitUntil(
-    swSelf.registration.showNotification(data.title || 'MeteoAlerta', options)
-  );
+    event.waitUntil(
+        swSelf.registration.showNotification(data.title || 'MeteoAlerta', {
+            body: data.body || 'Nuevo aviso meteorológico de AEMET.',
+            icon: data.icon || '/icons/icon-192x192.png',
+            badge: data.badge || '/icons/icon-72x72.png',
+            tag: data.tag || 'aemet-alert',
+            renotify: data.renotify ?? true,
+            data: data.data ?? { url: '/' },
+            vibrate: [200, 100, 200],
+        })
+    );
 });
 
-swSelf.addEventListener('notificationclick', (event: any) => {
-  event.notification.close();
-  if (event.action === 'close') return;
+swSelf.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    if (event.action === 'close') return;
 
-  const url = event.notification.data?.url || '/';
+    const payload = event.notification.data as { url?: string } | undefined;
+    const url = payload?.url || '/';
 
-  event.waitUntil(
-    swSelf.clients
-      .matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList: any[]) => {
-        for (const client of clientList) {
-          if (client.url.includes(swSelf.location.origin) && 'focus' in client) {
-            if ('navigate' in client) {
-              client.navigate(url);
-            }
-            return client.focus();
-          }
-        }
-        if (swSelf.clients.openWindow) {
-          return swSelf.clients.openWindow(url);
-        }
-      })
-  );
+    event.waitUntil(
+        swSelf.clients
+            .matchAll({ type: 'window', includeUncontrolled: true })
+            .then((clientList) => {
+                for (const client of clientList) {
+                    if (client.url.includes(swSelf.location.origin)) {
+                        void client.navigate(url);
+                        return client.focus();
+                    }
+                }
+                return swSelf.clients.openWindow(url);
+            })
+    );
 });

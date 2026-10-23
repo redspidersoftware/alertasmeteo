@@ -2,40 +2,36 @@ import { useState, useEffect } from 'react';
 
 type InstallState = 'installable' | 'installed' | 'ios' | 'unsupported';
 
+interface BeforeInstallPromptEvent extends Event {
+    prompt: () => Promise<void>;
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
 interface UseInstallPromptReturn {
     installState: InstallState;
     install: () => Promise<void>;
     isIOS: boolean;
 }
 
-export function useInstallPrompt(): UseInstallPromptReturn {
-    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-    const [installState, setInstallState] = useState<InstallState>('unsupported');
+const isStandaloneMode = () =>
+    window.matchMedia('(display-mode: standalone)').matches ||
+    ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true);
 
-    const isIOS =
-        /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+export function useInstallPrompt(): UseInstallPromptReturn {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
+
+    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+    const [installState, setInstallState] = useState<InstallState>(() => {
+        if (isStandaloneMode()) return 'installed';
+        if (isIOS) return 'ios';
+        return 'unsupported';
+    });
 
     useEffect(() => {
-        // Si ya está instalada (modo standalone)
-        const isStandalone =
-            window.matchMedia('(display-mode: standalone)').matches ||
-            (navigator as any).standalone === true;
-
-        if (isStandalone) {
-            setInstallState('installed');
-            return;
-        }
-
-        // iOS no soporta beforeinstallprompt — instrucciones manuales
-        if (isIOS) {
-            setInstallState('ios');
-            return;
-        }
-
         // Capturar el evento de instalación en Chrome/Edge/Android
         const handler = (e: Event) => {
             e.preventDefault();
-            setDeferredPrompt(e);
+            setDeferredPrompt(e as BeforeInstallPromptEvent);
             setInstallState('installable');
         };
 
@@ -49,7 +45,7 @@ export function useInstallPrompt(): UseInstallPromptReturn {
             window.removeEventListener('beforeinstallprompt', handler);
             window.removeEventListener('appinstalled', installedHandler);
         };
-    }, [isIOS]);
+    }, []);
 
     const install = async () => {
         if (!deferredPrompt) return;

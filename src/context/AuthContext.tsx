@@ -19,12 +19,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<UserData | null>(null);
 
-    const fetchProfile = async (uid: string, email: string, userMetadata?: any) => {
+    const fetchProfile = async (uid: string, email: string, userMetadata?: Record<string, unknown>) => {
         console.log("Fetching profile for", uid);
         let profile = await getUserProfile(uid);
         if (!profile) {
             // Profile doesn't exist in public.users (e.g. Google OAuth signup). Let's create it automatically.
-            const name = userMetadata?.full_name || userMetadata?.name || email.split('@')[0];
+            const name = String(userMetadata?.full_name ?? userMetadata?.name ?? email.split('@')[0]);
             const defaultProfile = {
                 id: uid,
                 email: email,
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser({
                 id: uid,
                 email: email,
-                name: userMetadata?.full_name || userMetadata?.name || 'User',
+                name: String(userMetadata?.full_name ?? userMetadata?.name ?? 'User'),
                 phone: '',
                 postalCode: '',
                 language: 'es',

@@ -1,17 +1,33 @@
-import { UnsubscribePage } from './components/UnsubscribePage';
+import { lazy, Suspense } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageProvider';
-import { EulaPage } from './components/EulaPage';
 import { NuevaPage } from './components/NuevaPage';
 import { DonationSection } from './components/DonationSection';
-import { AdminPage } from './components/AdminPage';
 import { MotionConfig } from 'framer-motion';
+
+const EulaPage = lazy(() =>
+  import('./components/EulaPage').then((m) => ({ default: m.EulaPage }))
+);
+const UnsubscribePage = lazy(() =>
+  import('./components/UnsubscribePage').then((m) => ({ default: m.UnsubscribePage }))
+);
+const AdminPage = lazy(() =>
+  import('./components/AdminPage').then((m) => ({ default: m.AdminPage }))
+);
+
+const RouteFallback = () => (
+  <div className="min-h-screen w-full flex items-center justify-center bg-white">
+    <span className="material-symbols-outlined text-[#003f87] animate-spin text-4xl">progress_activity</span>
+  </div>
+);
 
 function App() {
   if (window.location.pathname === '/eula') {
     return (
       <LanguageProvider>
-        <EulaPage />
+        <Suspense fallback={<RouteFallback />}>
+          <EulaPage />
+        </Suspense>
       </LanguageProvider>
     );
   }
@@ -19,7 +35,9 @@ function App() {
   if (window.location.pathname === '/unsubscribe') {
     return (
       <LanguageProvider>
-        <UnsubscribePage />
+        <Suspense fallback={<RouteFallback />}>
+          <UnsubscribePage />
+        </Suspense>
       </LanguageProvider>
     );
   }
@@ -27,7 +45,9 @@ function App() {
   if (window.location.pathname === '/admin') {
     return (
       <MotionConfig reducedMotion="user">
-        <AdminPage />
+        <Suspense fallback={<RouteFallback />}>
+          <AdminPage />
+        </Suspense>
       </MotionConfig>
     );
   }

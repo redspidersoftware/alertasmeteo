@@ -12,7 +12,8 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      includeAssets: ['meteoalerta_logo.png', 'icons/*.png'],
+      // Solo la app-shell: las imágenes (WebP/PNG) se sirven con HTTP cache
+      includeAssets: ['icons/*.png'],
       manifest: {
         name: 'MeteoAlerta - Avisos Meteorológicos',
         short_name: 'MeteoAlerta',
@@ -71,8 +72,26 @@ export default defineConfig({
         ],
       },
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // App-shell: JS/CSS/HTML + el icono que usa la notificación push.
+        // Las imágenes grandes (WebP, banner, resto de iconos) se sirven con cache HTTP.
+        globPatterns: ['**/*.{js,css,html,ico,svg,woff2}', 'icons/icon-192x192.png'],
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        // Vendor separado: cambia menos veces que la app → mejor caché
+        manualChunks(id: string) {
+          if (id.includes('node_modules/react-dom/') || id.includes('node_modules/react/') || id.includes('node_modules/scheduler/')) {
+            return 'react-vendor';
+          }
+          if (id.includes('node_modules/framer-motion/')) return 'motion';
+          if (id.includes('node_modules/@supabase/')) return 'supabase';
+          if (id.includes('node_modules/lucide-react/')) return 'icons';
+          return undefined;
+        },
+      },
+    },
+  },
 })

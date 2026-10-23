@@ -81,15 +81,16 @@ export const getAlerts = async (): Promise<WeatherAlert[]> => {
             'https://aemet-supabase-service.alertasmeteo.workers.dev/api/alerts'
         );
 
+        // Lanza en vez de devolver []: el llamante debe distinguir
+        // "no hay alertas" de "no se pudo consultar" (fallback a caché offline)
         if (!response.data.success || !response.data.alerts) {
-            console.error("Failed to fetch alerts: Worker returned success false");
-            return [];
+            throw new Error('El servidor de alertas devolvió una respuesta inválida');
         }
 
         return response.data.alerts.map(mapDbAlertToWeatherAlert);
     } catch (error) {
         console.error("Failed to fetch alerts:", error);
-        return [];
+        throw error;
     }
 };
 
