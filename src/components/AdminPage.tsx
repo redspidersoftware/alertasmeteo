@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import type { ReactNode, FormEvent } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AdminMap } from './AdminMap';
+import type { MapPoint } from './AdminMap';
 
 /* ══════════════ TIPOS ══════════════ */
 
@@ -51,7 +53,7 @@ interface PostalMapping { postal_code: string; aemet_zone_name: string; province
 interface WStats { extreme: number; severe: number; moderate: number; minor: number; total: number }
 interface LStats { email: number; telegram: number; push: number; total: number }
 
-type Tab = 'panel' | 'alertas' | 'notificaciones' | 'usuarios' | 'codigos' | 'config' | 'tests';
+type Tab = 'panel' | 'alertas' | 'notificaciones' | 'usuarios' | 'codigos' | 'mapa' | 'config' | 'tests';
 
 const TOKEN_KEY = 'meteoalerta-admin-token';
 const TOTAL_POSTAL_PAGES = 38;
@@ -241,6 +243,10 @@ export const AdminPage = () => {
     const [logsLoading, setLogsLoading] = useState(false);
     const [lForm, setLForm] = useState({ type: '', from: '', to: '', limit: '100' });
 
+    // Mapa
+    const [mapAlerts, setMapAlerts] = useState<WeatherAlert[]>([]);
+    const [mapLoading, setMapLoading] = useState(false);
+
     // Códigos postales
     const [postal, setPostal] = useState<PostalMapping[]>([]);
     const [postalProgress, setPostalProgress] = useState({ done: 0, loading: false });
@@ -423,6 +429,36 @@ export const AdminPage = () => {
         } catch (err) { notify('err', err instanceof Error ? err.message : 'Error al eliminar'); }
     };
 
+    /* ── MAPA ── */
+    const loadMapData = async (force = false) => {
+        if (loaded.current.has('mapa') && !force) return;
+        setMapLoading(true);
+        try {
+            const data = await callWorker({ action: 'get-weather-alerts', params: { active: 'true', limit: '500' } });
+            setMapAlerts(data.alerts || []);
+            loaded.current.add('mapa');
+            if (!loaded.current.has('postal')) await loadPostalCodes();
+        } catch (err) { notify('err', err instanceof Error ? err.message : 'Error cargando el mapa'); }
+        finally { setMapLoading(false); }
+    };
+
+    const mapPoints = useMemo<MapPoint[]>(() => {
+        if (mapAlerts.length === 0 || postal.length === 0) return [];
+        const points: MapPoint[] = [];
+        for (const p of postal) {
+            const zone = (p.aemet_zone_name || '').trim();
+            if (!zone || !p.postal_code) continue;
+            const zoneLc = zone.toLowerCase();
+            // AEMET lista las áreas afectadas separadas por ';' → comparamos cada una (case-insensitive)
+            const matched = mapAlerts.filter(a =>
+                (a.area_desc || '').toLowerCase().split(';').some(part => part.trim() === zoneLc));
+            if (matched.length > 0) {
+                points.push({ postalCode: p.postal_code, zone, province: p.province || '', alerts: matched });
+            }
+        }
+        return points;
+    }, [postal, mapAlerts]);
+
     const uniqueZones = useMemo(() => Array.from(new Set(postal.map(p => p.aemet_zone_name).filter(Boolean))).sort(), [postal]);
     const uniqueProvinces = useMemo(() => Array.from(new Set(postal.map(p => p.province).filter(Boolean))).sort(), [postal]);
 
@@ -520,6 +556,7 @@ export const AdminPage = () => {
         else if (t === 'alertas') loadWeather(force);
         else if (t === 'notificaciones') loadLogs(force);
         else if (t === 'codigos') loadPostalCodes(force);
+        else if (t === 'mapa') loadMapData(force);
         else if (t === 'config') loadConfig(force);
         else if (t === 'tests') loadWorkerData(force);
     };
@@ -1021,6 +1058,17 @@ export const AdminPage = () => {
         </div>
     );
 
+    const renderMapa = () => (
+        <div className="space-y-5">
+            <div className="grid grid-cols-3 gap-3">
+                <StatChip label="CP con alertas" value={mapPoints.length} color="#003f87" />
+                <StatChip label="Alertas activas" value={mapAlerts.length} color="#b3261e" />
+                <StatChip label="Total CP mapeados" value={postal.length} color="#5f6368" />
+            </div>
+            <AdminMap points={mapPoints} loading={mapLoading || postalProgress.loading} />
+        </div>
+    );
+
     const renderConfig = () => (
         <Card icon="tune" title="Parámetros del Sistema" sub="Configuración del servicio de notificaciones (Cloudflare Worker)">
             {cfgLoading ? <Loading text="Cargando configuración..." /> : (
@@ -1205,6 +1253,7 @@ export const AdminPage = () => {
         ['notificaciones', 'notifications', 'Notificaciones'],
         ['usuarios', 'group', 'Usuarios'],
         ['codigos', 'pin_drop', 'Códigos Postales'],
+        ['mapa', 'map', 'Mapa Alertas'],
         ['config', 'tune', 'Configuración'],
         ['tests', 'science', 'Tests'],
     ];
@@ -1276,6 +1325,7 @@ export const AdminPage = () => {
                         {tab === 'notificaciones' && renderLogs()}
                         {tab === 'usuarios' && renderUsuarios()}
                         {tab === 'codigos' && renderCodigos()}
+                        {tab === 'mapa' && renderMapa()}
                         {tab === 'config' && renderConfig()}
                         {tab === 'tests' && renderTests()}
                     </motion.div>
