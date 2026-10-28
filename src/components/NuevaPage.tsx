@@ -19,6 +19,26 @@ const MapView = lazy(() => import('./MapView').then((m) => ({ default: m.MapView
 type Tab = 'map' | 'info' | 'alertas' | 'settings';
 type AuthState = 'login' | 'register';
 
+interface SupportState { sending: boolean; ok: boolean; error: string | null }
+const IDLE_SUPPORT: SupportState = { sending: false, ok: false, error: null };
+
+const SupportFeedback = ({ state }: { state: SupportState }) => (
+  <>
+    {state.ok && (
+      <p className="text-xs text-green-800 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5 flex items-start gap-2" role="status">
+        <span className="material-symbols-outlined text-sm text-green-600 mt-0.5">check_circle</span>
+        Mensaje enviado correctamente. Te contactaremos pronto.
+      </p>
+    )}
+    {state.error && (
+      <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 flex items-start gap-2" role="alert">
+        <span className="material-symbols-outlined text-sm text-red-500 mt-0.5">error</span>
+        {state.error}
+      </p>
+    )}
+  </>
+);
+
 export const NuevaPage = () => {
   const { user, login, loginWithGoogle, logout, refreshProfile } = useAuth();
   const { status: pushStatus, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe } = usePushNotifications(user?.id ?? null);
@@ -41,6 +61,37 @@ export const NuevaPage = () => {
   useModalFocus(showToSModal, closeToSModal, tosPanelRef);
   useModalFocus(showPrivacyModal, closePrivacyModal, privacyPanelRef);
   useModalFocus(showSupportModal, closeSupportModal, supportPanelRef);
+
+  // Formularios de soporte (pestaña Info y modal)
+  const [infoSupport, setInfoSupport] = useState<SupportState>(IDLE_SUPPORT);
+  const [modalSupport, setModalSupport] = useState<SupportState>(IDLE_SUPPORT);
+
+  const sendSupportForm = async (form: HTMLFormElement, set: (u: (s: SupportState) => SupportState) => void) => {
+    const fd = new FormData(form);
+    const replyTo = String(fd.get('email') || '').trim();
+    const subject = String(fd.get('subject') || '').trim();
+    const message = String(fd.get('message') || '').trim();
+    if (!replyTo || !subject || !message) {
+      set(() => ({ sending: false, ok: false, error: 'Completa email, asunto y mensaje.' }));
+      return;
+    }
+    set(() => ({ sending: true, ok: false, error: null }));
+    try {
+      const { data, error } = await supabase.functions.invoke('send-confirmation', {
+        body: { type: 'contact', name: user?.name || 'Usuario', email: replyTo, subject, message },
+      });
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error || 'Error al enviar el mensaje');
+      set(() => ({ sending: false, ok: true, error: null }));
+      form.reset();
+    } catch (err) {
+      set(() => ({
+        sending: false,
+        ok: false,
+        error: err instanceof Error && err.message ? err.message : 'Error al enviar el mensaje. Inténtalo de nuevo.',
+      }));
+    }
+  };
   
   // Navigation State
   const [currentTab, setCurrentTab] = useState<Tab>('map');
@@ -1353,11 +1404,26 @@ export const NuevaPage = () => {
                           <form
                             onSubmit={(e) => {
                               e.preventDefault();
-                              alert('Mensaje enviado correctamente. Nos pondremos en contacto a la brevedad.');
-                              (e.target as HTMLFormElement).reset();
+                              const form = e.currentTarget;
+                              void sendSupportForm(form, setInfoSupport);
                             }}
+                            onChangeCapture={() => setInfoSupport(s => (s.ok || s.error ? IDLE_SUPPORT : s))}
                             className="bg-white p-6 rounded-2xl border border-[#c2c6d4]/30 space-y-4 shadow-sm"
                           >
+                            <div className="space-y-1">
+                              <label className="ui-label ml-1" htmlFor="email-contacto">
+                                Tu email
+                              </label>
+                              <input
+                                className="w-full bg-[#f7f9ff] border border-[#c2c6d4] rounded-lg px-4 py-2.5 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87] transition-all"
+                                id="email-contacto"
+                                name="email"
+                                placeholder="ejemplo@correo.es"
+                                type="email"
+                                autoComplete="email"
+                                required
+                              />
+                            </div>
                             <div className="space-y-1">
                               <label className="ui-label ml-1" htmlFor="asunto">
                                 Asunto
@@ -1365,6 +1431,7 @@ export const NuevaPage = () => {
                               <input
                                 className="w-full bg-[#f7f9ff] border border-[#c2c6d4] rounded-lg px-4 py-2.5 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87] transition-all"
                                 id="asunto"
+                                name="subject"
                                 placeholder="Ej: Error en el mapa / Sugerencia"
                                 type="text"
                                 required
@@ -1377,16 +1444,19 @@ export const NuevaPage = () => {
                               <textarea
                                 className="w-full bg-[#f7f9ff] border border-[#c2c6d4] rounded-lg px-4 py-2.5 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87] transition-all"
                                 id="mensaje"
+                                name="message"
                                 placeholder="Escribe tu consulta o reporte aquí..."
                                 rows={4}
                                 required
                               />
                             </div>
+                            <SupportFeedback state={infoSupport} />
                             <button
-                              className="w-full ui-btn-primary text-white font-bold text-xs py-3 rounded-xl shadow-sm transition-all active:scale-[0.98]"
+                              className="w-full ui-btn-primary text-white font-bold text-xs py-3 rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none"
                               type="submit"
+                              disabled={infoSupport.sending}
                             >
-                              Enviar Mensaje
+                              {infoSupport.sending ? 'Enviando...' : 'Enviar Mensaje'}
                             </button>
                           </form>
                         </div>
@@ -2441,11 +2511,26 @@ export const NuevaPage = () => {
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
-                      alert('Tu reporte se ha registrado correctamente. Analizaremos tu caso en las próximas horas.');
-                      setShowSupportModal(false);
+                      const form = e.currentTarget;
+                      void sendSupportForm(form, setModalSupport);
                     }}
+                    onChangeCapture={() => setModalSupport(s => (s.ok || s.error ? IDLE_SUPPORT : s))}
                     className="bg-[#f7f9ff] p-4 rounded-xl border border-[#c2c6d4]/30 space-y-3"
                   >
+                    <div className="space-y-1">
+                      <label className="ui-label ml-1" htmlFor="modal-email">
+                        Tu email
+                      </label>
+                      <input
+                        className="w-full bg-white border border-[#c2c6d4] rounded-lg px-3 py-2 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87]"
+                        id="modal-email"
+                        name="email"
+                        placeholder="ejemplo@correo.es"
+                        type="email"
+                        autoComplete="email"
+                        required
+                      />
+                    </div>
                     <div className="space-y-1">
                       <label className="ui-label ml-1" htmlFor="modal-asunto">
                         Asunto
@@ -2453,6 +2538,7 @@ export const NuevaPage = () => {
                       <input
                         className="w-full bg-white border border-[#c2c6d4] rounded-lg px-3 py-2 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87]"
                         id="modal-asunto"
+                        name="subject"
                         placeholder="Ej: Error al activar notificaciones"
                         type="text"
                         required
@@ -2465,16 +2551,19 @@ export const NuevaPage = () => {
                       <textarea
                         className="w-full bg-white border border-[#c2c6d4] rounded-lg px-3 py-2 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87]"
                         id="modal-mensaje"
+                        name="message"
                         placeholder="Explica qué problema experimentas..."
                         rows={3}
                         required
                       />
                     </div>
+                    <SupportFeedback state={modalSupport} />
                     <button
-                      className="w-full ui-btn-primary text-white font-bold text-xs py-2.5 rounded-lg shadow-sm transition-all active:scale-[0.98]"
+                      className="w-full ui-btn-primary text-white font-bold text-xs py-2.5 rounded-lg shadow-sm transition-all active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none"
                       type="submit"
+                      disabled={modalSupport.sending}
                     >
-                      Enviar reporte
+                      {modalSupport.sending ? 'Enviando...' : 'Enviar reporte'}
                     </button>
                   </form>
                 </div>

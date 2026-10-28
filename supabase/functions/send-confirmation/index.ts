@@ -4,6 +4,7 @@ import nodemailer from "npm:nodemailer"
 const SMTP_USER = Deno.env.get('SMTP_USER')
 const SMTP_PASS = Deno.env.get('SMTP_PASS')
 const UNSUBSCRIBE_SECRET = Deno.env.get('UNSUBSCRIBE_SECRET')
+const SUPPORT_EMAIL = Deno.env.get('SUPPORT_EMAIL') || 'ochentainueve@gmail.com'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -21,6 +22,13 @@ async function generateToken(email: string): Promise<string> {
     const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(email.toLowerCase().trim()))
     return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')
 }
+
+const escapeHtml = (v: string): string => String(v)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 
 function unsubscribeFooter(appUrl: string, email: string, token: string): string {
     const link = `${appUrl}/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`
@@ -73,16 +81,16 @@ serve(async (req: Request) => {
                 html = `
                     <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
                         <h2 style="color: #2563eb;">Nuevo mensaje de contacto</h2>
-                        <p><strong>De:</strong> ${name} (${contactEmail})</p>
-                        <p><strong>Asunto:</strong> ${payload.subject}</p>
+                        <p><strong>De:</strong> ${escapeHtml(name)} (${escapeHtml(contactEmail)})</p>
+                        <p><strong>Asunto:</strong> ${escapeHtml(payload.subject || 'Sin asunto')}</p>
                         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                            <p style="white-space: pre-wrap; color: #334155;">${payload.message || 'Sin mensaje'}</p>
+                            <p style="white-space: pre-wrap; color: #334155;">${escapeHtml(payload.message || 'Sin mensaje')}</p>
                         </div>
                         ${unsubscribeFooter(appUrl, contactEmail, token)}
                     </div>
                 `
-                email = "ochentainueve@gmail.com"
+                email = SUPPORT_EMAIL
             } else {
                 email = payload.email
                 const preferences = payload.preferences || {}
