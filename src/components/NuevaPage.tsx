@@ -2010,12 +2010,6 @@ export const NuevaPage = () => {
                                   </div>
                                 </div>
                               </div>
-                              <div className="mt-6 flex justify-end">
-                                <button onClick={handleSaveChanges} className="bg-[#003f87] text-white px-6 py-2 rounded-full font-bold text-xs hover:opacity-90 transition-all active:scale-95 shadow-md flex items-center gap-2">
-                                  <span className="material-symbols-outlined text-[18px]">save</span>
-                                  Guardar Cambios
-                                </button>
-                              </div>
                             </div>
                           </div>
 
@@ -2037,12 +2031,12 @@ export const NuevaPage = () => {
                                 </label>
                               ))}
                             </div>
-                            <div className="mt-6 pt-4 border-t border-[#c2c6d4]/30 flex justify-end">
-                              <button onClick={handleSaveChanges} className="bg-[#003f87] text-white px-6 py-2 rounded-full font-bold text-xs hover:opacity-90 transition-all active:scale-95 shadow-md flex items-center gap-2">
-                                <span className="material-symbols-outlined text-[18px]">save</span>
-                                Guardar Cambios
-                              </button>
-                            </div>
+                          </div>
+                          <div className="flex justify-end">
+                            <button onClick={handleSaveChanges} className="bg-[#003f87] text-white px-6 py-2 rounded-full font-bold text-xs hover:opacity-90 transition-all active:scale-95 shadow-md flex items-center gap-2">
+                              <span className="material-symbols-outlined text-[18px]">save</span>
+                              Guardar Cambios
+                            </button>
                           </div>
                         </div>
 

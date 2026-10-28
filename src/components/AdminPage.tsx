@@ -1148,6 +1148,26 @@ export const AdminPage = () => {
                             saveConfigValues([['aemet_check_interval_minutes', i], ['aemet_retry_delay_seconds', r]], 'Ajustes de AEMET guardados');
                         }} className={`${BTN} mt-4 h-11 px-5 bg-[#f97316] text-white shadow hover:brightness-110`}>Guardar Ajustes AEMET</button>
                     </ConfigBlock>
+
+                    <ConfigBlock title="Soporte y Contacto" icon="contact_support">
+                        <p className="text-xs text-[#727784] mb-3">Destino de los mensajes de los formularios de contacto de la app (pestaña Información y Soporte y modal de reporte).</p>
+                        <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                            <div className="flex-1">
+                                <Field label="Email de destino">
+                                    <input type="email" value={cfg.support_email || ''} onChange={e => setCfg(p => ({ ...p, support_email: e.target.value }))}
+                                        placeholder="ej: soporte@alertasmeteo.es" className={inputCls} />
+                                </Field>
+                            </div>
+                            <button onClick={() => {
+                                const v = (cfg.support_email || '').trim();
+                                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { notify('err', 'Introduce un email válido'); return; }
+                                void saveConfigValues([['support_email', v]], 'Email de soporte guardado');
+                            }} className={`${BTN} h-11 px-5 bg-[#003f87] text-white shadow hover:brightness-110`}>Guardar</button>
+                        </div>
+                        <p className="text-[11px] text-[#727784] mt-2.5">
+                            Actual: <strong className="text-[#181c20]">{cfg.support_email || 'ochentainueve@gmail.com (por defecto)'}</strong>
+                        </p>
+                    </ConfigBlock>
                 </div>
             )}
         </Card>

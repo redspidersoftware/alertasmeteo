@@ -5,6 +5,40 @@ const SMTP_USER = Deno.env.get('SMTP_USER')
 const SMTP_PASS = Deno.env.get('SMTP_PASS')
 const UNSUBSCRIBE_SECRET = Deno.env.get('UNSUBSCRIBE_SECRET')
 const SUPPORT_EMAIL = Deno.env.get('SUPPORT_EMAIL') || 'ochentainueve@gmail.com'
+const WORKER_URL = (Deno.env.get('WORKER_URL') || 'https://aemet-supabase-service.alertasmeteo.workers.dev').replace(/\/$/, '')
+const WORKER_USER = Deno.env.get('WORKER_USER')
+const WORKER_PASS = Deno.env.get('WORKER_PASS')
+
+// Destino de los formularios de contacto: la clave 'support_email' de la
+// configuración del dashboard (editable desde el panel admin) tiene
+// prioridad sobre el secret SUPPORT_EMAIL.
+let cachedSupportEmail: { value: string; expires: number } | null = null
+
+async function resolveSupportEmail(): Promise<string> {
+    if (cachedSupportEmail && cachedSupportEmail.expires > Date.now()) return cachedSupportEmail.value
+    if (!WORKER_USER || !WORKER_PASS) return SUPPORT_EMAIL
+    try {
+        const login = await fetch(`${WORKER_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `username=${encodeURIComponent(WORKER_USER)}&password=${encodeURIComponent(WORKER_PASS)}`,
+            redirect: 'manual',
+        })
+        const match = (login.headers.get('Set-Cookie') || '').match(/session=([^;]+)/)
+        if (!match) return SUPPORT_EMAIL
+        const resp = await fetch(`${WORKER_URL}/api/config`, {
+            headers: { 'Cookie': `session=${match[1]}` },
+            redirect: 'manual',
+        })
+        const data = await resp.json()
+        const value = typeof data?.config?.support_email === 'string' ? data.config.support_email.trim() : ''
+        if (value.includes('@')) {
+            cachedSupportEmail = { value, expires: Date.now() + 10 * 60 * 1000 }
+            return value
+        }
+    } catch { /* sin configuración en el worker → secret */ }
+    return SUPPORT_EMAIL
+}
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -90,7 +124,7 @@ serve(async (req: Request) => {
                         ${unsubscribeFooter(appUrl, contactEmail, token)}
                     </div>
                 `
-                email = SUPPORT_EMAIL
+                email = await resolveSupportEmail()
             } else {
                 email = payload.email
                 const preferences = payload.preferences || {}
@@ -119,7 +153,7 @@ serve(async (req: Request) => {
                         <h2 style="color: #2563eb;">¡Hola ${name}!</h2>
                         <p>Te confirmamos que hemos actualizado tus preferencias de visualización de alertas meteorológicas.</p>
                         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                            <p style="margin: 5px 0;"><strong>Resumen diario WhatsApp:</strong> ${dailyForecast}</p>
+                            <p style="margin: 5px 0;"><strong>Resumen diario Telegram:</strong> ${dailyForecast}</p>
                             <p style="margin: 5px 0;"><strong>Niveles de gravedad:</strong> ${severities}</p>
                             <p style="margin: 5px 0;"><strong>Tipos de avisos:</strong> ${eventTypes}</p>
                         </div>
