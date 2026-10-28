@@ -314,7 +314,7 @@ export const AdminPage = () => {
     const [postal, setPostal] = useState<PostalMapping[]>([]);
     const [postalProgress, setPostalProgress] = useState({ done: 0, loading: false });
     const [postalSearch, setPostalSearch] = useState('');
-    const [postalModal, setPostalModal] = useState<{ cp: string; zone: string; prov: string; isNew: boolean } | null>(null);
+    const [postalModal, setPostalModal] = useState<{ cp: string; zone: string; prov: string; isNew: boolean; customZone?: boolean } | null>(null);
     const [postalSaving, setPostalSaving] = useState(false);
 
     // Config
@@ -949,6 +949,10 @@ export const AdminPage = () => {
     };
 
     const gResults = computeGResults();
+
+    // Zona en modo manual: elegido a mano o porque la zona actual no existe aún en la base
+    const useManualZone = !!postalModal &&
+        (postalModal.customZone === true || (!!postalModal.zone && !uniqueZones.includes(postalModal.zone)));
 
     /* ══════════ LOGIN ══════════ */
     if (!token) {
@@ -2248,10 +2252,41 @@ export const AdminPage = () => {
                                         placeholder="Ej: 28001" className={`${inputCls} font-mono`} />
                                 </Field>
                                 <Field label="Zona AEMET">
-                                    <input type="text" list="aemet-zones" value={postalModal.zone}
-                                        onChange={e => setPostalModal(m => m && { ...m, zone: e.target.value })}
-                                        placeholder="Ej: Madrid" className={inputCls} />
+                                    {useManualZone ? (
+                                        <div className="flex gap-2">
+                                            <input type="text" list="aemet-zones" value={postalModal.zone} autoFocus
+                                                onChange={e => setPostalModal(m => m && { ...m, zone: e.target.value })}
+                                                placeholder="Ej: Costa de A Mariña" className={`${inputCls} flex-1`} />
+                                            <button type="button"
+                                                onClick={() => setPostalModal(m => m && ({
+                                                    ...m,
+                                                    customZone: false,
+                                                    zone: m.zone && uniqueZones.includes(m.zone) ? m.zone : '',
+                                                }))}
+                                                title="Volver al desplegable de zonas"
+                                                className="h-11 px-3 rounded-xl border border-[#c2c6d4] bg-[#f7f9ff] text-[#424752] hover:border-[#003f87]/60 hover:text-[#003f87] transition-all flex-shrink-0">
+                                                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>list</span>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <select value={postalModal.zone}
+                                            onChange={e => {
+                                                if (e.target.value === '__custom__') {
+                                                    setPostalModal(m => m && { ...m, customZone: true });
+                                                } else {
+                                                    setPostalModal(m => m && { ...m, zone: e.target.value });
+                                                }
+                                            }}
+                                            className={`${inputCls} cursor-pointer`}>
+                                            <option value="" disabled>Selecciona una zona AEMET…</option>
+                                            {uniqueZones.map(z => <option key={z} value={z}>{z}</option>)}
+                                            <option value="__custom__">✎ Escribir una zona que no aparece…</option>
+                                        </select>
+                                    )}
                                     <datalist id="aemet-zones">{uniqueZones.map(z => <option key={z} value={z} />)}</datalist>
+                                    {uniqueZones.length > 0 && (
+                                        <p className="text-[10px] text-[#727784] mt-1">{uniqueZones.length} zonas disponibles en la base{postalModal.zone && !useManualZone ? ` · seleccionada: ${postalModal.zone}` : ''}</p>
+                                    )}
                                 </Field>
                                 <Field label="Provincia">
                                     <input type="text" list="aemet-prov" value={postalModal.prov}
