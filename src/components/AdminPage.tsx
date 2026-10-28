@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AdminMap } from './AdminMap';
 import type { MapPoint } from './AdminMap';
+import { HealthBadge, SparkLine, BarChart } from './AdminWidgets';
+import type { HealthState, BarPoint } from './AdminWidgets';
 
 /* ══════════════ TIPOS ══════════════ */
 
@@ -53,9 +55,31 @@ interface PostalMapping { postal_code: string; aemet_zone_name: string; province
 interface WStats { extreme: number; severe: number; moderate: number; minor: number; total: number }
 interface LStats { email: number; telegram: number; push: number; total: number }
 
+interface AuditEntry { t: string; who: string; what: string }
+
+interface ServiceHealth {
+    id: string;
+    label: string;
+    icon: string;
+    color: string;
+    last: Date | null;
+    state: HealthState;
+    hint: string;
+    test?: { id: string; path: string; confirm?: string };
+}
+
+interface CoverageInfo {
+    pct: number;
+    total: number;
+    unmapped: { alert: WeatherAlert; missing: string[] }[];
+    invalid: PostalMapping[];
+    duplicates: string[];
+}
+
 type Tab = 'panel' | 'alertas' | 'notificaciones' | 'usuarios' | 'codigos' | 'mapa' | 'config' | 'tests';
 
 const TOKEN_KEY = 'meteoalerta-admin-token';
+const ADMIN_USER_KEY = 'meteoalerta-admin-user';
 const TOTAL_POSTAL_PAGES = 38;
 
 /* ══════════════ ESTILOS ══════════════ */
@@ -129,12 +153,45 @@ const parseLevels = (raw: string): string[] => {
     return ['red', 'orange'];
 };
 
+const parseAudit = (raw?: string): AuditEntry[] => {
+    if (!raw) return [];
+    try { const p = JSON.parse(raw); if (Array.isArray(p)) return p.filter(e => e && typeof e.t === 'string' && typeof e.what === 'string'); } catch { /* ignore */ }
+    return [];
+};
+
+const dayKey = (v: string): string => {
+    const d = parseV(v);
+    return d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '—';
+};
+
+const weekStart = (d: Date): Date => {
+    const x = new Date(d);
+    const dow = (x.getDay() + 6) % 7;
+    x.setDate(x.getDate() - dow);
+    x.setHours(0, 0, 0, 0);
+    return x;
+};
+
+const downloadCsv = (filename: string, rows: (string | number)[][]) => {
+    const esc = (v: string | number) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv = rows.map(r => r.map(esc).join(';')).join('\r\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+};
+
 /* ══════════════ COMPONENTES REUTILIZABLES ══════════════ */
 
-const StatCard = ({ icon, color, label, value, hint }: { icon: string; color: string; label: string; value: ReactNode; hint?: string }) => (
+const StatCard = ({ icon, color, label, value, hint, spark, sparkColor }: { icon: string; color: string; label: string; value: ReactNode; hint?: string; spark?: number[]; sparkColor?: string }) => (
     <div className="bg-white rounded-2xl border border-[#c2c6d4]/30 shadow-sm p-5 hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#727784]">{label}</p>
                 <p className="text-3xl font-extrabold text-[#181c20] mt-1.5 leading-none">{value}</p>
                 {hint && <p className="text-[11px] text-[#727784] mt-1.5 truncate">{hint}</p>}
@@ -143,6 +200,11 @@ const StatCard = ({ icon, color, label, value, hint }: { icon: string; color: st
                 <span className="material-symbols-outlined text-white" style={{ fontSize: 22 }}>{icon}</span>
             </div>
         </div>
+        {spark && spark.length > 1 && (
+            <div className="mt-3 -mx-1">
+                <SparkLine data={spark} color={sparkColor || '#003f87'} />
+            </div>
+        )}
     </div>
 );
 
@@ -264,6 +326,14 @@ export const AdminPage = () => {
     const [workerUsers, setWorkerUsers] = useState<WorkerUser[]>([]);
     const [nationalPrediction, setNationalPrediction] = useState<string>('Cargando...');
 
+    // Tendencias (30 días) + ficha de usuario + buscador global
+    const [logs30, setLogs30] = useState<NotifLog[]>([]);
+    const [selUser, setSelUser] = useState<AdminUser | null>(null);
+    const [userFilter, setUserFilter] = useState<'all' | 'verified' | 'unverified' | 'withcp' | 'nocp'>('all');
+    const [userProv, setUserProv] = useState('');
+    const [gSearch, setGSearch] = useState('');
+    const [gOpen, setGOpen] = useState(false);
+
     const notify = (type: 'ok' | 'err', msg: string) => {
         setToast({ type, msg });
         window.setTimeout(() => setToast(null), 3800);
@@ -283,6 +353,13 @@ export const AdminPage = () => {
         return () => window.clearInterval(iv);
     }, []);
 
+    useEffect(() => {
+        if (!selUser) return undefined;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelUser(null); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [selUser]);
+
     const invoke = async (fn: string, body: Record<string, unknown>) => {
         const { data, error } = await supabase.functions.invoke(fn, { body: { ...body, token } });
         if (data && data.success === false) {
@@ -300,16 +377,19 @@ export const AdminPage = () => {
         if (loaded.current.has('panel') && !force) return;
         setPanelLoading(true);
         try {
-            const [a, l, u, c] = await Promise.allSettled([
-                callWorker({ action: 'get-weather-alerts', params: { active: 'true', limit: '50' } }),
+            const from30 = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
+            const [a, l, u, c, l30] = await Promise.allSettled([
+                callWorker({ action: 'get-weather-alerts', params: { active: 'true', limit: '500' } }),
                 callWorker({ action: 'get-logs', params: { limit: '8' } }),
                 callApi({ action: 'list' }),
                 callWorker({ action: 'get-config' }),
+                callWorker({ action: 'get-logs', params: { from: from30, limit: '500' } }),
             ]);
             if (a.status === 'fulfilled') { setAlerts(a.value.alerts || []); setWStats(a.value.stats || wStats); }
             if (l.status === 'fulfilled') { setLogs(l.value.logs || []); setLStats(l.value.stats || lStats); }
             if (u.status === 'fulfilled') { setUsers(u.value.users || []); setStats(u.value.stats || null); }
             if (c.status === 'fulfilled') setCfg(c.value.config || {});
+            if (l30.status === 'fulfilled') setLogs30(l30.value.logs || []);
             loaded.current.add('panel');
             loaded.current.add('usuarios');
             loaded.current.add('config');
@@ -321,8 +401,18 @@ export const AdminPage = () => {
         if (loaded.current.has('usuarios') && !force) return;
         setUsersLoading(true); setUsersError(null);
         try {
-            const data = await callApi({ action: 'list' });
-            setUsers(data.users || []); setStats(data.stats || null);
+            const [list, al, lg] = await Promise.allSettled([
+                callApi({ action: 'list' }),
+                callWorker({ action: 'get-weather-alerts', params: { active: 'true', limit: '500' } }),
+                callWorker({ action: 'get-logs', params: { limit: '300' } }),
+            ]);
+            if (list.status === 'fulfilled') {
+                setUsers(list.value.users || []); setStats(list.value.stats || null);
+            } else {
+                throw list.reason;
+            }
+            if (al.status === 'fulfilled') setAlerts(al.value.alerts || []);
+            if (lg.status === 'fulfilled') setLogs(lg.value.logs || []);
             loaded.current.add('usuarios');
         } catch (err) { setUsersError(err instanceof Error ? err.message : 'Error cargando usuarios'); }
         finally { setUsersLoading(false); }
@@ -334,6 +424,8 @@ export const AdminPage = () => {
             await callApi({ action: 'delete', userId: u.id, targetEmail: u.email });
             setUsers(prev => prev.filter(x => x.id !== u.id));
             if (stats) setStats({ ...stats, total: stats.total - 1 });
+            logAudit(`Usuario eliminado: ${u.email}`);
+            if (selUser?.id === u.id) setSelUser(null);
             notify('ok', `${u.email} eliminado`);
         } catch (err) { notify('err', err instanceof Error ? err.message : 'Error al eliminar'); }
     };
@@ -376,6 +468,10 @@ export const AdminPage = () => {
     const loadPostalCodes = async (force = false) => {
         if (loaded.current.has('postal') && !force) return;
         setPostalProgress({ done: 0, loading: true });
+        // Las alertas activas son necesarias para calcular la cobertura CP↔zona
+        void callWorker({ action: 'get-weather-alerts', params: { active: 'true', limit: '500' } })
+            .then(data => setAlerts(data.alerts || []))
+            .catch(() => { /* la cobertura se recalculará cuando haya datos */ });
         const all: PostalMapping[] = [];
         let next = 0; let done = 0;
         const run = async () => {
@@ -415,6 +511,7 @@ export const AdminPage = () => {
                 return next;
             });
             setPostalModal(null);
+            logAudit(`CP ${cp} ${postalModal.isNew ? 'creado' : 'actualizado'} → ${zone} (${prov})`);
             notify('ok', `Código ${cp} guardado`);
         } catch (err) { notify('err', err instanceof Error ? err.message : 'Error al guardar'); }
         finally { setPostalSaving(false); }
@@ -425,6 +522,7 @@ export const AdminPage = () => {
         try {
             await callWorker({ action: 'delete-postal-code', params: { postal_code: cp } });
             setPostal(prev => prev.filter(p => p.postal_code !== cp));
+            logAudit(`CP ${cp} eliminado`);
             notify('ok', `Código ${cp} eliminado`);
         } catch (err) { notify('err', err instanceof Error ? err.message : 'Error al eliminar'); }
     };
@@ -483,12 +581,26 @@ export const AdminPage = () => {
         finally { setCfgLoading(false); }
     };
 
+    const saveRawConfig = async (key: string, value: string) => {
+        try {
+            await callWorker({ action: 'save-config', key, value });
+            setCfg(prev => ({ ...prev, [key]: value }));
+        } catch (err) { console.warn(`No se pudo guardar la clave ${key}:`, err); }
+    };
+
+    const logAudit = (what: string) => {
+        const entry: AuditEntry = { t: new Date().toISOString(), who: sessionStorage.getItem(ADMIN_USER_KEY) || 'admin', what };
+        const next = [entry, ...parseAudit(cfg.admin_audit_log)].slice(0, 100);
+        void saveRawConfig('admin_audit_log', JSON.stringify(next));
+    };
+
     const saveConfigValues = async (entries: [string, string][], okMsg = '¡Guardado!') => {
         try {
             for (const [k, v] of entries) {
                 await callWorker({ action: 'save-config', key: k, value: v });
                 setCfg(prev => ({ ...prev, [k]: v }));
             }
+            logAudit(`Configuración actualizada: ${entries.map(e => e[0]).join(', ')}`);
             notify('ok', okMsg);
         } catch (err) { notify('err', err instanceof Error ? err.message : 'Error al guardar'); }
     };
@@ -542,9 +654,12 @@ export const AdminPage = () => {
 
     const logout = () => {
         sessionStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(ADMIN_USER_KEY);
         setToken(null);
         setUsers([]); setStats(null);
         setUsername(''); setPassword('');
+        setSelUser(null); setGSearch(''); setGOpen(false);
+        setLogs30([]);
         setTab('panel');
     };
 
@@ -563,6 +678,54 @@ export const AdminPage = () => {
 
     const refreshCurrent = () => { goto(tab, true); notify('ok', 'Actualizando...'); };
 
+    /* ── BUSCADOR GLOBAL (Fase 5) ── */
+    const renderGlobalSearch = (mobile: boolean) => (
+        <div className={`relative ${mobile
+            ? 'md:hidden px-4 pt-3 pb-3 bg-gradient-to-r from-[#003f87] to-[#0056b3]'
+            : 'hidden md:block flex-1 max-w-[400px] mx-4'}`}>
+            <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/70 z-10" style={{ fontSize: 17 }}>search</span>
+                <input
+                    type="search"
+                    value={gSearch}
+                    onChange={e => { setGSearch(e.target.value); setGOpen(true); }}
+                    onFocus={() => setGOpen(true)}
+                    onClick={() => setGOpen(true)}
+                    placeholder="Buscar usuario, CP o alerta…"
+                    aria-label="Buscar en el panel"
+                    autoFocus={mobile}
+                    className="w-full h-9 pl-9 pr-3 rounded-xl bg-white/15 border border-white/20 text-white text-sm placeholder-white/60 outline-none focus:bg-white focus:text-[#181c20] focus:placeholder-[#727784] focus:border-white transition-all" />
+            </div>
+            {gOpen && gResults !== null && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl shadow-2xl border border-[#c2c6d4]/40 overflow-hidden max-h-[70vh] overflow-y-auto">
+                    {gResults.length === 0 ? (
+                        <div className="px-4 py-5 text-center">
+                            <p className="text-xs font-bold text-[#424752]">Sin resultados para «{gSearch.trim()}»</p>
+                            <p className="text-[10px] text-[#727784] mt-1">Prueba con un email, un código postal (28001) o el nombre de una zona</p>
+                        </div>
+                    ) : gResults.map(group => (
+                        <div key={group.group}>
+                            <p className="px-4 pt-2.5 pb-1 text-[9px] font-extrabold uppercase tracking-wider text-[#727784] bg-[#f7f9ff]">{group.group}</p>
+                            {group.items.map(it => (
+                                <button key={it.id} onMouseDown={e => { e.preventDefault(); it.go(); }}
+                                    className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-[#f7f9ff] transition-colors border-t border-[#c2c6d4]/20">
+                                    <span className="w-7 h-7 rounded-lg bg-[#d7e2ff] flex items-center justify-center flex-shrink-0">
+                                        <span className="material-symbols-outlined text-[#003f87]" style={{ fontSize: 15 }}>{it.icon}</span>
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-bold text-[#181c20] truncate">{it.label}</p>
+                                        {it.sub && <p className="text-[10px] text-[#727784] truncate">{it.sub}</p>}
+                                    </div>
+                                    <span className="material-symbols-outlined text-[#727784]" style={{ fontSize: 16 }}>arrow_forward</span>
+                                </button>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+
     const handleLogin = async (e: FormEvent) => {
         e.preventDefault();
         setLoginLoading(true); setLoginError(null);
@@ -571,18 +734,212 @@ export const AdminPage = () => {
             if (error) throw error;
             if (!data?.success) throw new Error(data?.error || 'Error de autenticación');
             sessionStorage.setItem(TOKEN_KEY, data.token);
+            sessionStorage.setItem(ADMIN_USER_KEY, username);
             setToken(data.token);
         } catch (err) { setLoginError(err instanceof Error ? err.message : 'Error de autenticación'); }
         finally { setLoginLoading(false); }
     };
 
-    /* ── FILTROS ── */
-    const filteredUsers = users.filter(u =>
-        !search ||
-        (u.email || '').toLowerCase().includes(search.toLowerCase()) ||
-        (u.name || '').toLowerCase().includes(search.toLowerCase()) ||
-        (u.postalCode || '').includes(search)
-    );
+    /* ── FILTROS Y CÓMPUTOS ── */
+    const filteredUsers = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return users.filter(u => {
+            if (q && !((u.email || '').toLowerCase().includes(q) || (u.name || '').toLowerCase().includes(q) || (u.postalCode || '').includes(q))) return false;
+            if (userFilter === 'verified' && !u.isVerified) return false;
+            if (userFilter === 'unverified' && u.isVerified) return false;
+            if (userFilter === 'withcp' && !u.postalCode) return false;
+            if (userFilter === 'nocp' && u.postalCode) return false;
+            if (userProv && !(u.postalCode || '').startsWith(userProv)) return false;
+            return true;
+        });
+    }, [users, search, userFilter, userProv]);
+
+    const provinceOptions = useMemo(() => {
+        const m = new Map<string, string>();
+        for (const p of postal) {
+            const pref = (p.postal_code || '').slice(0, 2);
+            if (pref.length === 2 && p.province && !m.has(pref)) m.set(pref, p.province);
+        }
+        return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+    }, [postal]);
+
+    /* ── SALUD DE SERVICIOS (Fase 1) ── */
+    const services = useMemo<ServiceHealth[]>(() => {
+        const now = new Date();
+        const nowMs = now.getTime();
+        const age = (d: Date | null) => (d ? nowMs - d.getTime() : Infinity);
+        const madridHM = new Intl.DateTimeFormat('es-ES', {
+            timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', hour12: false,
+        }).format(now);
+        const madridDate = new Intl.DateTimeFormat('sv-SE', {
+            timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit',
+        }).format(now);
+        const toMin = (hm: string) => {
+            const m = hm.match(/^(\d{1,2}):(\d{2})/);
+            return m ? Number(m[1]) * 60 + Number(m[2]) : 480;
+        };
+
+        const items: ServiceHealth[] = [];
+
+        // AEMET: cada N minutos → caído a los 3× intervalo (mín. 45 min)
+        const intervalMin = Number(cfg.aemet_check_interval_minutes) || 15;
+        const aemetLast = parseV(cfg.last_alerts_check_time);
+        const aemetMaxMs = Math.max(intervalMin * 3, 45) * 60 * 1000;
+        const aemetAge = age(aemetLast);
+        items.push({
+            id: 'aemet', label: 'Alertas AEMET', icon: 'cloud_sync', color: '#f97316',
+            last: aemetLast,
+            state: !aemetLast ? 'unknown' : aemetAge > aemetMaxMs ? 'down' : aemetAge > aemetMaxMs * 0.7 ? 'warn' : 'ok',
+            hint: `cada ${intervalMin} min`,
+            test: { id: 'svc-cron', path: '/test-cron' },
+        });
+
+        // Resumen Telegram: máx. 26 h entre envíos
+        const tgLast = parseV(cfg.last_telegram_report_time);
+        const tgAge = age(tgLast);
+        items.push({
+            id: 'telegram', label: 'Resumen Telegram', icon: 'send', color: '#0088cc',
+            last: tgLast,
+            state: !tgLast ? 'unknown' : tgAge > 26 * 3600e3 ? 'down' : tgAge > 20 * 3600e3 ? 'warn' : 'ok',
+            hint: `horas: ${parseHours(cfg.telegram_summary_hours, [9, 17]).map(h => `${h}h`).join(' · ')}`,
+            test: { id: 'svc-tgsum', path: '/test-telegram-summary', confirm: 'Esto enviará el resumen de alertas al canal real de Telegram. ¿Continuar?' },
+        });
+
+        // Previsión diaria: enviada hoy y aún no pasó la hora+2h
+        const sched = cfg.daily_forecast_time || '08:00';
+        const sentToday = dayKey(cfg.last_daily_sent_date || '') === madridDate || dayKey(cfg.last_daily_sent_id || '') === madridDate;
+        const pastSched = toMin(madridHM) > toMin(sched) + 120;
+        items.push({
+            id: 'daily', label: 'Previsión diaria', icon: 'wb_twilight', color: '#7c3aed',
+            last: parseV(cfg.last_daily_sent_date) || parseV(cfg.last_daily_sent_id),
+            state: sentToday ? 'ok' : pastSched ? 'down' : 'ok',
+            hint: sentToday ? `enviada hoy a las ${sched}` : `programada a las ${sched}`,
+            test: { id: 'svc-daily', path: '/test-daily-forecast-telegram', confirm: 'Esto enviará la previsión diaria a los suscritos por Telegram. ¿Continuar?' },
+        });
+
+        // Twitter/X: puede que el Worker no registre última publicación
+        const twLast = parseV(cfg.last_tweet_time || cfg.last_twitter_post_time || cfg.last_auto_tweet_time || cfg.twitter_last_time);
+        const twAge = age(twLast);
+        items.push({
+            id: 'twitter', label: 'Twitter / X', icon: 'alternate_email', color: '#475569',
+            last: twLast,
+            state: !twLast ? 'unknown' : twAge > 26 * 3600e3 ? 'down' : twAge > 22 * 3600e3 ? 'warn' : 'ok',
+            hint: `horas: ${parseHours(cfg.twitter_forecast_hours, [8, 20]).map(h => `${h}h`).join(' · ')}`,
+            test: { id: 'svc-twitter', path: '/test-twitter' },
+        });
+
+        return items;
+    }, [cfg]);
+
+    const downServices = services.filter(s => s.state === 'down');
+
+    /* ── COBERTURA CP↔ZONA (Fase 2) ── */
+    const coverage = useMemo<CoverageInfo>(() => {
+        const zoneSet = new Set(postal.map(p => (p.aemet_zone_name || '').toLowerCase().trim()).filter(Boolean));
+        const unmapped: { alert: WeatherAlert; missing: string[] }[] = [];
+        for (const a of alerts) {
+            const parts = (a.area_desc || '')
+                .split(';').map(s => s.trim().toLowerCase()).filter(Boolean)
+                .filter(p => p !== 'españa');
+            if (parts.length === 0) continue;
+            const missing = parts.filter(p => !zoneSet.has(p));
+            if (missing.length > 0) unmapped.push({ alert: a, missing });
+        }
+        const total = alerts.filter(a => (a.area_desc || '').split(';').map(s => s.trim().toLowerCase()).filter(p => p && p !== 'españa').length > 0).length;
+        const pct = total === 0 ? 100 : Math.round(((total - unmapped.length) / total) * 100);
+        const invalid = postal.filter(p => {
+            const cp = p.postal_code || '';
+            if (!/^\d{5}$/.test(cp)) return true;
+            const pref = Number(cp.slice(0, 2));
+            return pref < 1 || pref > 52;
+        });
+        const counts = new Map<string, number>();
+        for (const p of postal) counts.set(p.postal_code, (counts.get(p.postal_code) || 0) + 1);
+        const duplicates = [...counts.entries()].filter(([, n]) => n > 1).map(([cp]) => cp).sort();
+        return { pct, total, unmapped, invalid, duplicates };
+    }, [alerts, postal]);
+
+    /* ── SERIES TEMPORALES (Fase 3) ── */
+    const notifDaily = useMemo<BarPoint[]>(() => {
+        const buckets = new Map<string, number>();
+        for (const l of logs30) {
+            const k = dayKey(l.created_at);
+            buckets.set(k, (buckets.get(k) || 0) + 1);
+        }
+        const pts: BarPoint[] = [];
+        for (let i = 29; i >= 0; i--) {
+            const d = new Date(Date.now() - i * 86400e3);
+            const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            pts.push({ label: `${d.getDate()}/${d.getMonth() + 1}`, value: buckets.get(k) || 0 });
+        }
+        return pts;
+    }, [logs30]);
+
+    const userWeekly = useMemo<BarPoint[]>(() => {
+        const now = new Date();
+        const starts: number[] = [];
+        const labels: string[] = [];
+        for (let i = 11; i >= 0; i--) {
+            const s = weekStart(new Date(now.getTime() - i * 7 * 86400e3));
+            starts.push(s.getTime());
+            labels.push(`${s.getDate()}/${s.getMonth() + 1}`);
+        }
+        const counts = new Array(12).fill(0);
+        for (const u of users) {
+            const d = parseV(u.createdAt);
+            if (!d) continue;
+            const idx = starts.indexOf(weekStart(d).getTime());
+            if (idx >= 0) counts[idx]++;
+        }
+        return starts.map((_, i) => ({ label: labels[i], value: counts[i] }));
+    }, [users]);
+
+    const logs30Stats = useMemo(() => {
+        const s = { email: 0, telegram: 0, push: 0, total: logs30.length };
+        for (const l of logs30) {
+            if (l.type === 'email') s.email++;
+            else if (l.type === 'telegram') s.telegram++;
+            else if (l.type === 'push') s.push++;
+        }
+        return s;
+    }, [logs30]);
+
+    const auditEntries = useMemo(() => parseAudit(cfg.admin_audit_log), [cfg.admin_audit_log]);
+
+    /* ── BUSCADOR GLOBAL (Fase 5) ── */
+    const computeGResults = (): { group: string; items: { id: string; label: string; sub?: string; icon: string; go: () => void }[] }[] | null => {
+        const q = gSearch.trim().toLowerCase();
+        if (!gOpen || q.length < 2) return null;
+        const res: { group: string; items: { id: string; label: string; sub?: string; icon: string; go: () => void }[] }[] = [];
+
+        const us = users.filter(u =>
+            (u.email || '').toLowerCase().includes(q) || (u.name || '').toLowerCase().includes(q) || (u.postalCode || '').includes(q),
+        ).slice(0, 4).map(u => ({
+            id: u.id, label: u.name || u.email, sub: `${u.email}${u.postalCode ? ` · CP ${u.postalCode}` : ''}`, icon: 'person',
+            go: () => { goto('usuarios'); setSearch(''); setUserFilter('all'); setUserProv(''); setSelUser(u); setGOpen(false); setGSearch(''); },
+        }));
+        if (us.length) res.push({ group: 'Usuarios', items: us });
+
+        const als = alerts.filter(a =>
+            (a.event || '').toLowerCase().includes(q) || (a.area_desc || '').toLowerCase().includes(q),
+        ).slice(0, 4).map(a => ({
+            id: a.id, label: a.event, sub: a.area_desc || 'España', icon: 'warning',
+            go: () => { goto('alertas'); setOpenAlert(null); setWForm(f => ({ ...f, area: a.area_desc ? a.area_desc.split(';')[0].trim() : '', active: 'true' })); void loadWeather(true, { ...wForm, area: a.area_desc ? a.area_desc.split(';')[0].trim() : '', active: 'true' }); setGOpen(false); setGSearch(''); },
+        }));
+        if (als.length) res.push({ group: 'Alertas', items: als });
+
+        const cps = postal.filter(p =>
+            (p.postal_code || '').includes(q) || (p.aemet_zone_name || '').toLowerCase().includes(q),
+        ).slice(0, 4).map(p => ({
+            id: p.postal_code, label: `${p.postal_code} · ${p.aemet_zone_name}`, sub: p.province, icon: 'pin_drop',
+            go: () => { goto('codigos'); setPostalSearch(p.postal_code); setGOpen(false); setGSearch(''); },
+        }));
+        if (cps.length) res.push({ group: 'Códigos postales', items: cps });
+
+        return res;
+    };
+
+    const gResults = computeGResults();
 
     /* ══════════ LOGIN ══════════ */
     if (!token) {
@@ -635,14 +992,57 @@ export const AdminPage = () => {
 
     /* ══════════ PANELES DE PESTAÑAS ══════════ */
 
+    const runServiceTest = (svc: ServiceHealth) => {
+        if (!svc.test) return;
+        if (svc.test.confirm && !window.confirm(svc.test.confirm)) return;
+        void runTest(svc.test.id, svc.test.path);
+    };
+
     const renderPanel = () => {
         const activeAlerts = alerts.slice(0, 6);
         return (
             <div className="space-y-5">
+                {downServices.length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                        className="bg-red-50 border border-red-200 rounded-2xl px-4 sm:px-5 py-3.5 flex flex-wrap items-center gap-3">
+                        <span className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                            <span className="material-symbols-outlined text-[#b3261e]" style={{ fontSize: 20 }}>error</span>
+                        </span>
+                        <div className="flex-1 min-w-[200px]">
+                            <p className="text-xs font-extrabold text-[#b91c1c]">
+                                {downServices.length} servicio{downServices.length > 1 ? 's' : ''} caído{downServices.length > 1 ? 's' : ''}
+                            </p>
+                            <p className="text-[11px] text-red-700/80">{downServices.map(s => s.label).join(' · ')}</p>
+                        </div>
+                        <button onClick={() => goto('tests')}
+                            className={`${BTN} px-3.5 py-2 bg-white border border-red-200 text-[#b91c1c] hover:bg-red-100`}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>science</span>Probar ahora
+                        </button>
+                    </motion.div>
+                )}
+
+                {postal.length > 0 && coverage.unmapped.length > 0 && (
+                    <motion.button initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} onClick={() => goto('codigos')}
+                        className="w-full bg-amber-50 border border-amber-200 rounded-2xl px-4 sm:px-5 py-3 flex items-center gap-3 text-left hover:bg-amber-100/70 transition-colors">
+                        <span className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                            <span className="material-symbols-outlined text-[#b45309]" style={{ fontSize: 18 }}>coverage</span>
+                        </span>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-extrabold text-[#92400e]">
+                                {coverage.unmapped.length} alerta{coverage.unmapped.length > 1 ? 's' : ''} activa{coverage.unmapped.length > 1 ? 's' : ''} sin códigos postales que la reciban
+                            </p>
+                            <p className="text-[11px] text-amber-700 truncate">Cobertura actual: {coverage.pct}% de las alertas · pulsa para revisar el mapeo</p>
+                        </div>
+                        <span className="material-symbols-outlined text-[#b45309] flex-shrink-0" style={{ fontSize: 18 }}>arrow_forward</span>
+                    </motion.button>
+                )}
+
                 <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                     <StatCard icon="warning" color="linear-gradient(135deg,#f97316,#ea580c)" label="Alertas activas" value={wStats.total || alerts.length} hint="AEMET en tiempo real" />
-                    <StatCard icon="group" color="linear-gradient(135deg,#003f87,#0056b3)" label="Usuarios" value={stats?.total ?? '—'} hint={stats ? `${stats.verified} verificados` : 'cargando'} />
-                    <StatCard icon="notifications" color="linear-gradient(135deg,#0891b2,#06b6d4)" label="Notificaciones" value={lStats.total} hint={`${lStats.telegram} telegram · ${lStats.email} email · ${lStats.push} push`} />
+                    <StatCard icon="group" color="linear-gradient(135deg,#003f87,#0056b3)" label="Usuarios" value={stats?.total ?? '—'}
+                        hint={stats ? `${stats.verified} verificados` : 'cargando'} spark={userWeekly.map(w => w.value)} sparkColor="#003f87" />
+                    <StatCard icon="notifications" color="linear-gradient(135deg,#0891b2,#06b6d4)" label="Notificaciones" value={lStats.total}
+                        hint={`${lStats.telegram} telegram · ${lStats.email} email · ${lStats.push} push`} spark={notifDaily.map(p => p.value)} sparkColor="#0891b2" />
                     <StatCard icon="wb_twilight" color="linear-gradient(135deg,#16a34a,#22c55e)" label="Previsión diaria" value={cfg.daily_forecast_time || '—'} hint={`Último: ${cfg.last_daily_sent_id || 'ninguno'}`} />
                 </div>
 
@@ -673,29 +1073,59 @@ export const AdminPage = () => {
                             )}
                         </Card>
 
-                        <Card icon="monitor_heart" title="Estado del sistema" sub="Última actividad de cada servicio automatizado">
+                        <Card icon="monitor_heart" title="Servicios automatizados" sub="Estado en vivo de cada tarea programada (cron)">
                             <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-                                {[
-                                    { icon: 'cloud_sync', label: 'AEMET', value: rel(cfg.last_alerts_check_time), hint: fmtDT(cfg.last_alerts_check_time), color: '#f97316' },
-                                    { icon: 'send', label: 'Telegram', value: rel(cfg.last_telegram_report_time), hint: fmtDT(cfg.last_telegram_report_time), color: '#0088cc' },
-                                    { icon: 'summarize', label: 'Resumen diario', value: rel(cfg.last_daily_summary_date), hint: fmtDT(cfg.last_daily_summary_date), color: '#7c3aed' },
-                                    {
-                                        icon: 'alternate_email', label: 'Twitter / X', color: '#475569',
-                                        value: `${parseHours(cfg.twitter_forecast_hours, [8, 10, 20]).join('h · ')}h`,
-                                        hint: 'Publicación automática',
-                                    },
-                                ].map(sv => (
-                                    <div key={sv.label} className="p-3.5 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30 min-w-0">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: `${sv.color}20` }}>
-                                                <span className="material-symbols-outlined" style={{ fontSize: 16, color: sv.color }}>{sv.icon}</span>
-                                            </span>
-                                            <p className="text-xs font-extrabold text-[#181c20] truncate">{sv.label}</p>
+                                {services.map(svc => {
+                                    const res = svc.test ? testResult[svc.test.id] : undefined;
+                                    return (
+                                        <div key={svc.id} className="p-3.5 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30 min-w-0 flex flex-col gap-2">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: `${svc.color}20` }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: svc.color }}>{svc.icon}</span>
+                                                </span>
+                                                <p className="text-xs font-extrabold text-[#181c20] truncate flex-1">{svc.label}</p>
+                                                <HealthBadge state={svc.state} />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-extrabold text-[#181c20] leading-none">{rel(svc.last)}</p>
+                                                <p className="text-[10px] text-[#727784] mt-1 truncate" title={`${fmtDT(svc.last)} · ${svc.hint}`}>{fmtDT(svc.last)} · {svc.hint}</p>
+                                            </div>
+                                            <button onClick={() => runServiceTest(svc)} disabled={!svc.test || res?.loading}
+                                                className={`${BTN} h-8 px-3 bg-white border border-[#c2c6d4] text-[#424752] hover:bg-white hover:border-[#003f87]/50 hover:text-[#003f87] mt-auto self-start`}>
+                                                {res?.loading
+                                                    ? <span className="w-3.5 h-3.5 border-2 border-[#003f87]/30 border-t-[#003f87] rounded-full animate-spin" />
+                                                    : <><span className="material-symbols-outlined" style={{ fontSize: 14 }}>bolt</span>Probar</>}
+                                            </button>
+                                            {res && !res.loading && (
+                                                <p className={`text-[10px] font-semibold truncate ${res.ok ? 'text-[#15803d]' : 'text-[#b91c1c]'}`}
+                                                    title={res.msg}>{res.ok ? '✓ ' : '✗ '}{res.msg.replace(/\s+/g, ' ').slice(0, 90)}</p>
+                                            )}
                                         </div>
-                                        <p className="text-[11px] text-[#424752] font-semibold break-words">{sv.value}</p>
-                                        <p className="text-[10px] text-[#727784] mt-0.5 break-words">{sv.hint}</p>
+                                    );
+                                })}
+                            </div>
+                        </Card>
+
+                        <Card icon="insights" title="Tendencias" sub="Últimos 30 días de notificaciones y altas de usuarios por semana">
+                            <div className="grid md:grid-cols-2 gap-5">
+                                <div className="min-w-0">
+                                    <div className="flex items-center justify-between gap-2 mb-3">
+                                        <p className="text-xs font-extrabold text-[#424752]">Notificaciones · 30 días</p>
+                                        <div className="flex items-center gap-2.5 flex-wrap justify-end">
+                                            <span className="flex items-center gap-1 text-[9px] font-bold text-[#727784]"><span className="w-2 h-2 rounded-sm" style={{ background: '#0277bd' }} />{logs30Stats.email} email</span>
+                                            <span className="flex items-center gap-1 text-[9px] font-bold text-[#727784]"><span className="w-2 h-2 rounded-sm" style={{ background: '#0088cc' }} />{logs30Stats.telegram} tg</span>
+                                            <span className="flex items-center gap-1 text-[9px] font-bold text-[#727784]"><span className="w-2 h-2 rounded-sm" style={{ background: '#5e35b1' }} />{logs30Stats.push} push</span>
+                                        </div>
                                     </div>
-                                ))}
+                                    <BarChart data={notifDaily} color="#0891b2" />
+                                </div>
+                                <div className="min-w-0 md:border-l md:border-[#c2c6d4]/30 md:pl-5">
+                                    <div className="flex items-center justify-between gap-2 mb-3">
+                                        <p className="text-xs font-extrabold text-[#424752]">Altas de usuarios · 12 semanas</p>
+                                        <p className="text-[10px] font-bold text-[#727784]">{userWeekly.reduce((n, w) => n + w.value, 0)} nuevos</p>
+                                    </div>
+                                    <BarChart data={userWeekly} color="#003f87" />
+                                </div>
                             </div>
                         </Card>
                     </div>
@@ -902,73 +1332,147 @@ export const AdminPage = () => {
         </div>
     );
 
-    const renderUsuarios = () => (
-        <div className="space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <StatCard icon="group" color="linear-gradient(135deg,#003f87,#0056b3)" label="Usuarios totales" value={stats?.total ?? '—'} />
-                <StatCard icon="verified_user" color="linear-gradient(135deg,#16a34a,#22c55e)" label="Verificados" value={stats?.verified ?? '—'} />
-                <StatCard icon="markunread_mailbox" color="linear-gradient(135deg,#f97316,#ea580c)" label="Con código postal" value={stats?.withPostalCode ?? '—'} />
-            </div>
+    const exportUsersCsv = () => {
+        if (filteredUsers.length === 0) { notify('err', 'No hay usuarios para exportar'); return; }
+        const rows: (string | number)[][] = [
+            ['Nombre', 'Email', 'Teléfono', 'Código postal', 'Verificado', 'Idioma', 'Alta', 'Severidades', 'Eventos'],
+            ...filteredUsers.map(u => [
+                u.name || '', u.email, u.phone || '', u.postalCode || '',
+                u.isVerified ? 'Sí' : 'No', u.language || '', fmtD(u.createdAt),
+                u.preferredSeverities.join(' | '), u.preferredEventTypes.join(' | '),
+            ]),
+        ];
+        downloadCsv(`usuarios-meteoalerta-${new Date().toISOString().slice(0, 10)}.csv`, rows);
+        logAudit(`Exportados ${filteredUsers.length} usuarios a CSV`);
+        notify('ok', `CSV con ${filteredUsers.length} usuarios descargado`);
+    };
 
-            <Card icon="person_search" title="Usuarios registrados" sub="Busca por nombre, email o código postal" pad={false}
-                action={<button onClick={() => loadUsers(true)} className={`${BTN} px-3 py-2 bg-[#f1f4f9] text-[#424752] hover:bg-[#e5e8ee]`}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 15 }}>refresh</span>Recargar</button>}>
-                <div className="p-4 border-b border-[#c2c6d4]/30">
-                    <SearchBox value={search} onChange={setSearch} placeholder="Buscar por nombre, email o código postal..." />
+    const renderUsuarios = () => {
+        const counts = {
+            all: users.length,
+            verified: users.filter(u => u.isVerified).length,
+            unverified: users.filter(u => !u.isVerified).length,
+            withcp: users.filter(u => u.postalCode).length,
+            nocp: users.filter(u => !u.postalCode).length,
+        };
+        const chipCls = (active: boolean) =>
+            `px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${active
+                ? 'bg-[#003f87] text-white border-[#003f87] shadow-sm'
+                : 'bg-white text-[#424752] border-[#c2c6d4] hover:border-[#003f87]/50 hover:text-[#003f87]'}`;
+        const hasFilters = userFilter !== 'all' || !!userProv || !!search;
+        return (
+            <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <StatCard icon="group" color="linear-gradient(135deg,#003f87,#0056b3)" label="Usuarios totales" value={stats?.total ?? '—'}
+                        spark={userWeekly.map(w => w.value)} sparkColor="#003f87" />
+                    <StatCard icon="verified_user" color="linear-gradient(135deg,#16a34a,#22c55e)" label="Verificados" value={stats?.verified ?? '—'} />
+                    <StatCard icon="markunread_mailbox" color="linear-gradient(135deg,#f97316,#ea580c)" label="Con código postal" value={stats?.withPostalCode ?? '—'} />
                 </div>
-                {usersError && (
-                    <div className="mx-4 mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-red-500" style={{ fontSize: 17 }}>error</span>
-                        <p className="text-xs text-red-700">{usersError}</p>
+
+                <Card icon="person_search" title="Usuarios registrados" sub="Busca por nombre, email o código postal · pulsa una fila para ver la ficha" pad={false}
+                    action={
+                        <div className="flex gap-2">
+                            <button onClick={() => loadUsers(true)} disabled={usersLoading} className={`${BTN} px-3 py-2 bg-[#f1f4f9] text-[#424752] hover:bg-[#e5e8ee]`}>
+                                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>refresh</span>Recargar
+                            </button>
+                            <button onClick={exportUsersCsv} disabled={filteredUsers.length === 0}
+                                className={`${BTN} px-3.5 py-2 bg-[#0f7b3f] text-white shadow hover:brightness-110`}>
+                                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>download</span>CSV
+                            </button>
+                        </div>
+                    }>
+                    <div className="flex flex-col gap-3 p-4 border-b border-[#c2c6d4]/30">
+                        <SearchBox value={search} onChange={setSearch} placeholder="Buscar por nombre, email o código postal..." />
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {([
+                                ['all', 'Todos'], ['verified', 'Verificados'], ['unverified', 'Sin verificar'],
+                                ['withcp', 'Con CP'], ['nocp', 'Sin CP'],
+                            ] as const).map(([id, label]) => (
+                                <button key={id} onClick={() => setUserFilter(id)} className={chipCls(userFilter === id)}>
+                                    {label} <span className={userFilter === id ? 'text-white/70' : 'text-[#727784]'}>({counts[id]})</span>
+                                </button>
+                            ))}
+                            {provinceOptions.length > 0 ? (
+                                <select value={userProv} onChange={e => setUserProv(e.target.value)}
+                                    className="h-8 pl-2.5 pr-8 rounded-full border border-[#c2c6d4] bg-white text-[11px] font-bold text-[#424752] outline-none focus:border-[#003f87] cursor-pointer">
+                                    <option value="">Provincia (todas)</option>
+                                    {provinceOptions.map(([pref, name]) => <option key={pref} value={pref}>{name}</option>)}
+                                </select>
+                            ) : (
+                                <button onClick={() => void loadPostalCodes()} disabled={postalProgress.loading}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border border-dashed transition-all ${postalProgress.loading
+                                        ? 'text-[#727784] border-[#c2c6d4] cursor-wait'
+                                        : 'text-[#003f87] border-[#003f87]/50 hover:bg-[#003f87]/5'}`}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>download</span>
+                                    {postalProgress.loading ? `Cargando CP ${postalProgress.done}/${TOTAL_POSTAL_PAGES}…` : 'Cargar provincias'}
+                                </button>
+                            )}
+                            {hasFilters && (
+                                <button onClick={() => { setSearch(''); setUserFilter('all'); setUserProv(''); }}
+                                    className="px-3 py-1.5 rounded-full text-[11px] font-bold text-[#b91c1c] bg-red-50 border border-red-200 hover:bg-red-100 transition-all">
+                                    Limpiar filtros
+                                </button>
+                            )}
+                        </div>
                     </div>
-                )}
-                {usersLoading ? <Loading text="Cargando usuarios..." /> : filteredUsers.length === 0 ? (
-                    <Empty icon="group_off" title="No se encontraron usuarios" />
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-[#f1f4f9] text-[10px] uppercase tracking-wider text-[#727784]">
-                                    <th className="text-left px-5 py-3 font-bold">Usuario</th>
-                                    <th className="text-left px-5 py-3 font-bold hidden md:table-cell">Código Postal</th>
-                                    <th className="text-left px-5 py-3 font-bold hidden lg:table-cell">Alertas</th>
-                                    <th className="text-left px-5 py-3 font-bold hidden lg:table-cell">Alta</th>
-                                    <th className="text-right px-5 py-3 font-bold">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredUsers.map((u, i) => (
-                                    <tr key={u.id} className={`border-t border-[#c2c6d4]/20 hover:bg-[#f7f9ff] transition-colors ${i % 2 === 1 ? 'bg-[#f7f9ff]/60' : ''}`}>
-                                        <td className="px-5 py-3">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-8 h-8 rounded-full bg-[#d7e2ff] flex items-center justify-center text-[#003f87] font-bold text-xs flex-shrink-0">
-                                                    {(u.name || u.email || '?').charAt(0).toUpperCase()}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="font-bold truncate max-w-[180px]">{u.name || '—'}</p>
-                                                    <p className="text-[11px] text-[#727784] truncate max-w-[180px]">{u.email}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-3 hidden md:table-cell"><span className="font-mono font-bold text-[#424752]">{u.postalCode || '—'}</span></td>
-                                        <td className="px-5 py-3 hidden lg:table-cell"><span className="text-[10px] font-bold bg-[#ebeef3] text-[#424752] px-2 py-1 rounded-full">{u.preferredSeverities.length} niveles</span></td>
-                                        <td className="px-5 py-3 hidden lg:table-cell text-xs text-[#727784]">{fmtD(u.createdAt)}</td>
-                                        <td className="px-5 py-3 text-right">
-                                            <button onClick={() => handleDeleteUser(u)}
-                                                className={`${BTN} px-3 py-1.5 bg-red-50 hover:bg-red-100 text-[#ba1a1a] ml-auto`}>
-                                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete</span><span className="hidden sm:inline">Eliminar</span>
-                                            </button>
-                                        </td>
+                    {usersError && (
+                        <div className="mx-4 mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-red-500" style={{ fontSize: 17 }}>error</span>
+                            <p className="text-xs text-red-700">{usersError}</p>
+                        </div>
+                    )}
+                    {usersLoading ? <Loading text="Cargando usuarios..." /> : filteredUsers.length === 0 ? (
+                        <Empty icon="group_off" title="No se encontraron usuarios" sub={hasFilters ? 'Prueba a quitar algún filtro' : undefined} />
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-[#f1f4f9] text-[10px] uppercase tracking-wider text-[#727784]">
+                                        <th className="text-left px-5 py-3 font-bold">Usuario</th>
+                                        <th className="text-left px-5 py-3 font-bold hidden md:table-cell">Código Postal</th>
+                                        <th className="text-left px-5 py-3 font-bold hidden lg:table-cell">Alertas</th>
+                                        <th className="text-left px-5 py-3 font-bold hidden lg:table-cell">Alta</th>
+                                        <th className="text-right px-5 py-3 font-bold">Acciones</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        <p className="px-5 py-3 text-[11px] text-[#727784] border-t border-[#c2c6d4]/20">{filteredUsers.length} de {users.length} usuarios</p>
-                    </div>
-                )}
-            </Card>
-        </div>
-    );
+                                </thead>
+                                <tbody>
+                                    {filteredUsers.map((u, i) => (
+                                        <tr key={u.id} onClick={() => setSelUser(u)}
+                                            className={`border-t border-[#c2c6d4]/20 hover:bg-[#f7f9ff] transition-colors cursor-pointer ${i % 2 === 1 ? 'bg-[#f7f9ff]/60' : ''}`}>
+                                            <td className="px-5 py-3">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-8 h-8 rounded-full bg-[#d7e2ff] flex items-center justify-center text-[#003f87] font-bold text-xs flex-shrink-0">
+                                                        {(u.name || u.email || '?').charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <p className="font-bold truncate max-w-[180px]">{u.name || '—'}</p>
+                                                            {u.isVerified && <span className="material-symbols-outlined text-[#16a34a] flex-shrink-0" style={{ fontSize: 14 }} title="Verificado">verified</span>}
+                                                        </div>
+                                                        <p className="text-[11px] text-[#727784] truncate max-w-[180px]">{u.email}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-3 hidden md:table-cell"><span className="font-mono font-bold text-[#424752]">{u.postalCode || '—'}</span></td>
+                                            <td className="px-5 py-3 hidden lg:table-cell"><span className="text-[10px] font-bold bg-[#ebeef3] text-[#424752] px-2 py-1 rounded-full">{u.preferredSeverities.length} niveles</span></td>
+                                            <td className="px-5 py-3 hidden lg:table-cell text-xs text-[#727784]">{fmtD(u.createdAt)}</td>
+                                            <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
+                                                <button onClick={() => handleDeleteUser(u)}
+                                                    className={`${BTN} px-3 py-1.5 bg-red-50 hover:bg-red-100 text-[#ba1a1a] ml-auto`}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete</span><span className="hidden sm:inline">Eliminar</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <p className="px-5 py-3 text-[11px] text-[#727784] border-t border-[#c2c6d4]/20">{filteredUsers.length} de {users.length} usuarios · pulsa una fila para abrir la ficha</p>
+                        </div>
+                    )}
+                </Card>
+            </div>
+        );
+    };
 
     const renderCodigos = () => (
         <div className="space-y-5">
@@ -994,6 +1498,95 @@ export const AdminPage = () => {
                     </div>
                 </div>
             )}
+
+            <Card icon="health_and_safety" title="Cobertura de alertas"
+                sub="Alertas activas cuyas zonas AEMET no tienen ningún código postal asignado y errores de la base"
+                action={
+                    <button onClick={() => goto('mapa')}
+                        className={`${BTN} px-3 py-2 bg-[#f1f4f9] text-[#424752] hover:bg-[#e5e8ee]`}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 15 }}>map</span>Ver en el mapa
+                    </button>
+                }>
+                {postal.length > 0 && alerts.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                        <StatChip label="% cubierta" value={coverage.pct} color={coverage.pct === 100 ? '#16a34a' : coverage.pct >= 90 ? '#f59e0b' : '#b3261e'} />
+                        <StatChip label="Sin CP" value={coverage.unmapped.length} color={coverage.unmapped.length > 0 ? '#b3261e' : '#16a34a'} />
+                        <StatChip label="CP inválidos" value={coverage.invalid.length} color={coverage.invalid.length > 0 ? '#e65100' : '#16a34a'} />
+                        <StatChip label="Duplicados" value={coverage.duplicates.length} color={coverage.duplicates.length > 0 ? '#e65100' : '#16a34a'} />
+                    </div>
+                )}
+
+                {alerts.length === 0 || postal.length === 0 ? (
+                    <Empty icon={postalProgress.loading ? 'hourglass_empty' : 'fact_check'}
+                        title={postalProgress.loading ? 'Cargando la base de códigos postales…' : 'Datos incompletos'}
+                        sub={postalProgress.loading
+                            ? `Descargando CP ${postalProgress.done}/${TOTAL_POSTAL_PAGES}`
+                            : `Faltan ${alerts.length === 0 ? 'las alertas activas' : ''}${alerts.length === 0 && postal.length === 0 ? ' y ' : ''}${postal.length === 0 ? 'los códigos postales' : ''}. Pulsa Recargar en la tabla de abajo.`} />
+                ) : coverage.unmapped.length === 0 && coverage.invalid.length === 0 && coverage.duplicates.length === 0 ? (
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-200">
+                        <span className="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <span className="material-symbols-outlined text-[#15803d]" style={{ fontSize: 20 }}>task_alt</span>
+                        </span>
+                        <div>
+                            <p className="text-xs font-extrabold text-[#15803d]">Cobertura completa</p>
+                            <p className="text-[11px] text-green-700/80">Las {coverage.total} alertas activas tienen zonas con CP asignados y la base está limpia</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {coverage.unmapped.length > 0 && (
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-[#b3261e] mb-2">
+                                    Alertas sin ningún CP que las reciba ({coverage.unmapped.length})
+                                </p>
+                                <div className="flex flex-col gap-2">
+                                    {coverage.unmapped.slice(0, 8).map(({ alert, missing }) => {
+                                        const s = sev(alert.severity);
+                                        return (
+                                            <div key={alert.id} className="flex items-center gap-3 p-3 rounded-xl border border-red-100 bg-red-50/50">
+                                                <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: 17, color: s.fg }}>{s.icon}</span>
+                                                </span>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-xs font-bold text-[#181c20] truncate">{alert.event}</p>
+                                                    <p className="text-[10px] text-[#b3261e] truncate">Sin CP: {missing.join(', ')}</p>
+                                                </div>
+                                                <button onClick={() => setPostalModal({
+                                                    cp: '',
+                                                    zone: missing[0].charAt(0).toUpperCase() + missing[0].slice(1),
+                                                    prov: '', isNew: true,
+                                                })}
+                                                    className={`${BTN} px-3 py-1.5 bg-white border border-red-200 text-[#b3261e] hover:bg-red-50 flex-shrink-0`}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add_location</span>Mapear CP
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                    {coverage.unmapped.length > 8 && (
+                                        <p className="text-[11px] text-[#727784] pl-1">…y {coverage.unmapped.length - 8} alertas más sin cobertura</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        {(coverage.invalid.length > 0 || coverage.duplicates.length > 0) && (
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                {coverage.invalid.length > 0 && (
+                                    <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 min-w-0">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#b45309] mb-1.5">CP con formato inválido ({coverage.invalid.length})</p>
+                                        <p className="text-xs text-amber-800 font-mono break-all">{coverage.invalid.slice(0, 12).map(p => p.postal_code || '(vacío)').join(' · ')}</p>
+                                    </div>
+                                )}
+                                {coverage.duplicates.length > 0 && (
+                                    <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 min-w-0">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#b45309] mb-1.5">CP duplicados ({coverage.duplicates.length})</p>
+                                        <p className="text-xs text-amber-800 font-mono break-all">{coverage.duplicates.slice(0, 12).join(' · ')}</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </Card>
 
             <Card icon="markunread_mailbox" title="Mapeo Código Postal → Zona AEMET" sub="Determina qué zona meteorológica recibe cada usuario" pad={false}
                 action={
@@ -1065,7 +1658,17 @@ export const AdminPage = () => {
                 <StatChip label="Alertas activas" value={mapAlerts.length} color="#b3261e" />
                 <StatChip label="Total CP mapeados" value={postal.length} color="#5f6368" />
             </div>
-            <AdminMap points={mapPoints} loading={mapLoading || postalProgress.loading} />
+            <AdminMap
+                points={mapPoints}
+                loading={mapLoading || postalProgress.loading}
+                onEditCp={cp => {
+                    const p = postal.find(x => x.postal_code === cp);
+                    setPostalModal(p
+                        ? { cp: p.postal_code, zone: p.aemet_zone_name, prov: p.province, isNew: false }
+                        : { cp, zone: '', prov: '', isNew: false });
+                }}
+                onNewCp={() => setPostalModal({ cp: '', zone: '', prov: '', isNew: true })}
+            />
         </div>
     );
 
@@ -1168,6 +1771,42 @@ export const AdminPage = () => {
                             Actual: <strong className="text-[#181c20]">{cfg.support_email || 'ochentainueve@gmail.com (por defecto)'}</strong>
                         </p>
                     </ConfigBlock>
+
+                    <ConfigBlock title="Actividad del panel" icon="history">
+                        <p className="text-xs text-[#727784] mb-3">Registro de las últimas acciones realizadas en el panel (borrados, cambios de configuración y CP). Se conservan las 100 más recientes.</p>
+                        {auditEntries.length === 0 ? (
+                            <div className="p-4 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30 text-center">
+                                <p className="text-xs font-bold text-[#424752]">Sin actividad registrada</p>
+                                <p className="text-[11px] text-[#727784] mt-0.5">Las acciones que realices a partir de ahora aparecerán aquí</p>
+                            </div>
+                        ) : (
+                            <div className="rounded-xl border border-[#c2c6d4]/30 overflow-hidden">
+                                <div className="max-h-[260px] overflow-y-auto divide-y divide-[#c2c6d4]/20">
+                                    {auditEntries.map((e, i) => (
+                                        <div key={`${e.t}-${i}`} className="flex items-start gap-3 px-3.5 py-2.5 hover:bg-[#f7f9ff] transition-colors">
+                                            <span className="w-7 h-7 rounded-lg bg-[#d7e2ff] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                <span className="material-symbols-outlined text-[#003f87]" style={{ fontSize: 14 }}>admin_panel_settings</span>
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-xs font-semibold text-[#181c20] break-words">{e.what}</p>
+                                                <p className="text-[10px] text-[#727784] mt-0.5">{e.who} · {fmtDT(e.t)} · {rel(e.t)}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex justify-end px-3.5 py-2.5 border-t border-[#c2c6d4]/20 bg-[#f7f9ff]">
+                                    <button onClick={() => {
+                                        if (!confirm('¿Borrar el registro de actividad?')) return;
+                                        void saveRawConfig('admin_audit_log', '[]');
+                                        notify('ok', 'Registro de actividad borrado');
+                                    }}
+                                        className={`${BTN} px-3 py-1.5 bg-white border border-[#c2c6d4] text-[#b3261e] hover:bg-red-50 hover:border-red-200`}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete_sweep</span>Borrar registro
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </ConfigBlock>
                 </div>
             )}
         </Card>
@@ -1266,6 +1905,193 @@ export const AdminPage = () => {
         </div>
     );
 
+    /* ── FICHA DE USUARIO (drawer) ── */
+    const renderUserDrawer = () => {
+        if (!selUser) return null;
+        const u = selUser;
+        const zone = postal.find(p => p.postal_code === u.postalCode)?.aemet_zone_name || '';
+        const zoneAlerts = zone
+            ? alerts.filter(a => (a.area_desc || '').toLowerCase().split(';').some(part => part.trim() === zone.toLowerCase()))
+            : [];
+        const target = zoneAlerts[0] || alerts[0];
+        const targetId = target?.aemet_id || target?.id || '';
+        const userLogs = logs.filter(l => (l.users?.email || l.recipient || '') === u.email).slice(0, 6);
+        const mailRes = testResult[`u-mail-${u.id}`];
+        const pushRes = testResult[`u-push-${u.id}`];
+
+        const dataCell = (label: string, value: ReactNode) => (
+            <div className="p-3 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30 min-w-0">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-[#727784]">{label}</p>
+                <p className="text-xs font-extrabold text-[#181c20] mt-1 truncate" title={typeof value === 'string' ? value : undefined}>{value}</p>
+            </div>
+        );
+
+        return (
+            <motion.aside initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+                transition={{ type: 'tween', duration: .22, ease: 'easeOut' }}
+                className="absolute right-0 top-0 h-full w-full sm:max-w-[440px] bg-white shadow-2xl flex flex-col"
+                role="dialog" aria-label={`Ficha de ${u.email}`}>
+                <header className="px-5 py-4 bg-gradient-to-r from-[#003f87] to-[#0056b3] text-white flex items-start gap-3 flex-shrink-0">
+                    <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center font-extrabold text-lg flex-shrink-0">
+                        {(u.name || u.email || '?').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <p className="font-extrabold leading-tight truncate">{u.name || 'Sin nombre'}</p>
+                        <p className="text-[11px] text-white/75 truncate">{u.email}</p>
+                        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${u.isVerified ? 'bg-green-400/25 text-green-100' : 'bg-white/15 text-white/80'}`}>
+                                {u.isVerified ? '✓ Verificado' : 'Sin verificar'}
+                            </span>
+                            <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-white/15 text-white/80 font-mono">
+                                {u.postalCode || 'sin CP'}
+                            </span>
+                        </div>
+                    </div>
+                    <button onClick={() => setSelUser(null)} aria-label="Cerrar ficha"
+                        className="hover:bg-white/20 rounded-lg p-1 transition-colors flex-shrink-0">
+                        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
+                    </button>
+                </header>
+
+                <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                    <div className="grid grid-cols-2 gap-3">
+                        {dataCell('Teléfono', u.phone || '—')}
+                        {dataCell('Idioma', (u.language || 'es').toUpperCase())}
+                        {dataCell('Alta', fmtD(u.createdAt))}
+                        {dataCell('Preferencias', `${u.preferredSeverities.length} niveles · ${u.preferredEventTypes.length} eventos`)}
+                    </div>
+
+                    <section>
+                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#727784] mb-2">Zona AEMET y alertas activas</h4>
+                        {!u.postalCode ? (
+                            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
+                                Este usuario no tiene código postal: no recibe alertas por zona.
+                            </div>
+                        ) : postal.length === 0 ? (
+                            <button onClick={() => void loadPostalCodes()} disabled={postalProgress.loading}
+                                className={`${BTN} h-10 px-4 bg-white border border-[#c2c6d4] text-[#003f87] hover:border-[#003f87]/50`}>
+                                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>download</span>
+                                {postalProgress.loading ? 'Descargando zonas…' : 'Cargar zonas AEMET para ver su zona'}
+                            </button>
+                        ) : !zone ? (
+                            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-[11px] text-red-700">
+                                El CP <strong className="font-mono">{u.postalCode}</strong> no está asignado a ninguna zona: este usuario no recibiría alertas.
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="material-symbols-outlined text-[#003f87]" style={{ fontSize: 15 }}>location_on</span>
+                                    <p className="text-xs font-extrabold text-[#181c20]">{zone}</p>
+                                    <span className="text-[10px] text-[#727784]">· {zoneAlerts.length} alerta{zoneAlerts.length === 1 ? '' : 's'} activa{zoneAlerts.length === 1 ? '' : 's'}</span>
+                                </div>
+                                {zoneAlerts.length === 0 ? (
+                                    <p className="p-3 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30 text-[11px] text-[#727784]">
+                                        Su zona está tranquila ahora mismo: no hay alertas activas.
+                                    </p>
+                                ) : zoneAlerts.slice(0, 4).map(a => {
+                                    const s = sev(a.severity);
+                                    return (
+                                        <div key={a.id} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-[#c2c6d4]/30 bg-[#f7f9ff]">
+                                            <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: 15, color: s.fg }}>{s.icon}</span>
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-[11px] font-bold text-[#181c20] truncate">{a.event}</p>
+                                                <p className="text-[10px] text-[#727784]">Expira {fmtDT(a.expires)}</p>
+                                            </div>
+                                            <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: s.bg, color: s.fg }}>{s.label}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </section>
+
+                    <section>
+                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#727784] mb-2">Preferencias de notificación</h4>
+                        <div className="flex flex-wrap gap-1.5">
+                            {u.preferredSeverities.length === 0 && u.preferredEventTypes.length === 0 ? (
+                                <p className="text-[11px] text-[#727784]">Sin preferencias guardadas</p>
+                            ) : (
+                                <>
+                                    {u.preferredSeverities.map(sv => {
+                                        const s = sev(sv);
+                                        return <span key={sv} className="text-[10px] font-extrabold px-2 py-1 rounded-full" style={{ background: s.bg, color: s.fg }}>{s.label}</span>;
+                                    })}
+                                    {u.preferredEventTypes.map(ev => (
+                                        <span key={ev} className="text-[10px] font-bold px-2 py-1 rounded-full bg-[#ebeef3] text-[#424752]">{ev}</span>
+                                    ))}
+                                </>
+                            )}
+                        </div>
+                    </section>
+
+                    <section>
+                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#727784] mb-2">Últimas notificaciones</h4>
+                        {userLogs.length === 0 ? (
+                            <p className="p-3 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30 text-[11px] text-[#727784]">
+                                Sin registros visibles. Entra por la pestaña Usuarios para cargar el historial completo.
+                            </p>
+                        ) : (
+                            <div className="flex flex-col gap-1.5">
+                                {userLogs.map(l => {
+                                    const c = ch(l.type);
+                                    return (
+                                        <div key={l.id} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/25">
+                                            <span className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: c.bg }}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: 13, color: c.fg }}>{c.icon}</span>
+                                            </span>
+                                            <p className="text-[11px] font-semibold text-[#424752] truncate flex-1">{c.label}{l.alert_id ? ` · ${l.alert_id.slice(0, 18)}` : ''}</p>
+                                            <span className="text-[10px] text-[#727784] flex-shrink-0">{rel(l.created_at)}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </section>
+                </div>
+
+                <footer className="p-4 border-t border-[#c2c6d4]/30 flex-shrink-0 space-y-2.5">
+                    <div className="grid grid-cols-2 gap-2.5">
+                        <button onClick={() => {
+                            if (!targetId) return;
+                            void runTest(`u-mail-${u.id}`, '/test-email', { id: targetId, email: u.email });
+                        }} disabled={!targetId || mailRes?.loading}
+                        title={targetId ? 'Envía una alerta activa por email a este usuario' : 'No hay alertas activas para probar'}
+                        className={`${BTN} h-10 bg-[#0ea5e9] text-white hover:brightness-110`}>
+                            {mailRes?.loading
+                                ? <span className="inline-flex items-center gap-1.5"><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />Enviando…</span>
+                                : <><span className="material-symbols-outlined" style={{ fontSize: 15 }}>mail</span>Email de prueba</>}
+                        </button>
+                        <button onClick={() => {
+                            if (!targetId) return;
+                            void runTest(`u-push-${u.id}`, '/test-push-notification', { userId: u.id, alertId: targetId });
+                        }} disabled={!targetId || pushRes?.loading}
+                        title={targetId ? 'Envía una alerta activa por push a este usuario' : 'No hay alertas activas para probar'}
+                        className={`${BTN} h-10 bg-[#5e35b1] text-white hover:brightness-110`}>
+                            {pushRes?.loading
+                                ? <span className="inline-flex items-center gap-1.5"><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />Enviando…</span>
+                                : <><span className="material-symbols-outlined" style={{ fontSize: 15 }}>notifications_active</span>Push de prueba</>}
+                        </button>
+                    </div>
+                    {(mailRes || pushRes) && (() => {
+                        const r = mailRes || pushRes;
+                        if (!r || r.loading) return null;
+                        return (
+                            <p className={`text-[10px] font-semibold px-3 py-2 rounded-xl border break-words ${r.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                                {r.msg.replace(/\s+/g, ' ').slice(0, 220)}
+                            </p>
+                        );
+                    })()}
+                    <button onClick={() => handleDeleteUser(u)}
+                        className={`${BTN} h-10 w-full bg-red-50 border border-red-200 text-[#b3261e] hover:bg-red-100`}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 15 }}>delete</span>Eliminar usuario
+                    </button>
+                </footer>
+            </motion.aside>
+        );
+    };
+
     /* ══════════ NAVEGACIÓN ══════════ */
     const TABS: [Tab, string, string][] = [
         ['panel', 'space_dashboard', 'Panel'],
@@ -1291,7 +2117,19 @@ export const AdminPage = () => {
                         <p className="text-[11px] text-white/70 leading-tight">MeteoAlerta España · <span className="font-mono">{clock}</span></p>
                     </div>
                 </div>
+                {renderGlobalSearch(false)}
                 <div className="flex items-center gap-2 flex-shrink-0">
+                    <button onClick={() => setGOpen(p => !p)} aria-label="Buscar en el panel" title="Buscar"
+                        className="md:hidden flex items-center bg-white/15 hover:bg-white/25 px-2.5 py-2 rounded-xl transition-all">
+                        <span className="material-symbols-outlined" style={{ fontSize: 17 }}>{gOpen ? 'close' : 'search'}</span>
+                    </button>
+                    {downServices.length > 0 && (
+                        <button onClick={() => goto('panel')} title={`${downServices.length} servicios caídos: ${downServices.map(s => s.label).join(', ')}`}
+                            className="flex items-center gap-1.5 bg-red-500/90 hover:bg-red-500 px-2.5 py-2 rounded-xl text-[11px] font-extrabold transition-all">
+                            <span className="material-symbols-outlined animate-pulse" style={{ fontSize: 16 }}>error</span>
+                            <span className="hidden sm:inline">{downServices.length} caído{downServices.length > 1 ? 's' : ''}</span>
+                        </button>
+                    )}
                     <button onClick={refreshCurrent} title="Actualizar datos de la pestaña actual"
                         className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl text-xs font-bold transition-all">
                         <span className="material-symbols-outlined" style={{ fontSize: 16 }}>refresh</span><span className="hidden sm:inline">Actualizar</span>
@@ -1302,6 +2140,14 @@ export const AdminPage = () => {
                     </button>
                 </div>
             </header>
+
+            {/* Buscador global (versión móvil) */}
+            {gOpen && renderGlobalSearch(true)}
+
+            {/* Cierre del buscador global */}
+            {gOpen && (
+                <div className="fixed inset-0 z-10" onMouseDown={() => setGOpen(false)} aria-hidden="true" />
+            )}
 
             {/* Tabs */}
             <div className="sticky top-[68px] z-20 bg-[#f7f9ff]/95 backdrop-blur border-b border-[#c2c6d4]/30">
@@ -1401,6 +2247,17 @@ export const AdminPage = () => {
                             </div>
                         </motion.div>
                     </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Ficha de usuario (drawer) */}
+            <AnimatePresence>
+                {selUser && (
+                    <div className="fixed inset-0 z-40">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/45" onMouseDown={() => setSelUser(null)} aria-hidden="true" />
+                        {renderUserDrawer()}
+                    </div>
                 )}
             </AnimatePresence>
         </div>

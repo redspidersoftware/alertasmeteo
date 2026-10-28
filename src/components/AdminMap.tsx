@@ -29,6 +29,8 @@ export interface MapPoint {
 interface AdminMapProps {
     points: MapPoint[];
     loading?: boolean;
+    onEditCp?: (postalCode: string) => void;
+    onNewCp?: () => void;
 }
 
 /* ══════════════ ESTILOS ══════════════ */
@@ -96,7 +98,7 @@ const FitBounds = ({ positions }: { positions: LatLngTuple[] }) => {
 
 /* ══════════════ COMPONENTE ══════════════ */
 
-export const AdminMap = ({ points, loading }: AdminMapProps) => {
+export const AdminMap = ({ points, loading, onEditCp, onNewCp }: AdminMapProps) => {
     const [coords, setCoords] = useState<Record<string, CpCoords>>({});
     const [geo, setGeo] = useState({ done: 0, total: 0, loading: false });
     const [selectedCp, setSelectedCp] = useState<string | null>(null);
@@ -189,6 +191,12 @@ export const AdminMap = ({ points, loading }: AdminMapProps) => {
                             {sevMeta(s).label}
                         </span>
                     ))}
+                    {onNewCp && (
+                        <button onClick={onNewCp}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#003f87] text-white text-[11px] font-bold shadow hover:brightness-110 transition-all active:scale-[.97]">
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>Nuevo CP
+                        </button>
+                    )}
                 </div>
             </header>
 
@@ -259,10 +267,18 @@ export const AdminMap = ({ points, loading }: AdminMapProps) => {
                                     </div>
                                     <p className="text-[11px] text-[#727784] truncate">{selected.zone}{selected.province ? ` · ${selected.province}` : ''}</p>
                                 </div>
-                                <button onClick={() => setSelectedCp(null)} title="Cerrar"
-                                    className="text-[#727784] hover:text-[#181c20] hover:bg-[#f1f4f9] rounded-lg p-1 transition-colors flex-shrink-0">
-                                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
-                                </button>
+                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                    {onEditCp && (
+                                        <button onClick={() => onEditCp(selected.postalCode)} title="Editar este código postal"
+                                            className="text-[#003f87] hover:text-white hover:bg-[#003f87] rounded-lg p-1 transition-colors">
+                                            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit</span>
+                                        </button>
+                                    )}
+                                    <button onClick={() => setSelectedCp(null)} title="Cerrar"
+                                        className="text-[#727784] hover:text-[#181c20] hover:bg-[#f1f4f9] rounded-lg p-1 transition-colors">
+                                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+                                    </button>
+                                </div>
                             </div>
                             <div className="p-3 space-y-2">
                                 {selected.alerts.map(a => {
