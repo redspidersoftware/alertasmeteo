@@ -1275,14 +1275,23 @@ export const NuevaPage = () => {
                             </div>
                             <button
                               onClick={() => {
-                                if (filteredAlerts.length > 0) {
+                                if (filteredAlerts.length === 1) {
                                   setSelectedAlert(filteredAlerts[0]);
+                                } else {
+                                  setSelectedAlert(null);
                                 }
                                 setCurrentTab('alertas');
                               }}
-                              className="mt-6 w-full ui-btn-primary text-white font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                              disabled={filteredAlerts.length === 0}
+                              className="mt-6 w-full ui-btn-primary text-white font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
                             >
-                              <span>Ver Detalles</span>
+                              <span>
+                                {filteredAlerts.length > 1
+                                  ? `Ver los ${filteredAlerts.length} avisos`
+                                  : filteredAlerts.length === 1
+                                    ? 'Ver Detalles'
+                                    : 'Sin avisos activos'}
+                              </span>
                               <span className="material-symbols-outlined text-xs">arrow_forward</span>
                             </button>
                           </div>
@@ -1652,22 +1661,33 @@ export const NuevaPage = () => {
                         <div className="bg-white rounded-2xl border border-[#c2c6d4]/30 p-12 text-center text-[#727784] space-y-4">
                           <span className="material-symbols-outlined text-4xl text-[#727784] animate-bounce">warning</span>
                           <div>
-                            <h3 className="font-bold text-base text-[#181c20]">No se ha seleccionado ninguna alerta</h3>
+                            <h3 className="font-bold text-base text-[#181c20]">Selecciona una alerta para ver sus detalles</h3>
                             <p className="text-xs text-[#727784] mt-1">
-                              Puedes pulsar sobre cualquier alerta en el mapa o en la lista de avisos del mapa para ver sus detalles específicos.
+                              {filteredAlerts.length > 0
+                                ? 'Pulsa cualquiera de las alertas activas listadas abajo, o bien cualquier alerta en el mapa.'
+                                : 'Puedes pulsar sobre cualquier alerta en el mapa o en la lista de avisos del mapa para ver sus detalles específicos.'}
                             </p>
                           </div>
-                          {userZoneAlerts.length > 0 && (
-                            <div className="pt-4 max-w-md mx-auto space-y-3">
-                              <p className="text-[10px] font-bold uppercase text-[#727784] tracking-wider text-left border-b pb-1.5">Alertas activas en tu zona</p>
-                              <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
-                                {userZoneAlerts.map((a) => (
+                          {filteredAlerts.length > 0 && (
+                            <div className="max-w-md mx-auto space-y-3">
+                              <p className="text-[10px] font-bold uppercase text-[#727784] tracking-wider text-left border-b pb-1.5">Alertas activas ({filteredAlerts.length})</p>
+                              <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1">
+                                {filteredAlerts.map((a) => (
                                   <button
                                     key={a.id}
                                     onClick={() => setSelectedAlert(a)}
-                                    className="w-full text-left p-3 rounded-lg border border-[#c2c6d4]/30 hover:bg-[#f7f9ff] flex items-center justify-between text-xs transition-all"
+                                    className="w-full text-left p-3 rounded-lg border border-[#c2c6d4]/30 hover:bg-[#f7f9ff] flex items-center justify-between gap-2 text-xs transition-all"
                                   >
-                                    <span className="font-semibold text-[#181c20] line-clamp-1">{a.event} ({a.area})</span>
+                                    <span className="flex items-center gap-2 min-w-0">
+                                      <span
+                                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                        style={{ backgroundColor: a.severity === 'red' ? '#ba1a1a' : a.severity === 'orange' ? '#f97316' : '#eab308' }}
+                                      />
+                                      <span className="font-semibold text-[#181c20] line-clamp-1">{a.event} ({a.area})</span>
+                                      {userZoneAlerts.some(z => z.id === a.id) && (
+                                        <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-[#d7e2ff] text-[#003f87] flex-shrink-0">Tu zona</span>
+                                      )}
+                                    </span>
                                     <span className="material-symbols-outlined text-[#003f87] text-sm">chevron_right</span>
                                   </button>
                                 ))}
