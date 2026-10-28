@@ -121,8 +121,8 @@ export const AdminMap = ({ points, loading }: AdminMapProps) => {
     useEffect(() => {
         const cps = points.map(p => p.postalCode);
         if (cps.length === 0) return undefined;
+        const ctrl = new AbortController();
         let alive = true;
-        const ctrl = { cancelled: false };
         const start = async () => {
             await Promise.resolve();
             if (!alive) return;
@@ -130,12 +130,12 @@ export const AdminMap = ({ points, loading }: AdminMapProps) => {
             const res = await geocodePostalCodes(
                 cps,
                 (done, total) => { if (alive) setGeo({ done, total, loading: done < total }); },
-                ctrl,
+                ctrl.signal,
             );
             if (alive) setCoords(res);
         };
         void start();
-        return () => { alive = false; ctrl.cancelled = true; };
+        return () => { alive = false; ctrl.abort(); };
     }, [points]);
 
     const selected = useMemo(
