@@ -60,6 +60,7 @@ interface AuditEntry { t: string; who: string; what: string }
 interface ServiceHealth {
     id: string;
     label: string;
+    desc: string;
     icon: string;
     color: string;
     last: Date | null;
@@ -787,7 +788,9 @@ export const AdminPage = () => {
         const aemetMaxMs = Math.max(intervalMin * 3, 45) * 60 * 1000;
         const aemetAge = age(aemetLast);
         items.push({
-            id: 'aemet', label: 'Alertas AEMET', icon: 'cloud_sync', color: '#f97316',
+            id: 'aemet', label: 'Alertas AEMET',
+            desc: 'Descarga periódicamente las alertas oficiales de la API de AEMET, las guarda en base de datos y avisa a los usuarios de las zonas afectadas.',
+            icon: 'cloud_sync', color: '#f97316',
             last: aemetLast,
             state: !aemetLast ? 'unknown' : aemetAge > aemetMaxMs ? 'down' : aemetAge > aemetMaxMs * 0.7 ? 'warn' : 'ok',
             hint: `cada ${intervalMin} min`,
@@ -798,7 +801,9 @@ export const AdminPage = () => {
         const tgLast = parseV(cfg.last_telegram_report_time);
         const tgAge = age(tgLast);
         items.push({
-            id: 'telegram', label: 'Resumen Telegram', icon: 'send', color: '#0088cc',
+            id: 'telegram', label: 'Resumen Telegram',
+            desc: 'Envía al canal de Telegram un resumen con las alertas activas a las horas configuradas, filtrando por los niveles de severidad elegidos.',
+            icon: 'send', color: '#0088cc',
             last: tgLast,
             state: !tgLast ? 'unknown' : tgAge > 26 * 3600e3 ? 'down' : tgAge > 20 * 3600e3 ? 'warn' : 'ok',
             hint: `horas: ${parseHours(cfg.telegram_summary_hours, [9, 17]).map(h => `${h}h`).join(' · ')}`,
@@ -810,7 +815,9 @@ export const AdminPage = () => {
         const sentToday = dayKey(cfg.last_daily_sent_date || '') === madridDate || dayKey(cfg.last_daily_sent_id || '') === madridDate;
         const pastSched = toMin(madridHM) > toMin(sched) + 120;
         items.push({
-            id: 'daily', label: 'Previsión diaria', icon: 'wb_twilight', color: '#7c3aed',
+            id: 'daily', label: 'Previsión diaria',
+            desc: 'Cada día envía la previsión meteorológica por email y Telegram a la hora programada a todos los usuarios suscritos.',
+            icon: 'wb_twilight', color: '#7c3aed',
             last: parseV(cfg.last_daily_sent_date) || parseV(cfg.last_daily_sent_id),
             state: sentToday ? 'ok' : pastSched ? 'down' : 'ok',
             hint: sentToday ? `enviada hoy a las ${sched}` : `programada a las ${sched}`,
@@ -821,7 +828,9 @@ export const AdminPage = () => {
         const twLast = parseV(cfg.last_tweet_time || cfg.last_twitter_post_time || cfg.last_auto_tweet_time || cfg.twitter_last_time);
         const twAge = age(twLast);
         items.push({
-            id: 'twitter', label: 'Twitter / X', icon: 'alternate_email', color: '#475569',
+            id: 'twitter', label: 'Twitter / X',
+            desc: 'Publica automáticamente la predicción nacional en X (Twitter) a las horas configuradas, sin intervención manual.',
+            icon: 'alternate_email', color: '#475569',
             last: twLast,
             state: !twLast ? 'unknown' : twAge > 26 * 3600e3 ? 'down' : twAge > 22 * 3600e3 ? 'warn' : 'ok',
             hint: `horas: ${parseHours(cfg.twitter_forecast_hours, [8, 20]).map(h => `${h}h`).join(' · ')}`,
@@ -1073,32 +1082,46 @@ export const AdminPage = () => {
                             )}
                         </Card>
 
-                        <Card icon="monitor_heart" title="Servicios automatizados" sub="Estado en vivo de cada tarea programada (cron)">
-                            <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                        <Card icon="monitor_heart" title="Servicios automatizados" sub="Qué hace cada tarea programada, cuándo se ejecutó por última vez y si está en marcha">
+                            <div className="grid sm:grid-cols-2 gap-4">
                                 {services.map(svc => {
                                     const res = svc.test ? testResult[svc.test.id] : undefined;
                                     return (
-                                        <div key={svc.id} className="p-3.5 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30 min-w-0 flex flex-col gap-2">
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: `${svc.color}20` }}>
-                                                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: svc.color }}>{svc.icon}</span>
+                                        <div key={svc.id} className="p-5 rounded-2xl bg-[#f7f9ff] border border-[#c2c6d4]/40 min-w-0 flex flex-col gap-3">
+                                            <div className="flex items-start gap-3 min-w-0">
+                                                <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${svc.color}1f` }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: 23, color: svc.color }}>{svc.icon}</span>
                                                 </span>
-                                                <p className="text-xs font-extrabold text-[#181c20] truncate flex-1">{svc.label}</p>
-                                                <HealthBadge state={svc.state} />
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <p className="text-sm font-extrabold text-[#181c20] truncate">{svc.label}</p>
+                                                        <HealthBadge state={svc.state} />
+                                                    </div>
+                                                    <p className="text-xs font-bold text-[#424752] mt-1">
+                                                        Última ejecución: <span className="text-[#181c20] font-extrabold">{rel(svc.last)}</span>
+                                                        <span className="text-[#727784] font-medium"> · {fmtDT(svc.last)}</span>
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-extrabold text-[#181c20] leading-none">{rel(svc.last)}</p>
-                                                <p className="text-[10px] text-[#727784] mt-1 truncate" title={`${fmtDT(svc.last)} · ${svc.hint}`}>{fmtDT(svc.last)} · {svc.hint}</p>
+                                            <p className="text-[11px] text-[#727784] leading-relaxed">{svc.desc}</p>
+                                            <p className="text-[11px] text-[#424752] font-semibold flex items-center gap-1.5 mt-auto">
+                                                <span className="material-symbols-outlined text-[#003f87]" style={{ fontSize: 14 }}>schedule</span>
+                                                {svc.hint}
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={() => runServiceTest(svc)} disabled={!svc.test || res?.loading}
+                                                    className={`${BTN} h-9 px-4 bg-white border border-[#c2c6d4] text-[#424752] hover:border-[#003f87]/60 hover:text-[#003f87] hover:shadow-sm`}>
+                                                    {res?.loading
+                                                        ? <span className="inline-flex items-center gap-2"><span className="w-3.5 h-3.5 border-2 border-[#003f87]/30 border-t-[#003f87] rounded-full animate-spin" />Probando…</span>
+                                                        : <><span className="material-symbols-outlined" style={{ fontSize: 15 }}>bolt</span>Probar ahora</>}
+                                                </button>
                                             </div>
-                                            <button onClick={() => runServiceTest(svc)} disabled={!svc.test || res?.loading}
-                                                className={`${BTN} h-8 px-3 bg-white border border-[#c2c6d4] text-[#424752] hover:bg-white hover:border-[#003f87]/50 hover:text-[#003f87] mt-auto self-start`}>
-                                                {res?.loading
-                                                    ? <span className="w-3.5 h-3.5 border-2 border-[#003f87]/30 border-t-[#003f87] rounded-full animate-spin" />
-                                                    : <><span className="material-symbols-outlined" style={{ fontSize: 14 }}>bolt</span>Probar</>}
-                                            </button>
                                             {res && !res.loading && (
-                                                <p className={`text-[10px] font-semibold truncate ${res.ok ? 'text-[#15803d]' : 'text-[#b91c1c]'}`}
-                                                    title={res.msg}>{res.ok ? '✓ ' : '✗ '}{res.msg.replace(/\s+/g, ' ').slice(0, 90)}</p>
+                                                <p className={`text-[11px] font-semibold px-3 py-2 rounded-xl border break-words ${res.ok
+                                                    ? 'bg-green-50 text-green-800 border-green-200'
+                                                    : 'bg-red-50 text-red-700 border-red-200'}`}>
+                                                    {res.ok ? '✓ ' : '✗ '}{res.msg.replace(/\s+/g, ' ').slice(0, 160)}
+                                                </p>
                                             )}
                                         </div>
                                     );
