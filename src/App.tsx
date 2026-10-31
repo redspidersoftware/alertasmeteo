@@ -16,8 +16,8 @@ const AdminPage = lazy(() =>
 );
 
 const RouteFallback = () => (
-  <div className="min-h-screen w-full flex items-center justify-center bg-white">
-    <span className="material-symbols-outlined text-[#003f87] animate-spin text-4xl">progress_activity</span>
+  <div className="min-h-screen w-full flex items-center justify-center bg-surface">
+    <span className="material-symbols-outlined text-brand-ink animate-spin text-4xl">progress_activity</span>
   </div>
 );
 

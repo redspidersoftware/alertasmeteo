@@ -97,6 +97,7 @@ export const NuevaPage = () => {
   const [currentTab, setCurrentTab] = useState<Tab>('map');
   const [authState, setAuthState] = useState<AuthState>('login');
   const [selectedAlert, setSelectedAlert] = useState<WeatherAlert | null>(null);
+  const [videoReady, setVideoReady] = useState(false);
 
   // Login Form State
   const [email, setEmail] = useState('');
@@ -386,6 +387,15 @@ export const NuevaPage = () => {
   // Filter alerts by search query (e.g. municipality or province)
   const filteredAlerts = alerts;
 
+  // Badge de la nav inferior: nº de alertas activas y color según severidad máxima
+  const activeAlertCount = alerts.length;
+  const topSeverity = (['red', 'orange', 'yellow', 'green'] as const).find((s) => alerts.some((a) => a.severity === s));
+  const alertBadgeBg =
+    topSeverity === 'red' ? 'bg-[#ba1a1a]' :
+    topSeverity === 'orange' ? 'bg-[#f97316]' :
+    topSeverity === 'yellow' ? 'bg-[#eab308]' :
+    topSeverity === 'green' ? 'bg-[#22c55e]' : 'bg-ink-500';
+
   // Share an alert
   const shareAlert = async (alert: WeatherAlert) => {
     const severityLabel = alert.severity === 'red' ? 'ROJA' : alert.severity === 'orange' ? 'NARANJA' : 'AMARILLA';
@@ -432,46 +442,12 @@ export const NuevaPage = () => {
   };
 
   return (
-    <div className="font-['Hanken_Grotesk'] text-[#181c20] min-h-screen bg-[#f7f9ff] flex flex-col relative select-none">
+    <div className="font-['Hanken_Grotesk'] text-ink min-h-screen bg-canvas flex flex-col relative select-none">
       {/* Dynamic inline styles for design system values */}
       <style>{`
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-          display: inline-block;
-          vertical-align: middle;
-        }
-        .login-card {
-          box-shadow: 0px 4px 12px rgba(0,0,0,0.05);
-          border: 1px solid #E9ECEF;
-        }
-        .active-alert-indicator {
-          width: 6px;
-          flex-shrink: 0;
-        }
-        .map-container {
-          min-height: 450px;
-          position: relative;
-          overflow: hidden;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f4f9;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #c2c6d4;
-          border-radius: 3px;
-        }
-        .glass-panel {
-          background: rgba(255, 255, 255, 0.85);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(233, 236, 239, 1);
-        }
-        .glass-overlay {
-          background: rgba(255, 255, 255, 0.75);
-          backdrop-filter: blur(8px);
-        }
+        /* .material-symbols-outlined, .login-card, .active-alert-indicator,
+           .custom-scrollbar, .glass-panel y .glass-overlay ahora viven en
+           src/index.css, tokenizados para modo claro y oscuro. */
         .urgent-pulse {
             animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
@@ -481,7 +457,7 @@ export const NuevaPage = () => {
         }
         .raindrop {
             position: absolute;
-            background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(172,199,255,0.4) 100%);
+            background: linear-gradient(to bottom, rgba(148,163,184,0) 0%, rgba(148,163,184,0.7) 100%);
             width: 1.5px;
             height: 40px;
             top: -50px;
@@ -494,21 +470,21 @@ export const NuevaPage = () => {
         }
         .snowdrop {
             position: absolute;
-            background: white;
+            background: #93c5fd;
             border-radius: 50%;
             width: 4px;
             height: 4px;
             top: -10px;
             animation: fall-snow linear infinite;
             opacity: 0.8;
-            box-shadow: 0 0 4px rgba(255,255,255,0.8);
+            box-shadow: 0 0 4px rgba(147,197,253,0.8);
         }
         @keyframes fall-snow {
             to { transform: translateY(350px) translateX(30px) rotate(360deg); }
         }
         .windline {
             position: absolute;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.7), transparent);
             height: 2px;
             width: 80px;
             left: -100px;
@@ -519,7 +495,7 @@ export const NuevaPage = () => {
         }
         @keyframes lightning {
             0%, 95%, 98% { background-color: transparent; }
-            96%, 99% { background-color: rgba(255, 255, 255, 0.4); }
+            96%, 99% { background-color: rgba(148, 163, 184, 0.25); }
         }
         .lightning-flash {
             animation: lightning 6s infinite;
@@ -543,12 +519,12 @@ export const NuevaPage = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.4 }}
-              className="flex-grow flex flex-col items-center justify-center p-5 bg-[#f7f9ff]"
+              className="flex-grow flex flex-col items-center justify-center p-5 bg-canvas"
             >
               <main className="w-full max-w-[440px] flex flex-col gap-6">
                 {/* Header / Brand Section */}
                 <header className="flex flex-col items-center text-center gap-4">
-                  <div className="w-20 h-20 rounded-xl bg-[#e0e3e8] flex items-center justify-center p-1 overflow-hidden shadow-sm">
+                  <div className="w-20 h-20 rounded-xl bg-surface-2 flex items-center justify-center p-1 overflow-hidden shadow-sm">
                     <img
                       alt="MeteoAlerta España Logo"
                       width={1024}
@@ -558,29 +534,29 @@ export const NuevaPage = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <h1 className="text-2xl md:text-3xl font-extrabold text-[#003f87] tracking-tight">
+                    <h1 className="text-2xl md:text-3xl font-extrabold text-brand-ink tracking-tight">
                       MeteoAlerta España
                     </h1>
-                    <p className="text-sm text-[#424752] max-w-[320px] mx-auto font-medium">
+                    <p className="text-sm text-ink-700 max-w-[320px] mx-auto font-medium">
                       Accede a la red oficial de alertas meteorológicas y protección civil en tiempo real.
                     </p>
                   </div>
                 </header>
 
                 {/* Login Card */}
-                <section className="bg-white login-card rounded-xl p-6 flex flex-col gap-6">
+                <section className="bg-surface login-card rounded-xl p-6 flex flex-col gap-6">
                   <form onSubmit={handleLoginSubmit} className="flex flex-col gap-4">
                     {/* Email Input */}
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs font-semibold text-[#181c20] ml-1" htmlFor="email">
+                      <label className="text-xs font-semibold text-ink ml-1" htmlFor="email">
                         Correo electrónico
                       </label>
                       <div className="relative group">
-                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#727784] group-focus-within:text-[#003f87] transition-colors">
+                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-ink-500 group-focus-within:text-brand-ink transition-colors">
                           mail
                         </span>
                         <input
-                          className="w-full pl-11 pr-4 py-3 bg-[#f7f9ff] border border-[#c2c6d4] rounded-lg text-sm text-[#181c20] focus:outline-none focus:border-[#003f87] focus:ring-1 focus:ring-[#003f87] transition-all"
+                          className="w-full pl-11 pr-4 py-3 bg-canvas border border-line rounded-lg text-sm text-ink focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all"
                           id="email"
                           type="email"
                           placeholder="ejemplo@correo.es"
@@ -594,19 +570,19 @@ export const NuevaPage = () => {
                     {/* Password Input */}
                     <div className="flex flex-col gap-1">
                       <div className="flex justify-between items-center ml-1">
-                        <label className="text-xs font-semibold text-[#181c20]" htmlFor="password">
+                        <label className="text-xs font-semibold text-ink" htmlFor="password">
                           Contraseña
                         </label>
-                        <a href="#" className="text-xs text-[#003f87] hover:underline font-semibold transition-all">
+                        <a href="#" className="text-xs text-brand-ink hover:underline font-semibold transition-all">
                           ¿Olvidaste tu contraseña?
                         </a>
                       </div>
                       <div className="relative group">
-                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#727784] group-focus-within:text-[#003f87] transition-colors">
+                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-ink-500 group-focus-within:text-brand-ink transition-colors">
                           lock
                         </span>
                         <input
-                          className="w-full pl-11 pr-11 py-3 bg-[#f7f9ff] border border-[#c2c6d4] rounded-lg text-sm text-[#181c20] focus:outline-none focus:border-[#003f87] focus:ring-1 focus:ring-[#003f87] transition-all"
+                          className="w-full pl-11 pr-11 py-3 bg-canvas border border-line rounded-lg text-sm text-ink focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all"
                           id="password"
                           type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
@@ -615,7 +591,7 @@ export const NuevaPage = () => {
                           required
                         />
                         <button
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 text-[#727784] hover:text-[#424752] transition-colors"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 text-ink-500 hover:text-ink-700 transition-colors"
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                         >
@@ -636,7 +612,7 @@ export const NuevaPage = () => {
 
                     {/* Submit Button */}
                     <button
-                      className="w-full mt-2 py-3 bg-[#003f87] text-white font-bold text-sm rounded-lg shadow-sm hover:bg-[#0056b3] transition-all active:scale-[0.98] flex justify-center items-center gap-2"
+                      className="w-full mt-2 py-3 bg-brand text-white font-bold text-sm rounded-lg shadow-sm hover:bg-brand-500 transition-all active:scale-[0.98] flex justify-center items-center gap-2"
                       type="submit"
                       disabled={loading}
                     >
@@ -653,11 +629,11 @@ export const NuevaPage = () => {
 
                   {/* Divider */}
                   <div className="flex items-center gap-4">
-                    <div className="flex-1 h-[1px] bg-[#c2c6d4]/50"></div>
-                    <span className="text-[10px] font-bold text-[#727784] uppercase tracking-widest">
+                    <div className="flex-1 h-[1px] bg-ink-300/50"></div>
+                    <span className="text-[11px] font-bold text-ink-500 uppercase tracking-widest">
                       o continuar con
                     </span>
-                    <div className="flex-1 h-[1px] bg-[#c2c6d4]/50"></div>
+                    <div className="flex-1 h-[1px] bg-ink-300/50"></div>
                   </div>
 
                   {/* Google Sign In */}
@@ -665,7 +641,7 @@ export const NuevaPage = () => {
                     onClick={handleGoogleLogin} 
                     disabled={loading}
                     type="button"
-                    className="w-full py-3 bg-[#f7f9ff] border border-[#c2c6d4] rounded-lg text-sm text-[#181c20] font-semibold flex items-center justify-center gap-3 hover:bg-[#ebeef3] transition-all active:scale-[0.98] disabled:opacity-50"
+                    className="w-full py-3 bg-canvas border border-line rounded-lg text-sm text-ink font-semibold flex items-center justify-center gap-3 hover:bg-surface-2 transition-all active:scale-[0.98] disabled:opacity-50"
                   >
                     <svg height="18" viewBox="0 0 24 24" width="18">
                       <path
@@ -688,14 +664,14 @@ export const NuevaPage = () => {
                     <span>Google</span>
                   </button>
 
-                  <p className="text-center text-sm text-[#424752]">
+                  <p className="text-center text-sm text-ink-700">
                     ¿No tienes una cuenta?{' '}
                     <button
                       onClick={() => {
                         setAuthState('register');
                         setAuthError(null);
                       }}
-                      className="text-[#003f87] font-bold hover:underline"
+                      className="text-brand-ink font-bold hover:underline"
                     >
                       Crear una cuenta nueva
                     </button>
@@ -705,17 +681,17 @@ export const NuevaPage = () => {
                 {/* Footer Links */}
                 <footer className="mt-4 flex flex-col items-center gap-2">
                   <div className="flex gap-4 flex-wrap justify-center text-xs">
-                    <button onClick={() => setShowToSModal(true)} className="text-[#727784] hover:text-[#424752] transition-colors cursor-pointer bg-transparent border-none p-0 font-inherit text-xs">
+                    <button onClick={() => setShowToSModal(true)} className="text-ink-500 hover:text-ink-700 transition-colors cursor-pointer bg-transparent border-none p-0 font-inherit text-xs">
                       Términos de servicio
                     </button>
-                    <button onClick={() => setShowPrivacyModal(true)} className="text-[#727784] hover:text-[#424752] transition-colors cursor-pointer bg-transparent border-none p-0 font-inherit text-xs">
+                    <button onClick={() => setShowPrivacyModal(true)} className="text-ink-500 hover:text-ink-700 transition-colors cursor-pointer bg-transparent border-none p-0 font-inherit text-xs">
                       Política de privacidad
                     </button>
-                    <button onClick={() => setShowSupportModal(true)} className="text-[#727784] hover:text-[#424752] transition-colors cursor-pointer bg-transparent border-none p-0 font-inherit text-xs">
+                    <button onClick={() => setShowSupportModal(true)} className="text-ink-500 hover:text-ink-700 transition-colors cursor-pointer bg-transparent border-none p-0 font-inherit text-xs">
                       Soporte técnico
                     </button>
                   </div>
-                  <p className="text-[11px] text-[#727784] font-medium">
+                  <p className="text-xs text-ink-500 font-medium">
                     © 2026 MeteoAlerta España. Todos los derechos reservados.
                   </p>
                 </footer>
@@ -731,31 +707,31 @@ export const NuevaPage = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.4 }}
-              className="flex-grow flex flex-col items-center justify-center p-5 bg-[#f7f9ff]"
+              className="flex-grow flex flex-col items-center justify-center p-5 bg-canvas"
             >
               <main className="w-full max-w-[460px] flex flex-col gap-6">
                 <header className="flex flex-col items-center text-center gap-3">
-                  <div className="w-16 h-16 bg-[#0056b3] rounded-xl flex items-center justify-center text-white shadow-lg">
+                  <div className="w-16 h-16 bg-brand-500 rounded-xl flex items-center justify-center text-white shadow-lg">
                     <span className="material-symbols-outlined !text-[36px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                       warning
                     </span>
                   </div>
-                  <h1 className="text-2xl font-extrabold text-[#003f87] tracking-tight">
+                  <h1 className="text-2xl font-extrabold text-brand-ink tracking-tight">
                     MeteoAlerta España
                   </h1>
-                  <p className="text-xs text-[#424752] font-semibold max-w-[320px]">
+                  <p className="text-xs text-ink-700 font-semibold max-w-[320px]">
                     Únete a la red de alertas meteorológicas líder para recibir avisos críticos en tiempo real.
                   </p>
                 </header>
 
-                <section className="bg-white glass-panel rounded-xl shadow-sm p-6 border-l-4 border-[#003f87] transition-all">
+                <section className="bg-surface glass-panel rounded-xl shadow-sm p-6 border-l-4 border-brand transition-all">
                   {regSuccess ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
                       <span className="material-symbols-outlined text-green-500 text-5xl animate-bounce">
                         check_circle
                       </span>
-                      <h3 className="text-md font-bold text-[#181c20] mt-4">¡Cuenta creada con éxito!</h3>
-                      <p className="text-xs text-[#727784] mt-1">Redirigiendo a iniciar sesión...</p>
+                      <h3 className="text-md font-bold text-ink mt-4">¡Cuenta creada con éxito!</h3>
+                      <p className="text-xs text-ink-500 mt-1">Redirigiendo a iniciar sesión...</p>
                     </div>
                   ) : (
                     <form onSubmit={handleRegisterSubmit} className="space-y-4">
@@ -765,7 +741,7 @@ export const NuevaPage = () => {
                           Nombre Completo
                         </label>
                         <div className="relative group">
-                          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#727784] group-focus-within:text-[#003f87] transition-colors">
+                          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-ink-500 group-focus-within:text-brand-ink transition-colors">
                             person
                           </span>
                           <input
@@ -774,7 +750,7 @@ export const NuevaPage = () => {
                             placeholder="Ej: Juan Pérez"
                             value={regName}
                             onChange={(e) => setRegName(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm focus:outline-none focus:border-[#003f87] transition-all"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm focus:outline-none focus:border-brand transition-all"
                           />
                         </div>
                       </div>
@@ -785,7 +761,7 @@ export const NuevaPage = () => {
                           Email
                         </label>
                         <div className="relative group">
-                          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#727784] group-focus-within:text-[#003f87] transition-colors">
+                          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-ink-500 group-focus-within:text-brand-ink transition-colors">
                             mail
                           </span>
                           <input
@@ -794,7 +770,7 @@ export const NuevaPage = () => {
                             placeholder="tu@email.com"
                             value={regEmail}
                             onChange={(e) => setRegEmail(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm focus:outline-none focus:border-[#003f87] transition-all"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm focus:outline-none focus:border-brand transition-all"
                           />
                         </div>
                       </div>
@@ -805,7 +781,7 @@ export const NuevaPage = () => {
                           Código Postal
                         </label>
                         <div className="relative group">
-                          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#727784] group-focus-within:text-[#003f87] transition-colors">
+                          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-ink-500 group-focus-within:text-brand-ink transition-colors">
                             pin_drop
                           </span>
                           <input
@@ -817,10 +793,10 @@ export const NuevaPage = () => {
                             placeholder="Ej: 28001"
                             value={regPostalCode}
                             onChange={(e) => setRegPostalCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm tracking-widest focus:outline-none focus:border-[#003f87] transition-all"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm tracking-widest focus:outline-none focus:border-brand transition-all"
                           />
                         </div>
-                        <p className="text-[10px] text-[#727784] leading-snug">
+                        <p className="text-[11px] text-ink-500 leading-snug">
                           Zona donde quieres recibir los avisos de Protección Civil.
                         </p>
                       </div>
@@ -832,7 +808,7 @@ export const NuevaPage = () => {
                             Contraseña
                           </label>
                           <div className="relative group">
-                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#727784] group-focus-within:text-[#003f87] transition-colors">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-ink-500 group-focus-within:text-brand-ink transition-colors">
                               lock
                             </span>
                             <input
@@ -841,7 +817,7 @@ export const NuevaPage = () => {
                               placeholder="••••••••"
                               value={regPassword}
                               onChange={(e) => setRegPassword(e.target.value)}
-                              className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm focus:outline-none focus:border-[#003f87] transition-all"
+                              className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm focus:outline-none focus:border-brand transition-all"
                             />
                           </div>
                         </div>
@@ -851,7 +827,7 @@ export const NuevaPage = () => {
                             Confirmar
                           </label>
                           <div className="relative group">
-                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#727784] group-focus-within:text-[#003f87] transition-colors">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-ink-500 group-focus-within:text-brand-ink transition-colors">
                               lock_reset
                             </span>
                             <input
@@ -860,7 +836,7 @@ export const NuevaPage = () => {
                               placeholder="••••••••"
                               value={regConfirmPassword}
                               onChange={(e) => setRegConfirmPassword(e.target.value)}
-                              className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm focus:outline-none focus:border-[#003f87] transition-all"
+                              className="w-full pl-10 pr-4 py-2.5 rounded-lg ui-input text-sm focus:outline-none focus:border-brand transition-all"
                             />
                           </div>
                         </div>
@@ -873,11 +849,11 @@ export const NuevaPage = () => {
                           id="terms"
                           checked={regTerms}
                           onChange={(e) => setRegTerms(e.target.checked)}
-                          className="mt-1 rounded border-[#c2c6d4] text-[#003f87] focus:ring-[#003f87] h-4 w-4"
+                          className="mt-1 rounded border-line text-brand-ink focus:ring-brand h-4 w-4"
                           required
                         />
-                        <label htmlFor="terms" className="text-[10px] text-[#424752] leading-snug">
-                          Acepto los <a href="#" className="text-[#003f87] hover:underline font-bold">términos de servicio</a> y la <a href="#" className="text-[#003f87] hover:underline font-bold">política de privacidad</a> para recibir avisos de Protección Civil.
+                        <label htmlFor="terms" className="text-[11px] text-ink-700 leading-snug">
+                          Acepto los <a href="#" className="text-brand-ink hover:underline font-bold">términos de servicio</a> y la <a href="#" className="text-brand-ink hover:underline font-bold">política de privacidad</a> para recibir avisos de Protección Civil.
                         </label>
                       </div>
 
@@ -893,7 +869,7 @@ export const NuevaPage = () => {
                       <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-[#003f87] text-white font-bold text-sm py-3 rounded-xl shadow-sm hover:bg-[#0056b3] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                        className="w-full bg-brand text-white font-bold text-sm py-3 rounded-xl shadow-sm hover:bg-brand-500 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
                       >
                         <span>Crear Cuenta</span>
                         <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
@@ -905,14 +881,14 @@ export const NuevaPage = () => {
                 </section>
 
                 <div className="text-center">
-                  <p className="text-xs text-[#424752]">
+                  <p className="text-xs text-ink-700">
                     ¿Ya tienes una cuenta?{' '}
                     <button
                       onClick={() => {
                         setAuthState('login');
                         setAuthError(null);
                       }}
-                      className="text-[#003f87] font-bold hover:underline"
+                      className="text-brand-ink font-bold hover:underline"
                     >
                       Inicia Sesión
                     </button>
@@ -929,7 +905,7 @@ export const NuevaPage = () => {
             {/* Skip-link: primer elemento enfocable con Tab */}
             <a
               href="#contenido"
-              className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[60] focus:bg-white focus:text-[#003f87] focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-bold"
+              className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[60] focus:bg-surface focus:text-brand-ink focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-bold"
             >
               Saltar al contenido principal
             </a>
@@ -938,14 +914,14 @@ export const NuevaPage = () => {
             <div className="flex-grow flex flex-row relative min-h-[100dvh]">
               
               {/* ── LEFT DESKTOP SIDEBAR NAVIGATION (ICON-ONLY) ── */}
-              <aside className="hidden md:flex flex-col bg-[#f1f4f9] border-r border-[#c2c6d4]/20 w-16 lg:w-20 py-6 items-center justify-between flex-shrink-0 z-10">
+              <aside className="hidden md:flex flex-col bg-surface-3 border-r border-line/20 w-16 lg:w-20 py-6 items-center justify-between flex-shrink-0 z-10">
                 <nav className="flex flex-col gap-5 items-center w-full">
                   <button
                     onClick={() => setCurrentTab('map')}
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
                       currentTab === 'map'
-                        ? 'bg-[#0056b3] text-white shadow-md'
-                        : 'text-[#424752] hover:bg-[#ebeef3] hover:text-[#181c20]'
+                        ? 'bg-brand-500 text-white shadow-md'
+                        : 'text-ink-700 hover:bg-surface-2 hover:text-ink'
                     }`}
                     title="Mapa de Alertas"
                     aria-label="Mapa de Alertas"
@@ -958,8 +934,8 @@ export const NuevaPage = () => {
                     onClick={() => setCurrentTab('info')}
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
                       currentTab === 'info'
-                        ? 'bg-[#0056b3] text-white shadow-md'
-                        : 'text-[#424752] hover:bg-[#ebeef3] hover:text-[#181c20]'
+                        ? 'bg-brand-500 text-white shadow-md'
+                        : 'text-ink-700 hover:bg-surface-2 hover:text-ink'
                     }`}
                     title="Información y Soporte"
                     aria-label="Información y Soporte"
@@ -972,8 +948,8 @@ export const NuevaPage = () => {
                     onClick={() => setCurrentTab('alertas')}
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all relative ${
                       currentTab === 'alertas'
-                        ? 'bg-[#0056b3] text-white shadow-md'
-                        : 'text-[#424752] hover:bg-[#ebeef3] hover:text-[#181c20]'
+                        ? 'bg-brand-500 text-white shadow-md'
+                        : 'text-ink-700 hover:bg-surface-2 hover:text-ink'
                     }`}
                     title="Detalle de Alertas"
                     aria-label="Detalle de Alertas"
@@ -989,8 +965,8 @@ export const NuevaPage = () => {
                     onClick={() => setCurrentTab('settings')}
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
                       currentTab === 'settings'
-                        ? 'bg-[#0056b3] text-white shadow-md'
-                        : 'text-[#424752] hover:bg-[#ebeef3] hover:text-[#181c20]'
+                        ? 'bg-brand-500 text-white shadow-md'
+                        : 'text-ink-700 hover:bg-surface-2 hover:text-ink'
                     }`}
                     title="Ajustes"
                     aria-label="Ajustes"
@@ -1003,7 +979,7 @@ export const NuevaPage = () => {
                 <div className="flex flex-col gap-4 items-center">
                   <button
                     onClick={toggleDarkMode}
-                    className="w-11 h-11 rounded-xl hover:bg-[#ebeef3] text-[#424752] flex items-center justify-center transition-colors"
+                    className="w-11 h-11 rounded-xl hover:bg-surface-2 text-ink-700 flex items-center justify-center transition-colors"
                     title={darkMode ? 'Modo claro' : 'Modo oscuro'}
                     aria-label={darkMode ? 'Desactivar modo oscuro' : 'Activar modo oscuro'}
                   >
@@ -1038,18 +1014,19 @@ export const NuevaPage = () => {
                     >
                       <div className="flex-grow w-full lg:w-2/3 flex flex-col gap-6">
                         {/* Map Container */}
-                        <section className="w-full h-[400px] md:h-[500px] lg:h-[600px] relative rounded-xl overflow-hidden shadow-md bg-[#ebeef3] border border-[#c2c6d4]/30">
+                        <section className="w-full h-[400px] md:h-[500px] lg:h-[600px] relative rounded-xl overflow-hidden shadow-md bg-surface-2 border border-line/30">
                           <div className="absolute inset-0 z-0">
                             <Suspense
                               fallback={
-                                <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-[#ebeef3]">
-                                  <span className="material-symbols-outlined text-[#003f87] animate-spin text-3xl">progress_activity</span>
-                                  <p className="text-xs font-bold text-[#727784]">Cargando mapa…</p>
+                                <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-surface-2">
+                                  <span className="material-symbols-outlined text-brand-ink animate-spin text-3xl">progress_activity</span>
+                                  <p className="text-xs font-bold text-ink-500">Cargando mapa…</p>
                                 </div>
                               }
                             >
                               <MapView
                                 alerts={filteredAlerts}
+                                darkMode={darkMode}
                                 onSelectAlert={(alert) => {
                                   setSelectedAlert(alert);
                                   setCurrentTab('alertas');
@@ -1057,33 +1034,23 @@ export const NuevaPage = () => {
                               />
                             </Suspense>
                           </div>
-                            <div className="absolute right-4 bottom-12 z-10 flex flex-col gap-2">
-                            <button className="w-11 h-11 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all" aria-label="Acercar mapa">
-                              <span className="material-symbols-outlined">add</span>
-                            </button>
-                            <button className="w-11 h-11 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all" aria-label="Alejar mapa">
-                              <span className="material-symbols-outlined">remove</span>
-                            </button>
-                            <button className="w-11 h-11 rounded-lg shadow-md bg-white text-[#003f87] flex items-center justify-center border border-[#c2c6d4]/30 hover:bg-[#d7e2ff] transition-all" aria-label="Mi ubicación">
-                              <span className="material-symbols-outlined">my_location</span>
-                            </button>
-                          </div>
-                          <div className="absolute left-4 bottom-4 z-10 glass-overlay px-4 py-2.5 rounded-xl shadow-sm border border-white/20">
-                            <h4 className="text-[10px] font-bold uppercase tracking-widest text-[#424752] mb-1.5">
+                          {/* Zoom + "Mi ubicación" se renderizan dentro de MapView (MapControls, conectados vía useMap) */}
+                          <div className="absolute left-4 bottom-4 z-10 glass-overlay px-4 py-2.5 rounded-xl shadow-sm">
+                            <h4 className="text-[11px] font-bold uppercase tracking-widest text-ink-700 mb-1.5">
                               RIESGO METEOROLÓGICO
                             </h4>
                             <div className="flex gap-4">
                               <div className="flex items-center gap-1.5">
                                 <div className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a]"></div>
-                                <span className="text-[10px] font-extrabold uppercase text-[#ba1a1a]">EXTREMO</span>
+                                <span className="text-[11px] font-extrabold uppercase text-[#ba1a1a]">EXTREMO</span>
                               </div>
                               <div className="flex items-center gap-1.5">
                                 <div className="w-2.5 h-2.5 rounded-full bg-[#f97316]"></div>
-                                <span className="text-[10px] font-extrabold uppercase text-[#f97316]">IMPORTANTE</span>
+                                <span className="text-[11px] font-extrabold uppercase text-[#f97316]">IMPORTANTE</span>
                               </div>
                               <div className="flex items-center gap-1.5">
                                 <div className="w-2.5 h-2.5 rounded-full bg-[#eab308]"></div>
-                                <span className="text-[10px] font-extrabold uppercase text-[#eab308]">RIESGO</span>
+                                <span className="text-[11px] font-extrabold uppercase text-[#eab308]">RIESGO</span>
                               </div>
                             </div>
                           </div>
@@ -1092,11 +1059,27 @@ export const NuevaPage = () => {
                         {/* Radar Satelital */}
                         <section className="w-full">
                           <div className="flex justify-between items-end mb-2">
-                            <h2 className="text-xl font-bold text-[#003f87]">Radar Satelital</h2>
+                            <h2 className="text-xl font-bold text-brand-ink">Radar Satelital</h2>
                           </div>
-                          <div className="relative rounded-lg overflow-hidden shadow-lg bg-[#ebeef3] border border-[#c2c6d4]/30">
-                            <video autoPlay className="w-full h-auto block" loop muted playsInline>
-                              <source src="https://api.met.no/weatherapi/geosatellite/1.4/europe.mp4" type="video/mp4"/>
+                          <div className="relative rounded-lg overflow-hidden shadow-lg bg-surface-2 border border-line/30 aspect-video">
+                            {!videoReady && (
+                              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2">
+                                <span className="material-symbols-outlined text-brand-ink animate-spin text-3xl">progress_activity</span>
+                                <p className="text-xs font-bold text-ink-500">Cargando radar…</p>
+                              </div>
+                            )}
+                            <video
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              controls
+                              preload="metadata"
+                              onCanPlay={() => setVideoReady(true)}
+                              onLoadedData={() => setVideoReady(true)}
+                              className="w-full h-full object-cover block"
+                            >
+                              <source src="https://api.met.no/weatherapi/geosatellite/1.4/europe.mp4" type="video/mp4" />
                               Tu navegador no soporta videos.
                             </video>
                           </div>
@@ -1105,10 +1088,10 @@ export const NuevaPage = () => {
 
                       {/* Alerts list */}
                       <aside className="w-full lg:w-1/3 flex flex-col gap-4">
-                        <div className="flex justify-between items-center gap-2 border-b border-[#c2c6d4]/20 pb-2">
+                        <div className="flex justify-between items-center gap-2 border-b border-line/20 pb-2">
                           <div className="min-w-0">
-                            <h2 className="text-sm font-extrabold text-[#003f87] tracking-tight uppercase">Alertas Activas</h2>
-                            <p className="text-[11px] font-bold text-[#727784] truncate">
+                            <h2 className="text-sm font-extrabold text-brand-ink tracking-tight uppercase">Alertas Activas</h2>
+                            <p className="text-xs font-bold text-ink-500 truncate">
                               {alertsLoading
                                 ? 'Cargando alertas…'
                                 : lastUpdatedAt !== null
@@ -1121,7 +1104,7 @@ export const NuevaPage = () => {
                             onClick={() => void handleRefreshAlerts()}
                             disabled={refreshing || alertsLoading}
                             aria-label="Actualizar alertas ahora"
-                            className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl border border-[#c2c6d4]/40 text-[#003f87] hover:bg-[#ebeef3] transition-all disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87]"
+                            className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl border border-line/40 text-brand-ink hover:bg-surface-2 transition-all disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                           >
                             <span className={`material-symbols-outlined text-lg ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
                           </button>
@@ -1136,7 +1119,7 @@ export const NuevaPage = () => {
 
                         <div className="flex flex-col gap-3 overflow-y-auto max-h-[350px] md:max-h-[450px] lg:max-h-[600px] pr-1.5 custom-scrollbar">
                           {alertsError && alerts.length > 0 && (
-                            <div role="status" className="bg-[#ffea85]/60 border border-[#eab308]/40 text-[#001a40] rounded-xl px-3 py-2 text-[11px] font-bold flex items-center gap-2">
+                            <div role="status" className="bg-[#ffea85] border border-[#eab308]/40 text-[#001a40] rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-2">
                               <span className="material-symbols-outlined text-sm">cloud_off</span>
                               Sin conexión · mostrando datos guardados
                             </div>
@@ -1144,15 +1127,15 @@ export const NuevaPage = () => {
                           {alertsLoading ? (
                             <>
                               {[0, 1, 2].map((i) => (
-                                <div key={i} className="animate-pulse bg-[#ebeef3]/60 border border-[#c2c6d4]/30 rounded-xl p-4 space-y-2">
-                                  <div className="h-3 w-1/3 bg-[#c2c6d4]/60 rounded" />
-                                  <div className="h-3 w-2/3 bg-[#c2c6d4]/40 rounded" />
-                                  <div className="h-3 w-1/2 bg-[#c2c6d4]/40 rounded" />
+                                <div key={i} className="animate-pulse bg-surface-2/60 border border-line/30 rounded-xl p-4 space-y-2">
+                                  <div className="h-3 w-1/3 bg-ink-300/60 rounded" />
+                                  <div className="h-3 w-2/3 bg-ink-300/40 rounded" />
+                                  <div className="h-3 w-1/2 bg-ink-300/40 rounded" />
                                 </div>
                               ))}
                             </>
                           ) : alertsError && alerts.length === 0 ? (
-                            <div className="bg-[#ffdad6]/40 border border-[#ba1a1a]/25 rounded-xl p-8 text-center text-[#93000a]">
+                            <div className="bg-[#ffdad6] border border-[#ba1a1a]/25 rounded-xl p-8 text-center text-[#93000a]">
                               <span className="material-symbols-outlined text-3xl text-[#ba1a1a] mb-2">cloud_off</span>
                               <p className="text-sm font-semibold">No se pudo conectar</p>
                               <p className="text-xs text-[#93000a]/80 mt-1">Comprueba tu conexión e inténtalo de nuevo.</p>
@@ -1160,16 +1143,16 @@ export const NuevaPage = () => {
                                 type="button"
                                 onClick={() => void handleRefreshAlerts()}
                                 disabled={refreshing}
-                                className="mt-4 px-4 py-2 rounded-xl bg-[#003f87] text-white text-xs font-bold hover:bg-[#0050ad] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-offset-2"
+                                className="mt-4 px-4 py-2 rounded-xl bg-brand text-white text-xs font-bold hover:bg-brand-600 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
                               >
                                 {refreshing ? 'Reintentando…' : 'Reintentar'}
                               </button>
                             </div>
                           ) : filteredAlerts.length === 0 ? (
-                            <div className="bg-[#ebeef3]/60 border border-[#c2c6d4]/40 rounded-xl p-8 text-center text-[#424752]">
-                              <span className="material-symbols-outlined text-3xl text-[#727784] mb-2">check_circle</span>
+                            <div className="bg-surface-2/60 border border-line/40 rounded-xl p-8 text-center text-ink-700">
+                              <span className="material-symbols-outlined text-3xl text-ink-500 mb-2">check_circle</span>
                               <p className="text-sm font-semibold">Sin alertas activas</p>
-                              <p className="text-xs text-[#727784] mt-1">No hay alertas meteorológicas vigentes para los filtros seleccionados.</p>
+                              <p className="text-xs text-ink-500 mt-1">No hay alertas meteorológicas vigentes para los filtros seleccionados.</p>
                             </div>
                           ) : (
                             filteredAlerts.map((alert) => {
@@ -1215,27 +1198,27 @@ export const NuevaPage = () => {
                                       setCurrentTab('alertas');
                                     }
                                   }}
-                                  className="bg-white rounded-xl shadow-sm border border-[#c2c6d4]/30 flex flex-shrink-0 min-h-[120px] overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-offset-2"
+                                  className="bg-surface rounded-xl shadow-sm border border-line/30 flex flex-shrink-0 min-h-[120px] overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
                                 >
                                   <div className={`active-alert-indicator ${severityBg}`}></div>
                                   <div className="p-4 flex-grow flex flex-col justify-between">
                                     <div>
                                       <div className="flex justify-between items-start mb-2">
-                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider ${badgeTextColors}`}>
+                                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold tracking-wider ${badgeTextColors}`}>
                                           {badgeText}
                                         </span>
                                         <span className={`material-symbols-outlined ${iconColor} group-hover:scale-110 transition-transform`}>
                                           {iconName}
                                         </span>
                                       </div>
-                                      <h3 className="text-sm font-bold text-[#181c20] line-clamp-1 mb-1 leading-snug">
+                                      <h3 className="text-sm font-bold text-ink line-clamp-1 mb-1 leading-snug">
                                         {alert.event}
                                       </h3>
-                                      <p className="text-[11px] font-semibold text-[#424752] line-clamp-2">
+                                      <p className="text-xs font-semibold text-ink-700 line-clamp-2">
                                         {alert.area}
                                       </p>
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-[#424752] mt-3 border-t border-[#c2c6d4]/10 pt-2 text-[10px] font-semibold">
+                                    <div className="flex items-center gap-1.5 text-ink-700 mt-3 border-t border-line/10 pt-2 text-[11px] font-semibold">
                                       <span className="material-symbols-outlined text-[14px]">schedule</span>
                                       <span>
                                         Vigente hasta {new Date(alert.expires).toLocaleTimeString('es-ES', {
@@ -1263,46 +1246,46 @@ export const NuevaPage = () => {
                       exit={{ opacity: 0, x: -10 }}
                       className="space-y-8 max-w-6xl mx-auto"
                     >
-                      <div className="flex justify-between items-center border-b border-[#c2c6d4]/20 pb-4">
-                        <h2 className="text-xl md:text-2xl font-extrabold text-[#003f87]">Información y Soporte</h2>
-                        <span className="text-xs text-[#727784] font-semibold">MeteoAlerta España</span>
+                      <div className="flex justify-between items-center border-b border-line/20 pb-4">
+                        <h2 className="text-xl md:text-2xl font-extrabold text-brand-ink">Información y Soporte</h2>
+                        <span className="text-xs text-ink-500 font-semibold">MeteoAlerta España</span>
                       </div>
 
                       {/* Section 1: Predicción Nacional (Bento Layout) */}
                       <section className="space-y-4">
                         <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-[#003f87]">distance</span>
-                          <h3 className="font-bold text-base text-[#181c20]">Predicción Nacional</h3>
+                          <span className="material-symbols-outlined text-brand-ink">distance</span>
+                          <h3 className="font-bold text-base text-ink">Predicción Nacional</h3>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           {/* Main Prediction Details */}
-                          <div className="md:col-span-2 bg-white rounded-2xl p-6 border-l-4 border-[#003f87] shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[250px]">
+                          <div className="md:col-span-2 bg-surface rounded-2xl p-6 border-l-4 border-brand shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[250px]">
                             {prediction ? (
                               <div className="relative z-10 space-y-4">
                                 <div className="flex justify-between items-start">
                                   <div>
-                                    <p className="text-[10px] font-bold text-[#727784] uppercase tracking-wider">Hoy en la Península</p>
-                                    <p className="text-lg font-extrabold text-[#003f87] mt-1">
+                                    <p className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">Hoy en la Península</p>
+                                    <p className="text-lg font-extrabold text-brand-ink mt-1">
                                       {prediction.significantPhenomena ? prediction.significantPhenomena.split('.')[0] : 'Estabilidad General'}
                                     </p>
                                   </div>
-                                  <span className="material-symbols-outlined text-[#003f87] text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>cloud_sync</span>
+                                  <span className="material-symbols-outlined text-brand-ink text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>cloud_sync</span>
                                 </div>
-                                <p className="text-xs text-[#424752] leading-relaxed max-w-xl line-clamp-3">
+                                <p className="text-xs text-ink-700 leading-relaxed max-w-xl line-clamp-3">
                                   {prediction.generalPrediction || 'Cielos mayormente despejados con algunos intervalos de nubosidad en el tercio norte peninsular.'}
                                 </p>
                                 <div className="flex flex-wrap gap-2 pt-2">
-                                  <span className="flex items-center gap-1 text-[10px] font-bold bg-[#d7e2ff] text-[#001a40] px-3 py-1 rounded-full">
+                                  <span className="flex items-center gap-1 text-[11px] font-bold bg-[#d7e2ff] text-[#001a40] px-3 py-1 rounded-full">
                                     <span className="material-symbols-outlined text-xs">device_thermostat</span> Termómetro Estable
                                   </span>
-                                  <span className="flex items-center gap-1 text-[10px] font-bold bg-[#ebeef3] text-[#424752] px-3 py-1 rounded-full">
+                                  <span className="flex items-center gap-1 text-[11px] font-bold bg-surface-2 text-ink-700 px-3 py-1 rounded-full">
                                     <span className="material-symbols-outlined text-xs">air</span> Viento Moderado
                                   </span>
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex flex-col items-center justify-center h-full text-[#727784]">
-                                <div className="w-6 h-6 border-2 border-[#003f87]/30 border-t-[#003f87] rounded-full animate-spin mb-2" />
+                              <div className="flex flex-col items-center justify-center h-full text-ink-500">
+                                <div className="w-6 h-6 border-2 border-brand/30 border-t-brand rounded-full animate-spin mb-2" />
                                 <p className="text-xs font-semibold">Cargando datos oficiales AEMET...</p>
                               </div>
                             )}
@@ -1312,13 +1295,13 @@ export const NuevaPage = () => {
                           </div>
 
                           {/* Active Warnings Metric */}
-                          <div className="bg-white rounded-2xl p-6 border-l-4 border-[#f97316] shadow-sm flex flex-col justify-between">
+                          <div className="bg-surface rounded-2xl p-6 border-l-4 border-[#f97316] shadow-sm flex flex-col justify-between">
                             <div>
-                              <span className="text-[10px] font-bold text-[#727784] uppercase tracking-wider block">Avisos Activos</span>
-                              <h4 className="text-2xl font-extrabold text-[#181c20] mt-2">
+                              <span className="text-[11px] font-bold text-ink-500 uppercase tracking-wider block">Avisos Activos</span>
+                              <h4 className="text-2xl font-extrabold text-ink mt-2">
                                 {filteredAlerts.length} {filteredAlerts.length === 1 ? 'Aviso' : 'Avisos'}
                               </h4>
-                              <p className="text-xs text-[#424752] mt-2 leading-relaxed">
+                              <p className="text-xs text-ink-700 mt-2 leading-relaxed">
                                 {filteredAlerts.length > 0 
                                   ? 'Existen alertas de riesgo meteorológico vigentes según las últimas actualizaciones de AEMET.' 
                                   : 'No hay alertas activas en el territorio nacional con los filtros actuales.'}
@@ -1350,7 +1333,7 @@ export const NuevaPage = () => {
                       </section>
 
                       {/* Section 2: Qué hacemos (High-End Card) */}
-                      <section className="bg-white rounded-2xl border border-[#c2c6d4]/30 overflow-hidden shadow-sm">
+                      <section className="bg-surface rounded-2xl border border-line/30 overflow-hidden shadow-sm">
                         <div className="grid grid-cols-1 md:grid-cols-2">
                           <div className="relative min-h-[220px] md:h-auto">
                             <img
@@ -1362,20 +1345,20 @@ export const NuevaPage = () => {
                               className="absolute inset-0 w-full h-full object-cover"
                               src="/weather_center.webp"
                             />
-                            <div className="absolute inset-0 bg-[#003f87]/20 backdrop-grayscale-[0.4]"></div>
+                            <div className="absolute inset-0 bg-brand/20 backdrop-grayscale-[0.4]"></div>
                           </div>
                           <div className="p-6 md:p-8 flex flex-col justify-center">
                             <div className="flex items-center gap-2 mb-3">
-                              <span className="material-symbols-outlined text-[#003f87]" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
-                              <h3 className="font-bold text-base text-[#181c20]">Qué hacemos</h3>
+                              <span className="material-symbols-outlined text-brand-ink" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
+                              <h3 className="font-bold text-base text-ink">Qué hacemos</h3>
                             </div>
-                            <p className="text-sm font-semibold text-[#181c20] mb-3 leading-snug">
+                            <p className="text-sm font-semibold text-ink mb-3 leading-snug">
                               Garantizando la seguridad ciudadana a través de la precisión meteorológica.
                             </p>
-                            <p className="text-xs text-[#424752] leading-relaxed mb-4">
+                            <p className="text-xs text-ink-700 leading-relaxed mb-4">
                               MeteoAlerta es una plataforma independiente de visualización de riesgos meteorológicos en tiempo real. Integramos datos directos de la <strong>AEMET</strong> y avisos oficiales de <strong>Protección Civil</strong>.
                             </p>
-                            <ul className="space-y-2 text-xs text-[#424752] font-semibold">
+                            <ul className="space-y-2 text-xs text-ink-700 font-semibold">
                               <li className="flex items-start gap-2">
                                 <span className="material-symbols-outlined text-green-600 text-sm mt-0.5">check_circle</span>
                                 <span>Actualización continua cada 10 minutos.</span>
@@ -1398,8 +1381,8 @@ export const NuevaPage = () => {
                         {/* Contact Form */}
                         <div className="md:col-span-3 space-y-4">
                           <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-[#003f87]">mail</span>
-                            <h3 className="font-bold text-base text-[#181c20]">Formulario de Soporte</h3>
+                            <span className="material-symbols-outlined text-brand-ink">mail</span>
+                            <h3 className="font-bold text-base text-ink">Formulario de Soporte</h3>
                           </div>
                           <form
                             onSubmit={(e) => {
@@ -1408,14 +1391,14 @@ export const NuevaPage = () => {
                               void sendSupportForm(form, setInfoSupport);
                             }}
                             onChangeCapture={() => setInfoSupport(s => (s.ok || s.error ? IDLE_SUPPORT : s))}
-                            className="bg-white p-6 rounded-2xl border border-[#c2c6d4]/30 space-y-4 shadow-sm"
+                            className="bg-surface p-6 rounded-2xl border border-line/30 space-y-4 shadow-sm"
                           >
                             <div className="space-y-1">
                               <label className="ui-label ml-1" htmlFor="email-contacto">
                                 Tu email
                               </label>
                               <input
-                                className="w-full bg-[#f7f9ff] border border-[#c2c6d4] rounded-lg px-4 py-2.5 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87] transition-all"
+                                className="w-full bg-canvas border border-line rounded-lg px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-brand transition-all"
                                 id="email-contacto"
                                 name="email"
                                 placeholder="ejemplo@correo.es"
@@ -1429,7 +1412,7 @@ export const NuevaPage = () => {
                                 Asunto
                               </label>
                               <input
-                                className="w-full bg-[#f7f9ff] border border-[#c2c6d4] rounded-lg px-4 py-2.5 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87] transition-all"
+                                className="w-full bg-canvas border border-line rounded-lg px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-brand transition-all"
                                 id="asunto"
                                 name="subject"
                                 placeholder="Ej: Error en el mapa / Sugerencia"
@@ -1442,7 +1425,7 @@ export const NuevaPage = () => {
                                 Mensaje
                               </label>
                               <textarea
-                                className="w-full bg-[#f7f9ff] border border-[#c2c6d4] rounded-lg px-4 py-2.5 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87] transition-all"
+                                className="w-full bg-canvas border border-line rounded-lg px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-brand transition-all"
                                 id="mensaje"
                                 name="message"
                                 placeholder="Escribe tu consulta o reporte aquí..."
@@ -1464,15 +1447,15 @@ export const NuevaPage = () => {
                         {/* Social Channels */}
                         <div className="md:col-span-2 space-y-4">
                           <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-[#003f87]">share</span>
-                            <h3 className="font-bold text-base text-[#181c20]">Canales Oficiales</h3>
+                            <span className="material-symbols-outlined text-brand-ink">share</span>
+                            <h3 className="font-bold text-base text-ink">Canales Oficiales</h3>
                           </div>
                           <div className="space-y-3">
                             <a
                               href="https://twitter.com/AlertasMeteoES"
                               target="_blank"
                               rel="noreferrer"
-                              className="flex items-center justify-between p-4 bg-white border border-[#c2c6d4]/30 rounded-2xl hover:bg-[#f7f9ff] transition-all shadow-sm group"
+                              className="flex items-center justify-between p-4 bg-surface border border-line/30 rounded-2xl hover:bg-canvas transition-all shadow-sm group"
                             >
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-[#1DA1F2]/10 flex items-center justify-center text-[#1DA1F2]">
@@ -1481,31 +1464,31 @@ export const NuevaPage = () => {
                                   </svg>
                                 </div>
                                 <div>
-                                  <p className="font-bold text-xs text-[#181c20]">X (Twitter)</p>
-                                  <p className="text-[10px] text-[#727784] font-semibold">@AlertasMeteoES</p>
+                                  <p className="font-bold text-xs text-ink">X (Twitter)</p>
+                                  <p className="text-[11px] text-ink-500 font-semibold">@AlertasMeteoES</p>
                                 </div>
                               </div>
-                              <span className="material-symbols-outlined text-[#727784] text-sm group-hover:text-[#003f87]">open_in_new</span>
+                              <span className="material-symbols-outlined text-ink-500 text-sm group-hover:text-brand-ink">open_in_new</span>
                             </a>
                             
                             <a
                               href="https://t.me/alertasMeteoBot"
                               target="_blank"
                               rel="noreferrer"
-                              className="flex items-center justify-between p-4 bg-white border border-[#c2c6d4]/30 rounded-2xl hover:bg-[#f7f9ff] transition-all shadow-sm group"
+                              className="flex items-center justify-between p-4 bg-surface border border-line/30 rounded-2xl hover:bg-canvas transition-all shadow-sm group"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-[#0088cc]/10 flex items-center justify-center text-[#0088cc]">
+                                <div className="w-10 h-10 rounded-full bg-[#0088cc]/10 flex items-center justify-center text-[#0088cc] dark:text-sky-300">
                                   <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.75 3.81-1.65 6.35-2.75 7.61-3.3 3.61-1.56 4.36-1.83 4.85-1.84.11 0 .35.03.5.16.13.12.17.28.18.39.01.07.01.14 0 .2z" />
                                   </svg>
                                 </div>
                                 <div>
-                                  <p className="font-bold text-xs text-[#181c20]">Telegram</p>
-                                  <p className="text-[10px] text-[#727784] font-semibold">@alertasMeteoBot</p>
+                                  <p className="font-bold text-xs text-ink">Telegram</p>
+                                  <p className="text-[11px] text-ink-500 font-semibold">@alertasMeteoBot</p>
                                 </div>
                               </div>
-                              <span className="material-symbols-outlined text-[#727784] text-sm group-hover:text-[#003f87]">open_in_new</span>
+                              <span className="material-symbols-outlined text-ink-500 text-sm group-hover:text-brand-ink">open_in_new</span>
                             </a>
                           </div>
                         </div>
@@ -1525,7 +1508,7 @@ export const NuevaPage = () => {
                       <div className="flex justify-between items-center mb-4">
                         <button
                           onClick={() => setCurrentTab('map')}
-                          className="flex items-center gap-1.5 text-[#003f87] font-bold text-xs hover:underline transition-all bg-white px-3 py-1.5 rounded-lg border border-[#c2c6d4]/30 shadow-sm"
+                          className="flex items-center gap-1.5 text-brand-ink font-bold text-xs hover:underline transition-all bg-surface px-3 py-1.5 rounded-lg border border-line/30 shadow-sm"
                         >
                           <span className="material-symbols-outlined text-sm">arrow_back</span>
                           <span>Volver al Mapa</span>
@@ -1535,7 +1518,7 @@ export const NuevaPage = () => {
                       {selectedAlert ? (
                         <div className="space-y-6">
                           {/* Hero Alert Card */}
-                          <section className={`relative bg-white rounded-2xl border-2 border-l-[10px] shadow-sm overflow-hidden transition-all ${selectedAlert.severity === 'orange' || selectedAlert.severity === 'red' ? 'urgent-pulse' : ''}`}
+                          <section className={`relative bg-surface rounded-2xl border-2 border-l-[10px] shadow-sm overflow-hidden transition-all ${selectedAlert.severity === 'orange' || selectedAlert.severity === 'red' ? 'urgent-pulse' : ''}`}
                             style={{
                               borderColor: selectedAlert.severity === 'red' ? '#ba1a1a' : selectedAlert.severity === 'orange' ? '#f97316' : '#eab308'
                             }}
@@ -1580,14 +1563,14 @@ export const NuevaPage = () => {
                               )}
                             </div>
                             
-                            <div className="relative z-10 px-5 py-3 flex flex-wrap justify-between items-center gap-2 border-b border-[#c2c6d4]/10 bg-slate-50/50">
+                            <div className="relative z-10 px-5 py-3 flex flex-wrap justify-between items-center gap-2 border-b border-line/10 bg-surface-3/70">
                               <div className="flex items-center gap-2">
                                 <span className="w-3.5 h-3.5 rounded-full animate-ping"
                                   style={{
                                     backgroundColor: selectedAlert.severity === 'red' ? '#ba1a1a' : selectedAlert.severity === 'orange' ? '#f97316' : '#eab308'
                                   }}
                                 />
-                                <span className="text-[10px] font-bold uppercase tracking-widest"
+                                <span className="text-[11px] font-bold uppercase tracking-widest"
                                   style={{
                                     color: selectedAlert.severity === 'red' ? '#ba1a1a' : selectedAlert.severity === 'orange' ? '#f97316' : '#854d0e'
                                   }}
@@ -1596,14 +1579,14 @@ export const NuevaPage = () => {
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1.5 bg-white px-3 py-1 rounded-lg border border-[#c2c6d4]/20 text-[10px] font-semibold text-[#424752]">
+                                <div className="flex items-center gap-1.5 bg-surface px-3 py-1 rounded-lg border border-line/20 text-[11px] font-semibold text-ink-700">
                                   <span className="material-symbols-outlined text-xs">schedule</span>
                                   <span className="hidden sm:inline">Expira: {new Date(selectedAlert.expires).toLocaleDateString('es-ES')} • {new Date(selectedAlert.expires).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                                   <span className="sm:hidden">{new Date(selectedAlert.expires).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                                 <button
                                   onClick={() => shareAlert(selectedAlert)}
-                                  className="flex items-center gap-1 bg-[#003f87] text-white px-3 py-1 rounded-lg text-[10px] font-bold hover:bg-[#0056b3] transition-all"
+                                  className="flex items-center gap-1 bg-brand text-white px-3 py-1 rounded-lg text-[11px] font-bold hover:bg-brand-500 transition-all"
                                   title="Compartir alerta"
                                 >
                                   <span className="material-symbols-outlined text-xs">share</span>
@@ -1613,36 +1596,36 @@ export const NuevaPage = () => {
                             </div>
                             <div className="relative z-10 p-6 space-y-4">
                               <div>
-                                <h3 className="text-xl font-extrabold text-[#181c20] leading-tight">{selectedAlert.event}</h3>
-                                <div className="flex items-center gap-1.5 text-[#003f87] font-bold mt-1.5">
+                                <h3 className="text-xl font-extrabold text-ink leading-tight">{selectedAlert.event}</h3>
+                                <div className="flex items-center gap-1.5 text-brand-ink font-bold mt-1.5">
                                   <span className="material-symbols-outlined text-xs">location_on</span>
                                   <span className="text-xs uppercase">{selectedAlert.area}</span>
                                 </div>
                               </div>
                               <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-[#f7f9ff]/80 backdrop-blur-[2px] p-4 rounded-xl border border-[#c2c6d4]/30">
-                                  <p className="text-[10px] font-bold uppercase text-[#727784] tracking-wider mb-1">Severidad</p>
-                                  <p className="text-lg font-extrabold text-[#003f87] capitalize">
+                                <div className="bg-canvas/80 backdrop-blur-[2px] p-4 rounded-xl border border-line/30">
+                                  <p className="text-[11px] font-bold uppercase text-ink-500 tracking-wider mb-1">Severidad</p>
+                                  <p className="text-lg font-extrabold text-brand-ink capitalize">
                                     {selectedAlert.severity === 'red' ? 'Rojo' : selectedAlert.severity === 'orange' ? 'Naranja' : 'Amarillo'}
                                   </p>
                                 </div>
-                                <div className="bg-[#f7f9ff]/80 backdrop-blur-[2px] p-4 rounded-xl border border-[#c2c6d4]/30">
-                                  <p className="text-[10px] font-bold uppercase text-[#727784] tracking-wider mb-1">Fenómeno</p>
-                                  <p className="text-lg font-extrabold text-[#003f87] capitalize">{selectedAlert.event || 'Meteorológico'}</p>
+                                <div className="bg-canvas/80 backdrop-blur-[2px] p-4 rounded-xl border border-line/30">
+                                  <p className="text-[11px] font-bold uppercase text-ink-500 tracking-wider mb-1">Fenómeno</p>
+                                  <p className="text-lg font-extrabold text-brand-ink capitalize">{selectedAlert.event || 'Meteorológico'}</p>
                                 </div>
                               </div>
                               {/* Share buttons row */}
                               <div className="flex flex-wrap gap-2 pt-1">
                                 <button
                                   onClick={() => shareAlert(selectedAlert)}
-                                  className="flex items-center gap-1.5 bg-[#f7f9ff] border border-[#c2c6d4]/40 px-3 py-2 rounded-lg text-[11px] font-bold text-[#424752] hover:bg-[#ebeef3] hover:border-[#003f87]/40 transition-all"
+                                  className="flex items-center gap-1.5 bg-canvas border border-line/40 px-3 py-2 rounded-lg text-xs font-bold text-ink-700 hover:bg-surface-2 hover:border-brand/40 transition-all"
                                 >
-                                  <span className="material-symbols-outlined text-sm text-[#003f87]">ios_share</span>
+                                  <span className="material-symbols-outlined text-sm text-brand-ink">ios_share</span>
                                   Compartir
                                 </button>
                                 <button
                                   onClick={() => shareAlertWhatsApp(selectedAlert)}
-                                  className="flex items-center gap-1.5 bg-[#25d366]/10 border border-[#25d366]/30 px-3 py-2 rounded-lg text-[11px] font-bold text-[#128c7e] hover:bg-[#25d366]/20 transition-all"
+                                  className="flex items-center gap-1.5 bg-[#25d366]/10 border border-[#25d366]/30 px-3 py-2 rounded-lg text-xs font-bold text-[#128c7e] dark:text-green-400 hover:bg-[#25d366]/20 transition-all"
                                 >
                                   <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -1651,7 +1634,7 @@ export const NuevaPage = () => {
                                 </button>
                                 <button
                                   onClick={() => shareAlertTelegram(selectedAlert)}
-                                  className="flex items-center gap-1.5 bg-[#0088cc]/10 border border-[#0088cc]/30 px-3 py-2 rounded-lg text-[11px] font-bold text-[#0088cc] hover:bg-[#0088cc]/20 transition-all"
+                                  className="flex items-center gap-1.5 bg-[#0088cc]/10 border border-[#0088cc]/30 px-3 py-2 rounded-lg text-xs font-bold text-[#0088cc] dark:text-sky-300 hover:bg-[#0088cc]/20 transition-all"
                                 >
                                   <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.75 3.81-1.65 6.35-2.75 7.61-3.3 3.61-1.56 4.36-1.83 4.85-1.84.11 0 .35.03.5.16.13.12.17.28.18.39.01.07.01.14 0 .2z"/>
@@ -1660,9 +1643,9 @@ export const NuevaPage = () => {
                                 </button>
                                 <button
                                   onClick={() => copyAlertLink(selectedAlert)}
-                                  className="flex items-center gap-1.5 bg-[#f7f9ff] border border-[#c2c6d4]/40 px-3 py-2 rounded-lg text-[11px] font-bold text-[#424752] hover:bg-[#ebeef3] hover:border-[#003f87]/40 transition-all"
+                                  className="flex items-center gap-1.5 bg-canvas border border-line/40 px-3 py-2 rounded-lg text-xs font-bold text-ink-700 hover:bg-surface-2 hover:border-brand/40 transition-all"
                                 >
-                                  <span className="material-symbols-outlined text-sm text-[#003f87]">link</span>
+                                  <span className="material-symbols-outlined text-sm text-brand-ink">link</span>
                                   Copiar enlace
                                 </button>
                               </div>
@@ -1670,18 +1653,18 @@ export const NuevaPage = () => {
                           </section>
 
                           {/* Technical Description */}
-                          <section className="bg-white p-6 rounded-2xl border border-[#c2c6d4]/30 shadow-sm space-y-3">
+                          <section className="bg-surface p-6 rounded-2xl border border-line/30 shadow-sm space-y-3">
                             <div className="flex items-center gap-2">
-                              <span className="material-symbols-outlined text-[#003f87]">monitoring</span>
-                              <h3 className="font-bold text-sm text-[#181c20]">Detalle Técnico</h3>
+                              <span className="material-symbols-outlined text-brand-ink">monitoring</span>
+                              <h3 className="font-bold text-sm text-ink">Detalle Técnico</h3>
                             </div>
-                            <p className="text-xs text-[#424752] leading-relaxed whitespace-pre-line">
+                            <p className="text-xs text-ink-700 leading-relaxed whitespace-pre-line">
                               {selectedAlert.description || 'No hay descripción detallada disponible en el boletín técnico para esta alerta.'}
                             </p>
                           </section>
 
                           {/* Safety Instructions */}
-                          <section className="bg-[#003f87] text-white p-6 rounded-2xl shadow-sm space-y-4">
+                          <section className="bg-brand text-white p-6 rounded-2xl shadow-sm space-y-4">
                             <div className="flex items-center gap-2">
                               <span className="material-symbols-outlined text-[#acc7ff]">safety_check</span>
                               <h3 className="font-bold text-sm">Instrucciones de Seguridad</h3>
@@ -1690,49 +1673,49 @@ export const NuevaPage = () => {
                               {selectedAlert.instruction || 'Manténgase informado y siga las indicaciones de los servicios de Protección Civil y emergencias en su localidad.'}
                             </div>
                             <div className="flex flex-wrap gap-2">
-                              <span className="bg-white/20 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">Evite zonas inundables</span>
-                              <span className="bg-white/20 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">Cierre puertas y ventanas</span>
+                              <span className="bg-white/20 px-3 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider">Evite zonas inundables</span>
+                              <span className="bg-white/20 px-3 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider">Cierre puertas y ventanas</span>
                             </div>
                           </section>
 
                           {/* Emergency Contacts */}
-                          <section className="bg-[#f1f4f9]/50 p-6 rounded-2xl border border-[#c2c6d4]/20 space-y-4">
-                            <h4 className="text-[10px] font-bold uppercase text-[#727784] tracking-wider">Contactos de Emergencia</h4>
+                          <section className="bg-surface-3/50 p-6 rounded-2xl border border-line/20 space-y-4">
+                            <h4 className="text-[11px] font-bold uppercase text-ink-500 tracking-wider">Contactos de Emergencia</h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <a href="tel:112" className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-[#c2c6d4]/10 active:bg-red-50 transition-all group">
+                              <a href="tel:112" className="flex items-center justify-between p-4 bg-surface rounded-xl shadow-sm border border-line/10 active:bg-red-50 transition-all group">
                                 <div className="flex items-center gap-3">
                                   <div className="w-10 h-10 rounded-full bg-red-100/50 flex items-center justify-center text-[#ba1a1a]">
                                     <span className="material-symbols-outlined">emergency</span>
                                   </div>
                                   <div>
-                                    <p className="font-bold text-xs text-[#181c20]">Emergencias</p>
-                                    <p className="text-[10px] text-[#727784]">Atención nacional 24h</p>
+                                    <p className="font-bold text-xs text-ink">Emergencias</p>
+                                    <p className="text-[11px] text-ink-500">Atención nacional 24h</p>
                                   </div>
                                 </div>
                                 <span className="text-xl font-extrabold text-[#ba1a1a]">112</span>
                               </a>
 
-                              <a href="tel:061" className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-[#c2c6d4]/10 active:bg-blue-50 transition-all group">
+                              <a href="tel:061" className="flex items-center justify-between p-4 bg-surface rounded-xl shadow-sm border border-line/10 active:bg-blue-50 transition-all group">
                                 <div className="flex items-center gap-3">
                                   <div className="w-10 h-10 rounded-full bg-[#d7e2ff] flex items-center justify-center text-[#003f87]">
                                     <span className="material-symbols-outlined">medical_services</span>
                                   </div>
                                   <div>
-                                    <p className="font-bold text-xs text-[#181c20]">Urgencias Sanitarias</p>
-                                    <p className="text-[10px] text-[#727784]">Servicio de urgencias</p>
+                                    <p className="font-bold text-xs text-ink">Urgencias Sanitarias</p>
+                                    <p className="text-[11px] text-ink-500">Servicio de urgencias</p>
                                   </div>
                                 </div>
-                                <span className="text-xl font-extrabold text-[#003f87]">061</span>
+                                <span className="text-xl font-extrabold text-brand-ink">061</span>
                               </a>
                             </div>
                           </section>
                         </div>
                       ) : (
-                        <div className="bg-white rounded-2xl border border-[#c2c6d4]/30 p-12 text-center text-[#727784] space-y-4">
-                          <span className="material-symbols-outlined text-4xl text-[#727784] animate-bounce">warning</span>
+                        <div className="bg-surface rounded-2xl border border-line/30 p-12 text-center text-ink-500 space-y-4">
+                          <span className="material-symbols-outlined text-4xl text-ink-500 animate-bounce">warning</span>
                           <div>
-                            <h3 className="font-bold text-base text-[#181c20]">Selecciona una alerta para ver sus detalles</h3>
-                            <p className="text-xs text-[#727784] mt-1">
+                            <h3 className="font-bold text-base text-ink">Selecciona una alerta para ver sus detalles</h3>
+                            <p className="text-xs text-ink-500 mt-1">
                               {filteredAlerts.length > 0
                                 ? 'Pulsa cualquiera de las alertas activas listadas abajo, o bien cualquier alerta en el mapa.'
                                 : 'Puedes pulsar sobre cualquier alerta en el mapa o en la lista de avisos del mapa para ver sus detalles específicos.'}
@@ -1740,25 +1723,25 @@ export const NuevaPage = () => {
                           </div>
                           {filteredAlerts.length > 0 && (
                             <div className="max-w-md mx-auto space-y-3">
-                              <p className="text-[10px] font-bold uppercase text-[#727784] tracking-wider text-left border-b pb-1.5">Alertas activas ({filteredAlerts.length})</p>
+                              <p className="text-[11px] font-bold uppercase text-ink-500 tracking-wider text-left border-b pb-1.5">Alertas activas ({filteredAlerts.length})</p>
                               <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1">
                                 {filteredAlerts.map((a) => (
                                   <button
                                     key={a.id}
                                     onClick={() => setSelectedAlert(a)}
-                                    className="w-full text-left p-3 rounded-lg border border-[#c2c6d4]/30 hover:bg-[#f7f9ff] flex items-center justify-between gap-2 text-xs transition-all"
+                                    className="w-full text-left p-3 rounded-lg border border-line/30 hover:bg-canvas flex items-center justify-between gap-2 text-xs transition-all"
                                   >
                                     <span className="flex items-center gap-2 min-w-0">
                                       <span
                                         className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                         style={{ backgroundColor: a.severity === 'red' ? '#ba1a1a' : a.severity === 'orange' ? '#f97316' : '#eab308' }}
                                       />
-                                      <span className="font-semibold text-[#181c20] line-clamp-1">{a.event} ({a.area})</span>
+                                      <span className="font-semibold text-ink line-clamp-1">{a.event} ({a.area})</span>
                                       {userZoneAlerts.some(z => z.id === a.id) && (
-                                        <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-[#d7e2ff] text-[#003f87] flex-shrink-0">Tu zona</span>
+                                        <span className="text-xs font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-[#d7e2ff] text-[#003f87] flex-shrink-0">Tu zona</span>
                                       )}
                                     </span>
-                                    <span className="material-symbols-outlined text-[#003f87] text-sm">chevron_right</span>
+                                    <span className="material-symbols-outlined text-brand-ink text-sm">chevron_right</span>
                                   </button>
                                 ))}
                               </div>
@@ -1779,30 +1762,30 @@ export const NuevaPage = () => {
                       className="w-full max-w-7xl mx-auto space-y-6"
                     >
                       <section className="mb-6">
-                        <div className="ui-card rounded-xl p-6 flex flex-col md:flex-row items-center gap-4 border-l-4 border-l-[#003f87]">
+                        <div className="ui-card rounded-xl p-6 flex flex-col md:flex-row items-center gap-4 border-l-4 border-l-brand">
                           <div className="relative">
                             <div className="w-20 h-20 rounded-full bg-[#d7e2ff]/50 border-2 border-[#d7e2ff] shadow-md flex items-center justify-center overflow-hidden">
                               {avatarUrl ? (
                                 <img src={avatarUrl} alt="User Avatar" className="w-full h-full object-cover" />
                               ) : (
-                                <span className="material-symbols-outlined text-[#003f87] text-[40px]">account_circle</span>
+                                <span className="material-symbols-outlined text-brand-ink text-[40px]">account_circle</span>
                               )}
                             </div>
-                            <div className="absolute bottom-0 right-0 bg-[#003f87] text-white p-1 rounded-full border-2 border-white">
+                            <div className="absolute bottom-0 right-0 bg-brand text-white p-1 rounded-full border-2 border-white">
                               <span className="material-symbols-outlined text-[16px]">edit</span>
                             </div>
                           </div>
                           <div className="text-center md:text-left flex-1">
-                            <h2 className="text-xl font-bold text-[#181c20]">{user?.name || 'Carlos Rodríguez'}</h2>
-                            <p className="text-base text-[#424752]">Suscripción Premium • {user?.email || 'carlos@meteoalerta.es'}</p>
+                            <h2 className="text-xl font-bold text-ink">{user?.name || 'Carlos Rodríguez'}</h2>
+                            <p className="text-base text-ink-700">Suscripción Premium • {user?.email || 'carlos@meteoalerta.es'}</p>
                             <div className="mt-2 flex items-center justify-center md:justify-start gap-2">
-                              <span className="text-xs font-bold text-[#424752]">CP:</span>
+                              <span className="text-xs font-bold text-ink-700">CP:</span>
                               <input 
                                 type="text" 
                                 placeholder="28001" 
                                 value={postalCodeInput}
                                 onChange={(e) => handlePostalCodeUpdate(e.target.value)}
-                                className="w-24 px-2 py-1 text-sm rounded border border-[#c2c6d4] bg-white focus:ring-[#003f87] focus:border-[#003f87] outline-none" 
+                                className="w-24 px-2 py-1 text-sm rounded border border-line bg-surface focus:ring-brand focus:border-brand outline-none" 
                               />
                             </div>
                           </div>
@@ -1814,15 +1797,15 @@ export const NuevaPage = () => {
 
                           {/* Install App Card */}
                           {installState !== 'installed' && (
-                            <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-[#c2c6d4]/30">
-                              <div className="bg-[#ebeef3] px-6 py-4 border-b border-[#c2c6d4]/30">
-                                <h3 className="text-xl font-semibold text-[#003f87] flex items-center gap-2">
+                            <div className="bg-surface rounded-xl shadow-sm overflow-hidden border border-line/30">
+                              <div className="bg-surface-2 px-6 py-4 border-b border-line/30">
+                                <h3 className="text-xl font-semibold text-brand-ink flex items-center gap-2">
                                   <span className="material-symbols-outlined">install_mobile</span>
                                   Instalar Aplicación
                                 </h3>
                               </div>
                               <div className="p-6 space-y-4">
-                                <p className="text-sm text-[#424752]">
+                                <p className="text-sm text-ink-700">
                                   Instala MeteoAlerta en tu dispositivo para acceder más rápido, recibir notificaciones y usarla sin conexión.
                                 </p>
 
@@ -1840,22 +1823,22 @@ export const NuevaPage = () => {
 
                                 {/* iOS — instrucciones manuales */}
                                 {installState === 'ios' && (
-                                  <div className="bg-[#f0f4ff] border border-[#003f87]/20 rounded-xl p-4 space-y-3">
-                                    <p className="text-sm font-bold text-[#003f87] flex items-center gap-2">
+                                  <div className="bg-brand-100/40 border border-brand/20 rounded-xl p-4 space-y-3">
+                                    <p className="text-sm font-bold text-brand-ink flex items-center gap-2">
                                       <span className="material-symbols-outlined text-[18px]">info</span>
                                       Cómo instalar en iPhone / iPad:
                                     </p>
-                                    <ol className="text-sm text-[#424752] space-y-2 list-none">
+                                    <ol className="text-sm text-ink-700 space-y-2 list-none">
                                       <li className="flex items-start gap-2">
-                                        <span className="bg-[#003f87] text-white rounded-full w-5 h-5 flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5">1</span>
+                                        <span className="bg-brand text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
                                         Abre esta página en <strong>Safari</strong>
                                       </li>
                                       <li className="flex items-start gap-2">
-                                        <span className="bg-[#003f87] text-white rounded-full w-5 h-5 flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5">2</span>
+                                        <span className="bg-brand text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
                                         Pulsa el botón <strong>Compartir</strong> <span className="material-symbols-outlined text-[16px] align-middle">ios_share</span>
                                       </li>
                                       <li className="flex items-start gap-2">
-                                        <span className="bg-[#003f87] text-white rounded-full w-5 h-5 flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5">3</span>
+                                        <span className="bg-brand text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
                                         Selecciona <strong>"Añadir a pantalla de inicio"</strong>
                                       </li>
                                     </ol>
@@ -1864,7 +1847,7 @@ export const NuevaPage = () => {
 
                                 {/* Navegador no compatible */}
                                 {installState === 'unsupported' && !isIOS && (
-                                  <p className="text-xs text-[#727784] flex items-center gap-1">
+                                  <p className="text-xs text-ink-500 flex items-center gap-1">
                                     <span className="material-symbols-outlined text-[16px]">info</span>
                                     Usa Chrome o Edge en Android para instalar la app con un clic.
                                   </p>
@@ -1874,31 +1857,31 @@ export const NuevaPage = () => {
                           )}
 
                           {/* Push Notifications Card */}
-                          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-[#c2c6d4]/30">
-                            <div className="bg-[#ebeef3] px-6 py-4 border-b border-[#c2c6d4]/30">
-                              <h3 className="text-xl font-semibold text-[#003f87] flex items-center gap-2">
+                          <div className="bg-surface rounded-xl shadow-sm overflow-hidden border border-line/30">
+                            <div className="bg-surface-2 px-6 py-4 border-b border-line/30">
+                              <h3 className="text-xl font-semibold text-brand-ink flex items-center gap-2">
                                 <span className="material-symbols-outlined">notifications</span>
                                 Notificaciones Push
                               </h3>
                             </div>
                             <div className="p-6 space-y-3">
-                              <p className="text-sm text-[#424752] mb-4">
+                              <p className="text-sm text-ink-700 mb-4">
                                 Recibe alertas meteorológicas directamente en tu dispositivo, incluso con la app cerrada.
                                 {pushStatus === 'unsupported' && <span className="ml-1 text-[#ba1a1a] font-semibold">Tu navegador no soporta notificaciones push.</span>}
                                 {pushStatus === 'denied' && <span className="ml-1 text-[#ba1a1a] font-semibold">Has bloqueado los permisos. Actívalos en los ajustes del navegador.</span>}
                               </p>
                               <div className={`flex items-center justify-between p-4 rounded-lg border ${
                                 pushStatus === 'subscribed'
-                                  ? 'bg-[#e8f0fe]/40 border-[#003f87]/20'
-                                  : 'bg-[#e1e3e4]/30 border-[#c2c6d4]/30'
+                                  ? 'bg-brand-100/40 border-brand/20'
+                                  : 'bg-surface-2/30 border-line/30'
                               }`}>
                                 <div className="flex items-center gap-3">
                                   <span className={`w-4 h-4 rounded-full flex-shrink-0 ${
-                                    pushStatus === 'subscribed' ? 'bg-[#003f87]' : 'bg-[#727784]'
+                                    pushStatus === 'subscribed' ? 'bg-brand' : 'bg-ink-500'
                                   }`} />
                                   <div>
                                     <span className={`font-bold block text-sm ${
-                                      pushStatus === 'subscribed' ? 'text-[#003f87]' : 'text-[#181c20]'
+                                      pushStatus === 'subscribed' ? 'text-brand-ink' : 'text-ink'
                                     }`}>
                                       {pushStatus === 'subscribed' ? 'Notificaciones activas' :
                                        pushStatus === 'loading' ? 'Activando...' :
@@ -1907,7 +1890,7 @@ export const NuevaPage = () => {
                                        'Notificaciones desactivadas'}
                                     </span>
                                     <span className={`text-xs italic ${
-                                      pushStatus === 'subscribed' ? 'text-[#003f87]/70' : 'text-[#424752]'
+                                      pushStatus === 'subscribed' ? 'text-brand-ink/70' : 'text-ink-700'
                                     }`}>
                                       {pushStatus === 'subscribed' ? 'Recibirás alertas aunque la app esté cerrada' : 'Activa para recibir alertas en este dispositivo'}
                                     </span>
@@ -1927,14 +1910,14 @@ export const NuevaPage = () => {
                                         }
                                       }}
                                       disabled={pushStatus === 'loading' || pushStatus === 'denied'}
-                                      className={`absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer ${pushStatus === 'subscribed' ? 'right-0 border-[#003f87]' : 'left-0 border-[#727784]'}`}
+                                      className={`absolute block w-6 h-6 rounded-full bg-surface border-4 appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${pushStatus === 'subscribed' ? 'right-0 border-brand' : 'left-0 border-ink-500'}`}
                                     />
-                                    <label className={`block overflow-hidden h-6 rounded-full cursor-pointer ${pushStatus === 'subscribed' ? 'bg-[#0056b3]' : 'bg-[#e0e3e8]'}`} htmlFor="push-toggle"></label>
+                                    <label className={`block overflow-hidden h-6 rounded-full cursor-pointer ${pushStatus === 'subscribed' ? 'bg-brand-500' : 'bg-surface-2'}`} htmlFor="push-toggle"></label>
                                   </div>
                                 )}
                               </div>
                               {pushStatus === 'subscribed' && (
-                                <p className="text-[10px] text-[#727784] flex items-center gap-1">
+                                <p className="text-[11px] text-ink-500 flex items-center gap-1">
                                   <span className="material-symbols-outlined text-[14px] text-[#22c55e]">check_circle</span>
                                   Este dispositivo está registrado para recibir notificaciones push de MeteoAlerta.
                                 </p>
@@ -1942,17 +1925,17 @@ export const NuevaPage = () => {
                             </div>
                           </div>
 
-                          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-[#c2c6d4]/30">
-                            <div className="bg-[#ebeef3] px-6 py-4 border-b border-[#c2c6d4]/30">
-                              <h3 className="text-xl font-semibold text-[#003f87] flex items-center gap-2">
+                          <div className="bg-surface rounded-xl shadow-sm overflow-hidden border border-line/30">
+                            <div className="bg-surface-2 px-6 py-4 border-b border-line/30">
+                              <h3 className="text-xl font-semibold text-brand-ink flex items-center gap-2">
                                 <span className="material-symbols-outlined">notifications_active</span>
                                 Umbrales de Notificación
                               </h3>
                             </div>
                             <div className="p-6 space-y-4">
-                              <p className="text-base text-[#424752] mb-4">Selecciona el nivel mínimo de riesgo para recibir alertas en tu dispositivo.</p>
+                              <p className="text-base text-ink-700 mb-4">Selecciona el nivel mínimo de riesgo para recibir alertas en tu dispositivo.</p>
                               <div className="space-y-3">
-                                <div className="flex items-center justify-between p-4 bg-[#ffdad6]/20 rounded-lg border border-[#ba1a1a]/20">
+                                <div className="flex items-center justify-between p-4 bg-[#ffdad6] rounded-lg border border-[#ba1a1a]/20">
                                   <div className="flex items-center gap-3">
                                     <span className="w-4 h-4 rounded-full bg-[#ba1a1a]"></span>
                                     <div>
@@ -1964,14 +1947,14 @@ export const NuevaPage = () => {
                                     <input 
                                       checked={prefSeverities.includes('red')}
                                       onChange={() => handleSeverityToggle('red')}
-                                      className={`absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer ${prefSeverities.includes('red') ? 'right-0 border-[#003f87]' : 'left-0 border-[#727784]'}`} 
+                                      className={`absolute block w-6 h-6 rounded-full bg-surface border-4 appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${prefSeverities.includes('red') ? 'right-0 border-brand' : 'left-0 border-ink-500'}`} 
                                       id="toggle-red" 
                                       type="checkbox" 
                                     />
-                                    <label className={`block overflow-hidden h-6 rounded-full cursor-pointer ${prefSeverities.includes('red') ? 'bg-[#0056b3]' : 'bg-[#e0e3e8]'}`} htmlFor="toggle-red"></label>
+                                    <label className={`block overflow-hidden h-6 rounded-full cursor-pointer ${prefSeverities.includes('red') ? 'bg-brand-500' : 'bg-surface-2'}`} htmlFor="toggle-red"></label>
                                   </div>
                                 </div>
-                                <div className="flex items-center justify-between p-4 bg-[#ffdbcc]/20 rounded-lg border border-[#722b00]/20">
+                                <div className="flex items-center justify-between p-4 bg-[#ffdbcc] rounded-lg border border-[#722b00]/20">
                                   <div className="flex items-center gap-3">
                                     <span className="w-4 h-4 rounded-full bg-[#f97316]"></span>
                                     <div>
@@ -1983,57 +1966,57 @@ export const NuevaPage = () => {
                                     <input 
                                       checked={prefSeverities.includes('orange')}
                                       onChange={() => handleSeverityToggle('orange')}
-                                      className={`absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer ${prefSeverities.includes('orange') ? 'right-0 border-[#003f87]' : 'left-0 border-[#727784]'}`} 
+                                      className={`absolute block w-6 h-6 rounded-full bg-surface border-4 appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${prefSeverities.includes('orange') ? 'right-0 border-brand' : 'left-0 border-ink-500'}`} 
                                       id="toggle-orange" 
                                       type="checkbox" 
                                     />
-                                    <label className={`block overflow-hidden h-6 rounded-full cursor-pointer ${prefSeverities.includes('orange') ? 'bg-[#0056b3]' : 'bg-[#e0e3e8]'}`} htmlFor="toggle-orange"></label>
+                                    <label className={`block overflow-hidden h-6 rounded-full cursor-pointer ${prefSeverities.includes('orange') ? 'bg-brand-500' : 'bg-surface-2'}`} htmlFor="toggle-orange"></label>
                                   </div>
                                 </div>
-                                <div className="flex items-center justify-between p-4 bg-[#e1e3e4]/30 rounded-lg border border-[#c2c6d4]/30">
+                                <div className="flex items-center justify-between p-4 bg-surface-2/30 rounded-lg border border-line/30">
                                   <div className="flex items-center gap-3">
                                     <span className="w-4 h-4 rounded-full bg-[#eab308]"></span>
                                     <div>
-                                      <span className="font-bold text-[#181c20] block">Nivel Amarillo</span>
-                                      <span className="text-xs text-[#424752] italic">Riesgo Moderado</span>
+                                      <span className="font-bold text-ink block">Nivel Amarillo</span>
+                                      <span className="text-xs text-ink-700 italic">Riesgo Moderado</span>
                                     </div>
                                   </div>
                                   <div className="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                     <input 
                                       checked={prefSeverities.includes('yellow')}
                                       onChange={() => handleSeverityToggle('yellow')}
-                                      className={`absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer ${prefSeverities.includes('yellow') ? 'right-0 border-[#003f87]' : 'left-0 border-[#727784]'}`} 
+                                      className={`absolute block w-6 h-6 rounded-full bg-surface border-4 appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${prefSeverities.includes('yellow') ? 'right-0 border-brand' : 'left-0 border-ink-500'}`} 
                                       id="toggle-yellow" 
                                       type="checkbox" 
                                     />
-                                    <label className={`block overflow-hidden h-6 rounded-full cursor-pointer ${prefSeverities.includes('yellow') ? 'bg-[#0056b3]' : 'bg-[#e0e3e8]'}`} htmlFor="toggle-yellow"></label>
+                                    <label className={`block overflow-hidden h-6 rounded-full cursor-pointer ${prefSeverities.includes('yellow') ? 'bg-brand-500' : 'bg-surface-2'}`} htmlFor="toggle-yellow"></label>
                                   </div>
                                 </div>
                               </div>
                             </div>
                           </div>
 
-                          <div className="bg-white p-6 rounded-xl shadow-sm border border-[#c2c6d4]/30">
-                            <h4 className="font-bold text-[#003f87] mb-4 flex items-center gap-2">
+                          <div className="bg-surface p-6 rounded-xl shadow-sm border border-line/30">
+                            <h4 className="font-bold text-brand-ink mb-4 flex items-center gap-2">
                               <span className="material-symbols-outlined">storm</span>
                               Fenómenos Meteorológicos
                             </h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                               {['viento', 'lluvia', 'tormentas', 'nieve', 'temperaturas', 'costeros', 'polvo en suspensión', 'galernas', 'rissagas', 'aludes', 'visibilidad'].map(p => (
-                                <label key={p} className="flex items-center justify-between cursor-pointer group bg-[#ebeef3]/30 p-3 rounded-lg border border-[#c2c6d4]/20 hover:border-[#003f87]/50 transition-all">
-                                  <span className="text-base text-[#181c20] capitalize group-hover:text-[#003f87] transition-colors">{p}</span>
+                                <label key={p} className="flex items-center justify-between cursor-pointer group bg-surface-2/30 p-3 rounded-lg border border-line/20 hover:border-brand/50 transition-all">
+                                  <span className="text-base text-ink capitalize group-hover:text-brand-ink transition-colors">{p}</span>
                                   <input 
                                     type="checkbox" 
                                     checked={prefPhenomena.includes(p)}
                                     onChange={() => handlePhenomenonToggle(p)}
-                                    className="rounded border-[#727784] text-[#003f87] focus:ring-[#003f87] h-5 w-5" 
+                                    className="rounded border-ink-500 text-brand-ink focus:ring-brand h-5 w-5" 
                                   />
                                 </label>
                               ))}
                             </div>
                           </div>
                           <div className="flex justify-end">
-                            <button onClick={handleSaveChanges} className="bg-[#003f87] text-white px-6 py-2 rounded-full font-bold text-xs hover:opacity-90 transition-all active:scale-95 shadow-md flex items-center gap-2">
+                            <button onClick={handleSaveChanges} className="bg-brand text-white px-6 py-2 rounded-full font-bold text-xs hover:opacity-90 transition-all active:scale-95 shadow-md flex items-center gap-2">
                               <span className="material-symbols-outlined text-[18px]">save</span>
                               Guardar Cambios
                             </button>
@@ -2041,27 +2024,27 @@ export const NuevaPage = () => {
                         </div>
 
                         <aside className="lg:col-span-4 space-y-6">
-                          <div className="bg-[#e5e8ee] p-6 rounded-xl shadow-sm space-y-4">
-                            <h3 className="text-xl font-semibold text-[#424752] border-b border-[#c2c6d4]/30 pb-2">Información</h3>
+                          <div className="bg-surface-2 p-6 rounded-xl shadow-sm space-y-4">
+                            <h3 className="text-xl font-semibold text-ink-700 border-b border-line/30 pb-2">Información</h3>
                             <ul className="space-y-4">
-                              <li onClick={() => setCurrentTab('info')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCurrentTab('info'); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-inset rounded-lg">
+                              <li onClick={() => setCurrentTab('info')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCurrentTab('info'); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset rounded-lg">
                                 <div className="flex items-center gap-3">
-                                  <span className="material-symbols-outlined text-[#003f87]">online_prediction</span>
-                                  <span className="text-base text-[#181c20]">Predicción Nacional</span>
+                                  <span className="material-symbols-outlined text-brand-ink">online_prediction</span>
+                                  <span className="text-base text-ink">Predicción Nacional</span>
                                 </div>
-                                <span className="material-symbols-outlined text-[#c2c6d4] group-hover:text-[#003f87]">chevron_right</span>
+                                <span className="material-symbols-outlined text-icon group-hover:text-brand-ink">chevron_right</span>
                               </li>
-                              <li onClick={() => setCurrentTab('info')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCurrentTab('info'); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-inset rounded-lg">
+                              <li onClick={() => setCurrentTab('info')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCurrentTab('info'); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset rounded-lg">
                                 <div className="flex items-center gap-3">
-                                  <span className="material-symbols-outlined text-[#003f87]">info_i</span>
-                                  <span className="text-base text-[#181c20]">Qué hacemos</span>
+                                  <span className="material-symbols-outlined text-brand-ink">info_i</span>
+                                  <span className="text-base text-ink">Qué hacemos</span>
                                 </div>
-                                <span className="material-symbols-outlined text-[#c2c6d4] group-hover:text-[#003f87]">chevron_right</span>
+                                <span className="material-symbols-outlined text-icon group-hover:text-brand-ink">chevron_right</span>
                               </li>
                               <li className="flex items-center justify-between group">
                                 <div className="flex items-center gap-3">
-                                  <span className="material-symbols-outlined text-[#003f87]">{darkMode ? 'light_mode' : 'dark_mode'}</span>
-                                  <span className="text-base text-[#181c20]">Modo oscuro</span>
+                                  <span className="material-symbols-outlined text-brand-ink">{darkMode ? 'light_mode' : 'dark_mode'}</span>
+                                  <span className="text-base text-ink">Modo oscuro</span>
                                 </div>
                                 <div className="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                   <input
@@ -2069,50 +2052,50 @@ export const NuevaPage = () => {
                                     checked={darkMode}
                                     onChange={toggleDarkMode}
                                     aria-label="Modo oscuro"
-                                    className={`absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer ${darkMode ? 'right-0 border-[#003f87]' : 'left-0 border-[#727784]'}`}
+                                    className={`absolute block w-6 h-6 rounded-full bg-surface border-4 appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${darkMode ? 'right-0 border-brand' : 'left-0 border-ink-500'}`}
                                     id="toggle-dark"
                                   />
-                                  <label className={`block overflow-hidden h-6 rounded-full cursor-pointer ${darkMode ? 'bg-[#0056b3]' : 'bg-[#e0e3e8]'}`} htmlFor="toggle-dark"></label>
+                                  <label className={`block overflow-hidden h-6 rounded-full cursor-pointer ${darkMode ? 'bg-brand-500' : 'bg-surface-2'}`} htmlFor="toggle-dark"></label>
                                 </div>
                               </li>
                               <li className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                  <span className="material-symbols-outlined text-[#003f87]">info</span>
-                                  <span className="text-base text-[#181c20]">Versión de la App</span>
+                                  <span className="material-symbols-outlined text-brand-ink">info</span>
+                                  <span className="text-base text-ink">Versión de la App</span>
                                 </div>
-                                <span className="text-[#424752] font-bold">3.0.6</span>
+                                <span className="text-ink-700 font-bold">3.0.6</span>
                               </li>
-                              <li onClick={() => setShowSupportModal(true)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowSupportModal(true); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-inset rounded-lg">
+                              <li onClick={() => setShowSupportModal(true)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowSupportModal(true); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset rounded-lg">
                                 <div className="flex items-center gap-3">
-                                  <span className="material-symbols-outlined text-[#003f87]">contact_support</span>
-                                  <span className="text-base text-[#181c20]">Contacto y Soporte</span>
+                                  <span className="material-symbols-outlined text-brand-ink">contact_support</span>
+                                  <span className="text-base text-ink">Contacto y Soporte</span>
                                 </div>
-                                <span className="material-symbols-outlined text-[#c2c6d4] group-hover:text-[#003f87]">chevron_right</span>
+                                <span className="material-symbols-outlined text-icon group-hover:text-brand-ink">chevron_right</span>
                               </li>
-                              <li onClick={() => setShowPrivacyModal(true)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowPrivacyModal(true); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-inset rounded-lg">
+                              <li onClick={() => setShowPrivacyModal(true)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowPrivacyModal(true); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset rounded-lg">
                                 <div className="flex items-center gap-3">
-                                  <span className="material-symbols-outlined text-[#003f87]">security</span>
-                                  <span className="text-base text-[#181c20]">Privacidad</span>
+                                  <span className="material-symbols-outlined text-brand-ink">security</span>
+                                  <span className="text-base text-ink">Privacidad</span>
                                 </div>
-                                <span className="material-symbols-outlined text-[#c2c6d4] group-hover:text-[#003f87]">chevron_right</span>
+                                <span className="material-symbols-outlined text-icon group-hover:text-brand-ink">chevron_right</span>
                               </li>
-                              <li onClick={() => setCurrentTab('info')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCurrentTab('info'); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87] focus-visible:ring-inset rounded-lg">
+                              <li onClick={() => setCurrentTab('info')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCurrentTab('info'); } }} role="button" tabIndex={0} className="flex items-center justify-between group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset rounded-lg">
                                 <div className="flex items-center gap-3">
-                                  <span className="material-symbols-outlined text-[#003f87]">help</span>
-                                  <span className="text-base text-[#181c20]">Centro de Ayuda</span>
+                                  <span className="material-symbols-outlined text-brand-ink">help</span>
+                                  <span className="text-base text-ink">Centro de Ayuda</span>
                                 </div>
-                                <span className="material-symbols-outlined text-[#c2c6d4] group-hover:text-[#003f87]">chevron_right</span>
+                                <span className="material-symbols-outlined text-icon group-hover:text-brand-ink">chevron_right</span>
                               </li>
                             </ul>
                           </div>
-                          <div className="bg-[#003f87] text-white p-6 rounded-xl shadow-lg relative overflow-hidden">
+                          <div className="bg-brand text-white p-6 rounded-xl shadow-lg relative overflow-hidden">
                             <div className="relative z-10">
                               <h4 className="font-bold text-lg mb-2 text-white">Canal Oficial</h4>
                               <p className="text-sm text-[#bbd0ff] opacity-90 leading-relaxed">
                                 MeteoAlerta utiliza datos en tiempo real de AEMET y Protección Civil. En caso de emergencia, siga siempre las instrucciones de las autoridades locales.
                               </p>
                             </div>
-                            <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-[#0056b3]/20 rounded-full blur-2xl"></div>
+                            <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-brand-500/20 rounded-full blur-2xl"></div>
                             <div className="absolute bottom-0 left-0 -ml-4 -mb-4 w-24 h-24 bg-[#acc7ff]/10 rounded-full blur-xl"></div>
                           </div>
                           <button
@@ -2134,49 +2117,86 @@ export const NuevaPage = () => {
               </main>
 
               {/* ── BOTTOM MOBILE NAVIGATION BAR ── */}
-              <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-white border-t border-[#c2c6d4]/30 shadow-lg md:hidden">
+              <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-surface border-t border-line/30 shadow-lg md:hidden">
                 <button
                   onClick={() => setCurrentTab('map')}
                   aria-current={currentTab === 'map' ? 'page' : undefined}
-                  className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-all ${
-                    currentTab === 'map' ? 'text-[#003f87]' : 'text-[#727784]'
+                  className={`relative flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-colors ${
+                    currentTab === 'map' ? 'text-brand-ink' : 'text-ink-500 hover:text-ink'
                   }`}
                 >
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'map' ? 1 : 0}` }}>map</span>
-                  <span className="text-[10px] font-bold mt-0.5">Mapa</span>
+                  {currentTab === 'map' && (
+                    <motion.span
+                      layoutId="nav-active-pill"
+                      className="absolute inset-0 rounded-xl bg-brand/10"
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'map' ? 1 : 0}` }}>map</span>
+                  <span className="relative text-[11px] font-bold mt-0.5">Mapa</span>
                 </button>
 
                 <button
                   onClick={() => setCurrentTab('info')}
                   aria-current={currentTab === 'info' ? 'page' : undefined}
-                  className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-all ${
-                    currentTab === 'info' ? 'text-[#003f87]' : 'text-[#727784]'
+                  className={`relative flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-colors ${
+                    currentTab === 'info' ? 'text-brand-ink' : 'text-ink-500 hover:text-ink'
                   }`}
                 >
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'info' ? 1 : 0}` }}>info</span>
-                  <span className="text-[10px] font-bold mt-0.5">Info</span>
+                  {currentTab === 'info' && (
+                    <motion.span
+                      layoutId="nav-active-pill"
+                      className="absolute inset-0 rounded-xl bg-brand/10"
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'info' ? 1 : 0}` }}>info</span>
+                  <span className="relative text-[11px] font-bold mt-0.5">Info</span>
                 </button>
 
                 <button
                   onClick={() => setCurrentTab('alertas')}
                   aria-current={currentTab === 'alertas' ? 'page' : undefined}
-                  className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-all ${
-                    currentTab === 'alertas' ? 'text-[#003f87]' : 'text-[#727784]'
+                  className={`relative flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-colors ${
+                    currentTab === 'alertas' ? 'text-brand-ink' : 'text-ink-500 hover:text-ink'
                   }`}
                 >
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'alertas' ? 1 : 0}` }}>notifications_active</span>
-                  <span className="text-[10px] font-bold mt-0.5">Alertas</span>
+                  {currentTab === 'alertas' && (
+                    <motion.span
+                      layoutId="nav-active-pill"
+                      className="absolute inset-0 rounded-xl bg-brand/10"
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative flex items-center justify-center">
+                    <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'alertas' ? 1 : 0}` }}>notifications_active</span>
+                    {activeAlertCount > 0 && (
+                      <span
+                        className={`absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-bold leading-none text-white flex items-center justify-center ring-2 ring-surface ${alertBadgeBg}`}
+                      >
+                        {activeAlertCount > 9 ? '9+' : activeAlertCount}
+                      </span>
+                    )}
+                  </span>
+                  <span className="relative text-[11px] font-bold mt-0.5">Alertas</span>
                 </button>
 
                 <button
                   onClick={() => setCurrentTab('settings')}
                   aria-current={currentTab === 'settings' ? 'page' : undefined}
-                  className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-all ${
-                    currentTab === 'settings' ? 'text-[#003f87]' : 'text-[#727784]'
+                  className={`relative flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-colors ${
+                    currentTab === 'settings' ? 'text-brand-ink' : 'text-ink-500 hover:text-ink'
                   }`}
                 >
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'settings' ? 1 : 0}` }}>settings</span>
-                  <span className="text-[10px] font-bold mt-0.5">Ajustes</span>
+                  {currentTab === 'settings' && (
+                    <motion.span
+                      layoutId="nav-active-pill"
+                      className="absolute inset-0 rounded-xl bg-brand/10"
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${currentTab === 'settings' ? 1 : 0}` }}>settings</span>
+                  <span className="relative text-[11px] font-bold mt-0.5">Ajustes</span>
                 </button>
               </nav>
 
@@ -2208,33 +2228,33 @@ export const NuevaPage = () => {
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden focus:outline-none"
+              className="bg-surface rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden focus:outline-none"
               style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[#ebedf3]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-surface-2">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #003f87, #0066cc)' }}>
                     <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>gavel</span>
                   </div>
-                  <h2 id="tos-modal-title" className="text-base font-extrabold text-[#1a1c22]">Términos de Servicio</h2>
+                  <h2 id="tos-modal-title" className="text-base font-extrabold text-ink">Términos de Servicio</h2>
                 </div>
                 <button
                   onClick={() => setShowToSModal(false)}
                   aria-label="Cerrar"
-                  className="ui-btn w-11 h-11 rounded-lg flex items-center justify-center hover:bg-[#f2f3f7] transition-colors cursor-pointer bg-transparent border-none"
+                  className="ui-btn w-11 h-11 rounded-lg flex items-center justify-center hover:bg-surface-3 transition-colors cursor-pointer bg-transparent border-none"
                 >
-                  <span className="material-symbols-outlined text-[#727784]" style={{ fontSize: 20 }}>close</span>
+                  <span className="material-symbols-outlined text-ink-500" style={{ fontSize: 20 }}>close</span>
                 </button>
               </div>
 
               {/* Scrollable Content */}
-              <div className="overflow-y-auto flex-1 px-5 py-4 text-[#424752] text-[13px] leading-relaxed space-y-4">
-                <p className="text-[10px] text-[#727784] font-semibold uppercase tracking-wider">Última actualización: 23 de junio de 2026</p>
+              <div className="overflow-y-auto flex-1 px-5 py-4 text-ink-700 text-[13px] leading-relaxed space-y-4">
+                <p className="text-[11px] text-ink-500 font-semibold uppercase tracking-wider">Última actualización: 23 de junio de 2026</p>
 
                 <p>
                   Por favor, lea atentamente estos Términos de Servicio (&ldquo;Términos&rdquo;) antes de utilizar el sitio web{' '}
-                  <a href="https://alertasmeteo.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#003f87] font-bold hover:underline">alertasmeteo.vercel.app</a>{' '}
+                  <a href="https://alertasmeteo.vercel.app" target="_blank" rel="noopener noreferrer" className="text-brand-ink font-bold hover:underline">alertasmeteo.vercel.app</a>{' '}
                   (el &ldquo;Servicio&rdquo;) operado por MeteoAlerta España (&ldquo;nosotros&rdquo;, &ldquo;nuestro&rdquo;).
                 </p>
                 <p>
@@ -2242,8 +2262,8 @@ export const NuevaPage = () => {
                 </p>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
-                    <span className="text-[#003f87] font-bold">1.</span> Naturaleza del Servicio e Información Meteorológica
+                  <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                    <span className="text-brand-ink font-bold">1.</span> Naturaleza del Servicio e Información Meteorológica
                   </h3>
                   <p>
                     MeteoAlerta España es una plataforma independiente de carácter meramente informativo y de alerta temprana que recopila, procesa y retransmite avisos meteorológicos oficiales procedentes de la Agencia Estatal de Meteorología (AEMET).
@@ -2255,8 +2275,8 @@ export const NuevaPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
-                    <span className="text-[#003f87] font-bold">2.</span> Registro de Cuentas y Seguridad
+                  <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                    <span className="text-brand-ink font-bold">2.</span> Registro de Cuentas y Seguridad
                   </h3>
                   <p>
                     Para recibir alertas personalizadas, los usuarios deben registrarse proporcionando una dirección de correo electrónico válida y establecer una contraseña segura.
@@ -2268,11 +2288,11 @@ export const NuevaPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
-                    <span className="text-[#003f87] font-bold">3.</span> Servicios de Notificación (Telegram y Canales de Terceros)
+                  <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                    <span className="text-brand-ink font-bold">3.</span> Servicios de Notificación (Telegram y Canales de Terceros)
                   </h3>
                   <p>
-                    MeteoAlerta España ofrece la posibilidad de sincronizar su cuenta con un Bot de Telegram oficial (<code className="bg-[#f2f3f7] px-1 py-0.5 rounded text-[11px] font-bold">@alertasMeteoBot</code>) para la recepción de alertas meteorológicas automatizadas y previsiones diarias.
+                    MeteoAlerta España ofrece la posibilidad de sincronizar su cuenta con un Bot de Telegram oficial (<code className="bg-surface-3 px-1 py-0.5 rounded text-xs font-bold">@alertasMeteoBot</code>) para la recepción de alertas meteorológicas automatizadas y previsiones diarias.
                   </p>
                   <ul className="list-disc list-inside space-y-1 text-[12px] pl-1">
                     <li><strong>Configuración manual:</strong> El usuario es responsable de realizar la vinculación inicial a través del bot e introducir su número de teléfono de contacto en su panel de Ajustes si desea activar ciertas notificaciones.</li>
@@ -2281,8 +2301,8 @@ export const NuevaPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
-                    <span className="text-[#003f87] font-bold">4.</span> Limitación de Responsabilidad e Interrupciones del Servicio
+                  <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                    <span className="text-brand-ink font-bold">4.</span> Limitación de Responsabilidad e Interrupciones del Servicio
                   </h3>
                   <p>
                     MeteoAlerta España se esfuerza por ofrecer un servicio de alta disponibilidad y entrega rápida de avisos, pero <strong>el Servicio se proporciona &ldquo;TAL CUAL&rdquo; y &ldquo;SEGÚN DISPONIBILIDAD&rdquo;</strong>.
@@ -2294,8 +2314,8 @@ export const NuevaPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
-                    <span className="text-[#003f87] font-bold">5.</span> Baja del Servicio y Supresión de Datos
+                  <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                    <span className="text-brand-ink font-bold">5.</span> Baja del Servicio y Supresión de Datos
                   </h3>
                   <p>Respetamos plenamente su privacidad y el control de sus datos personales bajo el RGPD.</p>
                   <ul className="list-disc list-inside space-y-1 text-[12px] pl-1">
@@ -2305,8 +2325,8 @@ export const NuevaPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
-                    <span className="text-[#003f87] font-bold">6.</span> Modificaciones de los Términos
+                  <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                    <span className="text-brand-ink font-bold">6.</span> Modificaciones de los Términos
                   </h3>
                   <p>
                     Nos reservamos el derecho, a nuestra sola discreción, de modificar o reemplazar estos Términos en cualquier momento. Si una revisión es importante, intentaremos proporcionar un aviso con al menos 15 días de antelación a la entrada en vigor de los nuevos términos.
@@ -2314,8 +2334,8 @@ export const NuevaPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
-                    <span className="text-[#003f87] font-bold">7.</span> Contacto
+                  <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                    <span className="text-brand-ink font-bold">7.</span> Contacto
                   </h3>
                   <p>
                     Si tiene alguna pregunta sobre estos Términos, por favor póngase en contacto con nosotros a través de los canales de soporte indicados en la pestaña de Información del panel principal de la aplicación.
@@ -2324,7 +2344,7 @@ export const NuevaPage = () => {
               </div>
 
               {/* Footer */}
-              <div className="px-5 py-3.5 border-t border-[#ebedf3] flex justify-end">
+              <div className="px-5 py-3.5 border-t border-surface-2 flex justify-end">
                 <button
                   onClick={() => setShowToSModal(false)}
                   className="px-5 py-2 rounded-lg text-white text-sm font-bold cursor-pointer border-none transition-all duration-200 hover:shadow-lg"
@@ -2361,37 +2381,37 @@ export const NuevaPage = () => {
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden focus:outline-none"
+              className="bg-surface rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden focus:outline-none"
               style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[#ebedf3]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-surface-2">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #003f87, #0066cc)' }}>
                     <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>security</span>
                   </div>
-                  <h2 id="privacy-modal-title" className="text-base font-extrabold text-[#1a1c22]">Política de Privacidad</h2>
+                  <h2 id="privacy-modal-title" className="text-base font-extrabold text-ink">Política de Privacidad</h2>
                 </div>
                 <button
                   onClick={() => setShowPrivacyModal(false)}
                   aria-label="Cerrar"
-                  className="ui-btn w-11 h-11 rounded-lg flex items-center justify-center hover:bg-[#f2f3f7] transition-colors cursor-pointer bg-transparent border-none"
+                  className="ui-btn w-11 h-11 rounded-lg flex items-center justify-center hover:bg-surface-3 transition-colors cursor-pointer bg-transparent border-none"
                 >
-                  <span className="material-symbols-outlined text-[#727784]" style={{ fontSize: 20 }}>close</span>
+                  <span className="material-symbols-outlined text-ink-500" style={{ fontSize: 20 }}>close</span>
                 </button>
               </div>
 
               {/* Scrollable Content */}
-              <div className="overflow-y-auto flex-1 px-5 py-4 text-[#424752] text-[13px] leading-relaxed space-y-4">
-                <p className="text-[10px] text-[#727784] font-semibold uppercase tracking-wider">Última actualización: 30 de junio de 2026</p>
+              <div className="overflow-y-auto flex-1 px-5 py-4 text-ink-700 text-[13px] leading-relaxed space-y-4">
+                <p className="text-[11px] text-ink-500 font-semibold uppercase tracking-wider">Última actualización: 30 de junio de 2026</p>
 
                 <p>
                   En MeteoAlerta España nos tomamos muy en serio la seguridad y confidencialidad de tus datos. De acuerdo con el Reglamento General de Protección de Datos (RGPD) de la UE, esta Política describe cómo gestionamos tu información.
                 </p>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
-                    <span className="text-[#003f87] font-bold">1.</span> Datos que recopilamos
+                  <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                    <span className="text-brand-ink font-bold">1.</span> Datos que recopilamos
                   </h3>
                   <p>
                     Para prestar el servicio recopilamos exclusivamente los datos mínimos necesarios:
@@ -2405,8 +2425,8 @@ export const NuevaPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
-                    <span className="text-[#003f87] font-bold">2.</span> Uso y Almacenamiento de Datos
+                  <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                    <span className="text-brand-ink font-bold">2.</span> Uso y Almacenamiento de Datos
                   </h3>
                   <p>
                     Tus datos se almacenan de forma segura en las bases de datos de **Supabase** (bajo estrictos estándares de encriptación). Los datos se procesan con la única finalidad de automatizar la entrega de las alertas meteorológicas procedentes de AEMET. **Nunca** vendemos, alquilamos ni compartimos tu información personal con anunciantes o terceros.
@@ -2414,8 +2434,8 @@ export const NuevaPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
-                    <span className="text-[#003f87] font-bold">3.</span> Cookies y almacenamiento local
+                  <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                    <span className="text-brand-ink font-bold">3.</span> Cookies y almacenamiento local
                   </h3>
                   <p>
                     Utilizamos cookies técnicas del sistema y el almacenamiento local del navegador (`localStorage`) únicamente para mantener tu sesión activa de forma segura y guardar tus preferencias de diseño (como el filtro de alertas preferidas) en el dispositivo. No utilizamos cookies de rastreo comercial.
@@ -2423,8 +2443,8 @@ export const NuevaPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-extrabold text-[#1a1c22] flex items-center gap-2">
-                    <span className="text-[#003f87] font-bold">4.</span> Derechos del usuario (RGPD)
+                  <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                    <span className="text-brand-ink font-bold">4.</span> Derechos del usuario (RGPD)
                   </h3>
                   <p>
                     Tienes derecho a acceder, rectificar o solicitar la supresión de tus datos. Puedes ejercer tu derecho de supresión de forma automática dándote de baja del servicio en tu pestaña de Ajustes o en el enlace correspondiente de la web, lo cual eliminará de forma irreversible toda tu información.
@@ -2433,7 +2453,7 @@ export const NuevaPage = () => {
               </div>
 
               {/* Footer */}
-              <div className="px-5 py-3.5 border-t border-[#ebedf3] flex justify-end">
+              <div className="px-5 py-3.5 border-t border-surface-2 flex justify-end">
                 <button
                   onClick={() => setShowPrivacyModal(false)}
                   className="px-5 py-2 rounded-lg text-white text-sm font-bold cursor-pointer border-none transition-all duration-200 hover:shadow-lg"
@@ -2470,36 +2490,36 @@ export const NuevaPage = () => {
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden focus:outline-none"
+              className="bg-surface rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden focus:outline-none"
               style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[#ebedf3]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-surface-2">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #003f87, #0066cc)' }}>
                     <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>contact_support</span>
                   </div>
-                  <h2 id="support-modal-title" className="text-base font-extrabold text-[#1a1c22]">Soporte Técnico</h2>
+                  <h2 id="support-modal-title" className="text-base font-extrabold text-ink">Soporte Técnico</h2>
                 </div>
                 <button
                   onClick={() => setShowSupportModal(false)}
                   aria-label="Cerrar"
-                  className="ui-btn w-11 h-11 rounded-lg flex items-center justify-center hover:bg-[#f2f3f7] transition-colors cursor-pointer bg-transparent border-none"
+                  className="ui-btn w-11 h-11 rounded-lg flex items-center justify-center hover:bg-surface-3 transition-colors cursor-pointer bg-transparent border-none"
                 >
-                  <span className="material-symbols-outlined text-[#727784]" style={{ fontSize: 20 }}>close</span>
+                  <span className="material-symbols-outlined text-ink-500" style={{ fontSize: 20 }}>close</span>
                 </button>
               </div>
 
               {/* Scrollable Content */}
-              <div className="overflow-y-auto flex-1 px-5 py-4 text-[#424752] text-[13px] leading-relaxed space-y-5">
+              <div className="overflow-y-auto flex-1 px-5 py-4 text-ink-700 text-[13px] leading-relaxed space-y-5">
                 <p>
                   ¿Tienes algún problema con las notificaciones push o la localización? Puedes enviarnos un reporte directamente o contactar por nuestras redes oficiales.
                 </p>
 
                 {/* Contact Form */}
                 <div className="space-y-3">
-                  <h3 className="font-bold text-xs text-[#1a1c22] uppercase tracking-wider flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-[#003f87]">mail</span>
+                  <h3 className="font-bold text-xs text-ink uppercase tracking-wider flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-brand-ink">mail</span>
                     Enviar Mensaje
                   </h3>
                   <form
@@ -2509,14 +2529,14 @@ export const NuevaPage = () => {
                       void sendSupportForm(form, setModalSupport);
                     }}
                     onChangeCapture={() => setModalSupport(s => (s.ok || s.error ? IDLE_SUPPORT : s))}
-                    className="bg-[#f7f9ff] p-4 rounded-xl border border-[#c2c6d4]/30 space-y-3"
+                    className="bg-canvas p-4 rounded-xl border border-line/30 space-y-3"
                   >
                     <div className="space-y-1">
                       <label className="ui-label ml-1" htmlFor="modal-email">
                         Tu email
                       </label>
                       <input
-                        className="w-full bg-white border border-[#c2c6d4] rounded-lg px-3 py-2 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87]"
+                        className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-xs text-ink focus:outline-none focus:border-brand"
                         id="modal-email"
                         name="email"
                         placeholder="ejemplo@correo.es"
@@ -2530,7 +2550,7 @@ export const NuevaPage = () => {
                         Asunto
                       </label>
                       <input
-                        className="w-full bg-white border border-[#c2c6d4] rounded-lg px-3 py-2 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87]"
+                        className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-xs text-ink focus:outline-none focus:border-brand"
                         id="modal-asunto"
                         name="subject"
                         placeholder="Ej: Error al activar notificaciones"
@@ -2543,7 +2563,7 @@ export const NuevaPage = () => {
                         Mensaje
                       </label>
                       <textarea
-                        className="w-full bg-white border border-[#c2c6d4] rounded-lg px-3 py-2 text-xs text-[#181c20] focus:outline-none focus:border-[#003f87]"
+                        className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-xs text-ink focus:outline-none focus:border-brand"
                         id="modal-mensaje"
                         name="message"
                         placeholder="Explica qué problema experimentas..."
@@ -2564,8 +2584,8 @@ export const NuevaPage = () => {
 
                 {/* Social Channels */}
                 <div className="space-y-3">
-                  <h3 className="font-bold text-xs text-[#1a1c22] uppercase tracking-wider flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-[#003f87]">share</span>
+                  <h3 className="font-bold text-xs text-ink uppercase tracking-wider flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-brand-ink">share</span>
                     Canales de Contacto Directo
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -2573,27 +2593,27 @@ export const NuevaPage = () => {
                       href="https://t.me/alertasMeteoBot"
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center justify-between p-3 bg-white border border-[#c2c6d4]/30 rounded-xl hover:bg-[#f7f9ff] transition-all shadow-sm group"
+                      className="flex items-center justify-between p-3 bg-surface border border-line/30 rounded-xl hover:bg-canvas transition-all shadow-sm group"
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-[#0088cc]/10 flex items-center justify-center text-[#0088cc] flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-[#0088cc]/10 flex items-center justify-center text-[#0088cc] dark:text-sky-300 flex-shrink-0">
                           <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.75 3.81-1.65 6.35-2.75 7.61-3.3 3.61-1.56 4.36-1.83 4.85-1.84.11 0 .35.03.5.16.13.12.17.28.18.39.01.07.01.14 0 .2z" />
                           </svg>
                         </div>
                         <div>
-                          <p className="font-bold text-[10px] text-[#181c20]">Telegram</p>
-                          <p className="text-[10px] text-[#727784]">@alertasMeteoBot</p>
+                          <p className="font-bold text-[11px] text-ink">Telegram</p>
+                          <p className="text-[11px] text-ink-500">@alertasMeteoBot</p>
                         </div>
                       </div>
-                      <span className="material-symbols-outlined text-[#727784] text-[12px] group-hover:text-[#003f87]">open_in_new</span>
+                      <span className="material-symbols-outlined text-ink-500 text-[12px] group-hover:text-brand-ink">open_in_new</span>
                     </a>
 
                     <a
                       href="https://twitter.com/AlertasMeteoES"
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center justify-between p-3 bg-white border border-[#c2c6d4]/30 rounded-xl hover:bg-[#f7f9ff] transition-all shadow-sm group"
+                      className="flex items-center justify-between p-3 bg-surface border border-line/30 rounded-xl hover:bg-canvas transition-all shadow-sm group"
                     >
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-[#1DA1F2]/10 flex items-center justify-center text-[#1DA1F2] flex-shrink-0">
@@ -2602,18 +2622,18 @@ export const NuevaPage = () => {
                           </svg>
                         </div>
                         <div>
-                          <p className="font-bold text-[10px] text-[#181c20]">X (Twitter)</p>
-                          <p className="text-[10px] text-[#727784]">@AlertasMeteoES</p>
+                          <p className="font-bold text-[11px] text-ink">X (Twitter)</p>
+                          <p className="text-[11px] text-ink-500">@AlertasMeteoES</p>
                         </div>
                       </div>
-                      <span className="material-symbols-outlined text-[#727784] text-[12px] group-hover:text-[#003f87]">open_in_new</span>
+                      <span className="material-symbols-outlined text-ink-500 text-[12px] group-hover:text-brand-ink">open_in_new</span>
                     </a>
                   </div>
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="px-5 py-3.5 border-t border-[#ebedf3] flex justify-end">
+              <div className="px-5 py-3.5 border-t border-surface-2 flex justify-end">
                 <button
                   onClick={() => setShowSupportModal(false)}
                   className="px-5 py-2 rounded-lg text-white text-sm font-bold cursor-pointer border-none transition-all duration-200 hover:shadow-lg"

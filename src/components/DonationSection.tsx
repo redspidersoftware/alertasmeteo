@@ -6,20 +6,16 @@ interface DonationSectionProps {
     isFixed?: boolean;
 }
 
+// Botón flotante de donaciones. Posicionamiento vía utilidades Tailwind
+// (safe-area incluida) y colores vía design tokens; solo los colores de
+// marca de terceros (PayPal #0070ba, BMC #FFDD00) quedan como hex fijos.
 export const DonationSection = ({ isFixed = false }: DonationSectionProps) => {
     const [open, setOpen] = useState(false);
 
     if (!isFixed) return null;
 
     return (
-        <div
-            style={{
-                position: 'fixed',
-                bottom: 'calc(76px + env(safe-area-inset-bottom))',
-                right: '16px',
-                zIndex: 40,
-            }}
-        >
+        <div className="fixed right-4 bottom-[calc(76px+env(safe-area-inset-bottom))] z-40">
             <AnimatePresence>
                 {open && (
                     <motion.div
@@ -27,22 +23,9 @@ export const DonationSection = ({ isFixed = false }: DonationSectionProps) => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        style={{
-                            position: 'absolute',
-                            bottom: '56px',
-                            right: 0,
-                            background: 'linear-gradient(135deg, #1e293b, #0f172a)',
-                            borderRadius: '16px',
-                            padding: '16px',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-                            width: '220px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '10px',
-                        }}
+                        className="absolute bottom-14 right-0 w-[220px] flex flex-col gap-2.5 rounded-2xl bg-surface border border-line/40 p-4 shadow-xl"
                     >
-                        <p style={{ color: '#94a3b8', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                        <p className="m-0 text-[11px] font-bold uppercase tracking-wider text-ink-500">
                             ❤️ Apoya el proyecto
                         </p>
 
@@ -54,22 +37,7 @@ export const DonationSection = ({ isFixed = false }: DonationSectionProps) => {
                             <input type="hidden" name="currency_code" value="EUR" />
                             <button
                                 type="submit"
-                                style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px',
-                                    height: '38px',
-                                    borderRadius: '10px',
-                                    background: '#0070ba',
-                                    color: 'white',
-                                    fontSize: '11px',
-                                    fontWeight: 800,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    letterSpacing: '0.05em',
-                                }}
+                                className="ui-btn w-full h-[38px] rounded-[10px] bg-[#0070ba] text-white text-[11px] tracking-wide hover:bg-[#005c9a] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
                             >
                                 💙 Donar por PayPal
                             </button>
@@ -80,24 +48,9 @@ export const DonationSection = ({ isFixed = false }: DonationSectionProps) => {
                             href="https://buymeacoffee.com/alertasmeteo"
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{
-                                width: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '8px',
-                                height: '38px',
-                                borderRadius: '10px',
-                                background: '#FFDD00',
-                                color: '#000',
-                                fontSize: '11px',
-                                fontWeight: 800,
-                                textDecoration: 'none',
-                                letterSpacing: '0.05em',
-                                boxSizing: 'border-box',
-                            }}
+                            className="ui-btn w-full h-[38px] rounded-[10px] bg-[#FFDD00] text-black text-[11px] tracking-wide no-underline hover:brightness-95 transition-[filter] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
                         >
-                            <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="BMC" style={{ height: '16px' }} />
+                            <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="" className="h-4" />
                             Buy Me a Coffee
                         </a>
                     </motion.div>
@@ -108,20 +61,7 @@ export const DonationSection = ({ isFixed = false }: DonationSectionProps) => {
             <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setOpen(!open)}
-                style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '50%',
-                    background: open ? '#1e293b' : '#FFDD00',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '22px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                    transition: 'background 0.2s',
-                }}
+                className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg border border-line/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${open ? 'bg-surface text-ink' : 'bg-[#FFDD00] text-black'}`}
                 title="Apoya el proyecto"
                 aria-label={open ? 'Cerrar donaciones' : 'Apoya el proyecto'}
                 aria-expanded={open}

@@ -12,24 +12,37 @@ export default {
         'alert-yellow': '#eab308',
         'alert-orange': '#f97316',
         'alert-red': '#ef4444',
-        // Design tokens — MeteoAlerta
+        // ── Design tokens — MeteoAlerta ──
+        // Todos responden al modo oscuro vía variables CSS (-rgb) definidas
+        // en src/index.css (:root / .dark). Usar estas clases en lugar de
+        // colores hex fijos en los componentes.
         brand: {
-          DEFAULT: '#003f87',
-          600: '#004a9c',
-          500: '#0056b3',
+          DEFAULT: 'rgb(var(--brand-rgb) / <alpha-value>)',
+          600: 'rgb(var(--brand-strong-rgb) / <alpha-value>)',
+          500: 'rgb(var(--brand-soft-rgb) / <alpha-value>)',
           400: '#2d7dd2',
-          100: '#d7e2ff',
-          50: '#eef3ff',
+          100: 'rgb(var(--brand-tint-rgb) / <alpha-value>)',
+          50: 'rgb(var(--bg-rgb) / <alpha-value>)',
         },
+        // Texto/iconos sobre superficies (en oscuro aclara el azul de marca)
+        'brand-ink': 'rgb(var(--brand-ink-rgb) / <alpha-value>)',
         ink: {
-          DEFAULT: '#181c20',
-          700: '#424752',
-          500: '#727784',
-          300: '#c2c6d4',
-          100: '#ebeef3',
-          50: '#f1f4f9',
-          25: '#f7f9ff',
+          DEFAULT: 'rgb(var(--text-rgb) / <alpha-value>)',
+          700: 'rgb(var(--text-muted-rgb) / <alpha-value>)',
+          500: 'rgb(var(--text-faint-rgb) / <alpha-value>)',
+          300: 'rgb(var(--border-strong-rgb) / <alpha-value>)',
+          100: 'rgb(var(--surface-2-rgb) / <alpha-value>)',
+          50: 'rgb(var(--surface-3-rgb) / <alpha-value>)',
+          25: 'rgb(var(--bg-rgb) / <alpha-value>)',
         },
+        surface: {
+          DEFAULT: 'rgb(var(--surface-rgb) / <alpha-value>)',
+          2: 'rgb(var(--surface-2-rgb) / <alpha-value>)',
+          3: 'rgb(var(--surface-3-rgb) / <alpha-value>)',
+        },
+        canvas: 'rgb(var(--bg-rgb) / <alpha-value>)',
+        line: 'rgb(var(--border-strong-rgb) / <alpha-value>)',
+        icon: 'rgb(var(--icon-rgb) / <alpha-value>)',
         night: {
           950: '#0b1220',
           900: '#0f172a',

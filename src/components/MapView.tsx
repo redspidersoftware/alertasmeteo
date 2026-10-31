@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapContainer, TileLayer, Polygon, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Popup, useMap } from 'react-leaflet';
 import type { LeafletMouseEvent } from 'leaflet';
 import type { LatLngTuple } from 'leaflet';
 import type { WeatherAlert, CapArea } from '../types';
@@ -8,6 +8,7 @@ import 'leaflet/dist/leaflet.css';
 
 interface MapViewProps {
     alerts: WeatherAlert[];
+    darkMode?: boolean;
     onSelectAlert?: (alert: WeatherAlert) => void;
 }
 
@@ -26,6 +27,9 @@ const severityOrder = {
     'red': 4,
     'unknown': 0
 };
+
+const TILE_ATTRIBUTION =
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 const parseSingleRing = (ringStr: string): LatLngTuple[] => {
     if (typeof ringStr !== 'string' || !ringStr.trim()) return [];
@@ -61,7 +65,45 @@ const parsePolygon = (polygonInput: string | string[]): LatLngTuple[] => {
     }
 };
 
-export const MapView = ({ alerts, onSelectAlert }: MapViewProps) => {
+// Controles propios del mapa (zoom + ubicación). Deben vivir dentro de
+// MapContainer para poder usar useMap() de react-leaflet.
+const MapControls = () => {
+    const map = useMap();
+    const [locating, setLocating] = useState(false);
+
+    const handleLocate = () => {
+        if (locating) return;
+        setLocating(true);
+        map.locate({ setView: true, maxZoom: 11 });
+        map.once('locationfound', () => setLocating(false));
+        map.once('locationerror', () => setLocating(false));
+    };
+
+    const btnClass =
+        'w-10 h-10 rounded-lg shadow-md bg-surface text-brand-ink flex items-center justify-center border border-line/30 hover:bg-brand-100/60 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas';
+
+    return (
+        <div className="absolute right-4 bottom-12 z-[1000] flex flex-col gap-2">
+            <button type="button" className={btnClass} aria-label="Acercar mapa" onClick={() => map.zoomIn()}>
+                <span className="material-symbols-outlined">add</span>
+            </button>
+            <button type="button" className={btnClass} aria-label="Alejar mapa" onClick={() => map.zoomOut()}>
+                <span className="material-symbols-outlined">remove</span>
+            </button>
+            <button
+                type="button"
+                className={btnClass}
+                aria-label="Mi ubicación"
+                onClick={handleLocate}
+                disabled={locating}
+            >
+                <span className={`material-symbols-outlined ${locating ? 'animate-pulse' : ''}`}>my_location</span>
+            </button>
+        </div>
+    );
+};
+
+export const MapView = ({ alerts, darkMode = false, onSelectAlert }: MapViewProps) => {
     const [hoveredAlert, setHoveredAlert] = useState<WeatherAlert | null>(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -105,11 +147,21 @@ export const MapView = ({ alerts, onSelectAlert }: MapViewProps) => {
                 zoom={5}
                 style={{ height: '100%', width: '100%' }}
                 scrollWheelZoom={true}
+                zoomControl={false}
             >
+                {/* CartoDB Positron (claro) / Dark Matter (oscuro) — coherentes con la UI */}
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    key={darkMode ? 'dark' : 'light'}
+                    attribution={TILE_ATTRIBUTION}
+                    url={
+                        darkMode
+                            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                            : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+                    }
+                    subdomains={['a', 'b', 'c', 'd']}
                 />
+
+                <MapControls />
 
                 {mapAlerts.map(alert => {
                     const rawInfo = alert.raw;
@@ -141,7 +193,7 @@ export const MapView = ({ alerts, onSelectAlert }: MapViewProps) => {
                                     }
                                 }}
                             >
-                                <Popup className="text-slate-900">
+                                <Popup>
                                     <strong>{alert.headline}</strong><br />
                                     {alert.description ? alert.description.substring(0, 100) : ''}...
                                 </Popup>
