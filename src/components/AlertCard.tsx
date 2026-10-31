@@ -2,6 +2,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { WeatherAlert } from '../types';
 import { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { getAlertTiming, useNow } from '../hooks/useAlertDynamics';
+import { Countdown, VigenciaBar, NuevaBadge } from './AlertDynamics';
 
 interface AlertCardProps {
     alert: WeatherAlert;
@@ -134,6 +136,9 @@ export const AlertCard = ({ alert, isTooltip = false }: AlertCardProps) => {
     const { t } = useLanguage();
     const styles = severityStyles[alert.severity] || severityStyles.unknown;
     const severityLabel = severityLabels[alert.severity] || severityLabels.unknown;
+    // Tarjeta "viva": cuenta atrás, urgencia, estado nueva y vigencia
+    const now = useNow();
+    const timing = getAlertTiming(alert.sent, alert.expires, now);
 
     const formatTime = (dateString: string) => {
         try {
@@ -173,8 +178,8 @@ export const AlertCard = ({ alert, isTooltip = false }: AlertCardProps) => {
         >
             <WeatherEffects type={detectWeatherType(alert.event, alert.headline)} isTooltip={isTooltip} />
 
-            {/* Barra de acento de severidad */}
-            <div className={`absolute left-0 top-0 h-full w-1.5 ${styles.accent}`} aria-hidden="true" />
+            {/* Barra de acento de severidad (pulsa si la alerta es urgente) */}
+            <div className={`absolute left-0 top-0 h-full w-1.5 ${styles.accent} ${timing.urgent ? 'urgent-bar-pulse' : ''}`} aria-hidden="true" />
 
             <div className="relative flex items-start gap-3 p-4">
                 <div className={`${styles.chip} ${isTooltip ? 'p-2' : 'p-2.5'} rounded-xl flex-shrink-0`}>
@@ -183,9 +188,12 @@ export const AlertCard = ({ alert, isTooltip = false }: AlertCardProps) => {
 
                 <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                        <span className={`${styles.chip} px-2 py-0.5 rounded-full text-[11px] font-extrabold tracking-wider whitespace-nowrap`}>
-                            {severityLabel}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <span className={`${styles.chip} px-2 py-0.5 rounded-full text-[11px] font-extrabold tracking-wider whitespace-nowrap`}>
+                                {severityLabel}
+                            </span>
+                            {timing.isNew && <NuevaBadge />}
+                        </div>
                         <span className="text-[11px] font-bold text-ink-500 whitespace-nowrap">
                             {formatTime(alert.sent)}
                         </span>
@@ -198,6 +206,15 @@ export const AlertCard = ({ alert, isTooltip = false }: AlertCardProps) => {
                     <div className="flex items-center gap-1.5 mt-1.5 text-ink-700">
                         <span className="material-symbols-outlined text-[14px]">location_on</span>
                         <span className={`text-[11px] font-semibold ${isTooltip ? 'truncate' : ''}`}>{alert.area}</span>
+                    </div>
+
+                    {/* Cuenta atrás + vigencia consumida (B1/B2) */}
+                    <div className="mt-2 space-y-1.5">
+                        <VigenciaBar progress={timing.progress} />
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-ink-500">
+                            <span className="material-symbols-outlined text-[14px]">schedule</span>
+                            <Countdown timing={timing} />
+                        </div>
                     </div>
 
                     <p className={`mt-2 text-xs leading-relaxed text-ink-700 ${isTooltip ? 'line-clamp-2' : (expanded ? '' : 'line-clamp-2')}`}>

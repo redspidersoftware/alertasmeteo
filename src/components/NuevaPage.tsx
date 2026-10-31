@@ -12,6 +12,8 @@ import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { useModalFocus } from '../hooks/useModalFocus';
+import { getAlertTiming } from '../hooks/useAlertDynamics';
+import { Countdown, VigenciaBar, NuevaBadge } from './AlertDynamics';
 
 // Leaflet pesa ~150 kB: se carga solo cuando toca pintar el mapa
 const MapView = lazy(() => import('./MapView').then((m) => ({ default: m.MapView })));
@@ -98,6 +100,8 @@ export const NuevaPage = () => {
   const [authState, setAuthState] = useState<AuthState>('login');
   const [selectedAlert, setSelectedAlert] = useState<WeatherAlert | null>(null);
   const [videoReady, setVideoReady] = useState(false);
+  // Tarjeta de la lista con descripción expandida (acordeón in-situ)
+  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
 
   // Login Form State
   const [email, setEmail] = useState('');
@@ -395,6 +399,11 @@ export const NuevaPage = () => {
     topSeverity === 'orange' ? 'bg-[#f97316]' :
     topSeverity === 'yellow' ? 'bg-[#eab308]' :
     topSeverity === 'green' ? 'bg-[#22c55e]' : 'bg-ink-500';
+
+  // Timing de la alerta en detalle (cuenta atrás, urgencia, "nueva", vigencia)
+  const detailTiming = selectedAlert
+    ? getAlertTiming(selectedAlert.sent, selectedAlert.expires, now)
+    : null;
 
   // Share an alert
   const shareAlert = async (alert: WeatherAlert) => {
@@ -1155,7 +1164,8 @@ export const NuevaPage = () => {
                               <p className="text-xs text-ink-500 mt-1">No hay alertas meteorológicas vigentes para los filtros seleccionados.</p>
                             </div>
                           ) : (
-                            filteredAlerts.map((alert) => {
+                            <AnimatePresence mode="popLayout">
+                            {filteredAlerts.map((alert, idx) => {
                               let severityBg = 'bg-[#eab308]';
                               let badgeText = 'NIVEL AMARILLO';
                               let badgeTextColors = 'text-[#001a40] bg-[#ffea85]';
@@ -1181,12 +1191,24 @@ export const NuevaPage = () => {
                               else if (evt.includes('temperatura') || evt.includes('calor') || evt.includes('frío') || evt.includes('hielo')) iconName = 'device_thermostat';
                               else if (evt.includes('viento') || evt.includes('costero') || evt.includes('galerna') || evt.includes('oleaje')) iconName = 'air';
 
+                              const timing = getAlertTiming(alert.sent, alert.expires, now);
+                              const isExpanded = expandedCardId === alert.id;
+
                               return (
-                                <article
+                                <motion.article
                                   key={alert.id}
+                                  layout
                                   role="button"
                                   tabIndex={0}
                                   aria-label={`Alerta de ${alert.event} en ${alert.area}`}
+                                  initial={{ opacity: 0, y: 12 }}
+                                  animate={{
+                                    opacity: 1,
+                                    y: 0,
+                                    transition: { duration: 0.3, delay: Math.min(idx * 0.05, 0.4) },
+                                  }}
+                                  exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.18 } }}
+                                  whileTap={{ scale: 0.98 }}
                                   onClick={() => {
                                     setSelectedAlert(alert);
                                     setCurrentTab('alertas');
@@ -1198,15 +1220,18 @@ export const NuevaPage = () => {
                                       setCurrentTab('alertas');
                                     }
                                   }}
-                                  className="bg-surface rounded-xl shadow-sm border border-line/30 flex flex-shrink-0 min-h-[120px] overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+                                  className="bg-surface rounded-xl shadow-sm border border-line/30 flex flex-shrink-0 min-h-[120px] overflow-hidden hover:shadow-md transition-shadow duration-200 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
                                 >
-                                  <div className={`active-alert-indicator ${severityBg}`}></div>
+                                  <div className={`active-alert-indicator ${severityBg} ${timing.urgent ? 'urgent-bar-pulse' : ''}`}></div>
                                   <div className="p-4 flex-grow flex flex-col justify-between">
                                     <div>
                                       <div className="flex justify-between items-start mb-2">
-                                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold tracking-wider ${badgeTextColors}`}>
-                                          {badgeText}
-                                        </span>
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold tracking-wider ${badgeTextColors}`}>
+                                            {badgeText}
+                                          </span>
+                                          {timing.isNew && <NuevaBadge />}
+                                        </div>
                                         <span className={`material-symbols-outlined ${iconColor} group-hover:scale-110 transition-transform`}>
                                           {iconName}
                                         </span>
@@ -1218,19 +1243,59 @@ export const NuevaPage = () => {
                                         {alert.area}
                                       </p>
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-ink-700 mt-3 border-t border-line/10 pt-2 text-[11px] font-semibold">
-                                      <span className="material-symbols-outlined text-[14px]">schedule</span>
-                                      <span>
-                                        Vigente hasta {new Date(alert.expires).toLocaleTimeString('es-ES', {
-                                          hour: '2-digit',
-                                          minute: '2-digit',
-                                        })}
-                                      </span>
+                                    <div>
+                                      <div className="flex items-center justify-between gap-1.5 text-ink-700 mt-3 border-t border-line/10 pt-2 text-[11px] font-semibold">
+                                        <span className="flex items-center gap-1.5 min-w-0">
+                                          <span className="material-symbols-outlined text-[14px]">schedule</span>
+                                          <span className="truncate">
+                                            <Countdown timing={timing} />
+                                          </span>
+                                        </span>
+                                        <button
+                                          type="button"
+                                          aria-expanded={isExpanded}
+                                          aria-label={isExpanded ? 'Ocultar descripción de la alerta' : 'Ver descripción de la alerta'}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setExpandedCardId(isExpanded ? null : alert.id);
+                                          }}
+                                          onKeyDown={(e) => e.stopPropagation()}
+                                          className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-md text-brand-ink hover:bg-brand-100/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                                        >
+                                          <span
+                                            className="material-symbols-outlined text-[16px] transition-transform duration-200"
+                                            style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}
+                                          >
+                                            expand_more
+                                          </span>
+                                        </button>
+                                      </div>
+
+                                      {/* C1 — Acordeón in-situ con la descripción */}
+                                      <AnimatePresence initial={false}>
+                                        {isExpanded && (
+                                          <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                            className="overflow-hidden"
+                                          >
+                                            <p className="pt-2 text-xs leading-relaxed text-ink-700">
+                                              {alert.description || 'Sin descripción detallada disponible en el boletín técnico.'}
+                                            </p>
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+
+                                      {/* B2 — Vigencia consumida a sangre de la tarjeta */}
+                                      <VigenciaBar progress={timing.progress} className="-mx-4 -mb-4 mt-3" />
                                     </div>
                                   </div>
-                                </article>
+                                </motion.article>
                               );
-                            })
+                            })}
+                            </AnimatePresence>
                           )}
                         </div>
                       </aside>
@@ -1518,7 +1583,11 @@ export const NuevaPage = () => {
                       {selectedAlert ? (
                         <div className="space-y-6">
                           {/* Hero Alert Card */}
-                          <section className={`relative bg-surface rounded-2xl border-2 border-l-[10px] shadow-sm overflow-hidden transition-all ${selectedAlert.severity === 'orange' || selectedAlert.severity === 'red' ? 'urgent-pulse' : ''}`}
+                          <motion.section
+                            initial={{ opacity: 0, y: 14 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.35 }}
+                            className={`relative bg-surface rounded-2xl border-2 border-l-[10px] shadow-sm overflow-hidden transition-colors ${selectedAlert.severity === 'orange' || selectedAlert.severity === 'red' ? 'urgent-pulse' : ''}`}
                             style={{
                               borderColor: selectedAlert.severity === 'red' ? '#ba1a1a' : selectedAlert.severity === 'orange' ? '#f97316' : '#eab308'
                             }}
@@ -1577,6 +1646,7 @@ export const NuevaPage = () => {
                                 >
                                   Aviso Nivel {selectedAlert.severity === 'red' ? 'Rojo' : selectedAlert.severity === 'orange' ? 'Naranja' : 'Amarillo'}
                                 </span>
+                                {detailTiming?.isNew && <NuevaBadge />}
                               </div>
                               <div className="flex items-center gap-2">
                                 <div className="flex items-center gap-1.5 bg-surface px-3 py-1 rounded-lg border border-line/20 text-[11px] font-semibold text-ink-700">
@@ -1602,6 +1672,28 @@ export const NuevaPage = () => {
                                   <span className="text-xs uppercase">{selectedAlert.area}</span>
                                 </div>
                               </div>
+                              {/* B1 + B2 — Cuenta atrás y vigencia consumida */}
+                              {detailTiming && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 8 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ duration: 0.3, delay: 0.12 }}
+                                  className="flex items-center gap-3 bg-canvas/80 border border-line/30 p-3 rounded-xl"
+                                >
+                                  <span className={`material-symbols-outlined text-lg ${detailTiming.urgent ? 'text-[#ba1a1a]' : 'text-brand-ink'}`}>
+                                    hourglass_bottom
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-baseline justify-between gap-2">
+                                      <p className="text-[11px] font-bold uppercase tracking-wider">
+                                        <Countdown timing={detailTiming} />
+                                      </p>
+                                      {detailTiming.isNew && <NuevaBadge />}
+                                    </div>
+                                    <VigenciaBar progress={detailTiming.progress} className="mt-1.5" />
+                                  </div>
+                                </motion.div>
+                              )}
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="bg-canvas/80 backdrop-blur-[2px] p-4 rounded-xl border border-line/30">
                                   <p className="text-[11px] font-bold uppercase text-ink-500 tracking-wider mb-1">Severidad</p>
@@ -1650,10 +1742,14 @@ export const NuevaPage = () => {
                                 </button>
                               </div>
                             </div>
-                          </section>
+                          </motion.section>
 
                           {/* Technical Description */}
-                          <section className="bg-surface p-6 rounded-2xl border border-line/30 shadow-sm space-y-3">
+                          <motion.section
+                            initial={{ opacity: 0, y: 14 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.35, delay: 0.08 }}
+                            className="bg-surface p-6 rounded-2xl border border-line/30 shadow-sm space-y-3">
                             <div className="flex items-center gap-2">
                               <span className="material-symbols-outlined text-brand-ink">monitoring</span>
                               <h3 className="font-bold text-sm text-ink">Detalle Técnico</h3>
@@ -1661,10 +1757,14 @@ export const NuevaPage = () => {
                             <p className="text-xs text-ink-700 leading-relaxed whitespace-pre-line">
                               {selectedAlert.description || 'No hay descripción detallada disponible en el boletín técnico para esta alerta.'}
                             </p>
-                          </section>
+                          </motion.section>
 
                           {/* Safety Instructions */}
-                          <section className="bg-brand text-white p-6 rounded-2xl shadow-sm space-y-4">
+                          <motion.section
+                            initial={{ opacity: 0, y: 14 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.35, delay: 0.16 }}
+                            className="bg-brand text-white p-6 rounded-2xl shadow-sm space-y-4">
                             <div className="flex items-center gap-2">
                               <span className="material-symbols-outlined text-[#acc7ff]">safety_check</span>
                               <h3 className="font-bold text-sm">Instrucciones de Seguridad</h3>
@@ -1676,10 +1776,14 @@ export const NuevaPage = () => {
                               <span className="bg-white/20 px-3 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider">Evite zonas inundables</span>
                               <span className="bg-white/20 px-3 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider">Cierre puertas y ventanas</span>
                             </div>
-                          </section>
+                          </motion.section>
 
                           {/* Emergency Contacts */}
-                          <section className="bg-surface-3/50 p-6 rounded-2xl border border-line/20 space-y-4">
+                          <motion.section
+                            initial={{ opacity: 0, y: 14 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.35, delay: 0.24 }}
+                            className="bg-surface-3/50 p-6 rounded-2xl border border-line/20 space-y-4">
                             <h4 className="text-[11px] font-bold uppercase text-ink-500 tracking-wider">Contactos de Emergencia</h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <a href="tel:112" className="flex items-center justify-between p-4 bg-surface rounded-xl shadow-sm border border-line/10 active:bg-red-50 transition-all group">
@@ -1708,7 +1812,7 @@ export const NuevaPage = () => {
                                 <span className="text-xl font-extrabold text-brand-ink">061</span>
                               </a>
                             </div>
-                          </section>
+                          </motion.section>
                         </div>
                       ) : (
                         <div className="bg-surface rounded-2xl border border-line/30 p-12 text-center text-ink-500 space-y-4">

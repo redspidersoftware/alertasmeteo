@@ -609,6 +609,36 @@ body {
   color: var(--brand-ink);
 }
 
+/* ── Tarjetas de alertas dinámicas ── */
+/* Brillo del chip "Nueva" (sweep horizontal) */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  60%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Pulso para barras de severidad (fondo, no borde — complementa a .urgent-pulse) */
+.urgent-bar-pulse {
+  animation: bar-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes bar-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
 /* ── Accesibilidad: movimiento reducido ──
    framer-motion se respeta con <MotionConfig reducedMotion="user"> en App.tsx */
 @media (prefers-reduced-motion: reduce) {
