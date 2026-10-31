@@ -28,8 +28,19 @@ const severityOrder = {
     'unknown': 0
 };
 
-const TILE_ATTRIBUTION =
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+// Fuentes de tiles SIN API key.
+// Nota: CARTO (basemaps.cartocdn.com) exige ahora API key y sirve tiles de
+// error ("API KEY REQUIRED"), por eso se usa OSM (claro) y Esri Gray Canvas (oscuro).
+const TILE_SOURCES = {
+    light: {
+        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    },
+    dark: {
+        url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+        attribution: 'Tiles &copy; <a href="https://www.esri.com/">Esri</a> &mdash; Esri, HERE, Garmin, FAO, NOAA, USGS, OpenStreetMap contributors, GIS User Community',
+    },
+} as const;
 
 const parseSingleRing = (ringStr: string): LatLngTuple[] => {
     if (typeof ringStr !== 'string' || !ringStr.trim()) return [];
@@ -149,16 +160,11 @@ export const MapView = ({ alerts, darkMode = false, onSelectAlert }: MapViewProp
                 scrollWheelZoom={true}
                 zoomControl={false}
             >
-                {/* CartoDB Positron (claro) / Dark Matter (oscuro) — coherentes con la UI */}
+                {/* OSM (claro) / Esri Dark Gray Canvas (oscuro) — sin API key */}
                 <TileLayer
                     key={darkMode ? 'dark' : 'light'}
-                    attribution={TILE_ATTRIBUTION}
-                    url={
-                        darkMode
-                            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                            : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-                    }
-                    subdomains={['a', 'b', 'c', 'd']}
+                    attribution={TILE_SOURCES[darkMode ? 'dark' : 'light'].attribution}
+                    url={TILE_SOURCES[darkMode ? 'dark' : 'light'].url}
                 />
 
                 <MapControls />
