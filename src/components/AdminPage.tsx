@@ -190,12 +190,12 @@ const downloadCsv = (filename: string, rows: (string | number)[][]) => {
 /* ══════════════ COMPONENTES REUTILIZABLES ══════════════ */
 
 const StatCard = ({ icon, color, label, value, hint, spark, sparkColor }: { icon: string; color: string; label: string; value: ReactNode; hint?: string; spark?: number[]; sparkColor?: string }) => (
-    <div className="bg-white rounded-2xl border border-[#c2c6d4]/30 shadow-sm p-5 hover:shadow-md transition-shadow">
+    <div className="bg-surface rounded-2xl border border-line/30 shadow-sm p-5 hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#727784]">{label}</p>
-                <p className="text-3xl font-extrabold text-[#181c20] mt-1.5 leading-none">{value}</p>
-                {hint && <p className="text-[11px] text-[#727784] mt-1.5 truncate">{hint}</p>}
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-500">{label}</p>
+                <p className="text-3xl font-extrabold text-ink mt-1.5 leading-none">{value}</p>
+                {hint && <p className="text-xs text-ink-500 mt-1.5 truncate">{hint}</p>}
             </div>
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: color }}>
                 <span className="material-symbols-outlined text-white" style={{ fontSize: 22 }}>{icon}</span>
@@ -210,14 +210,14 @@ const StatCard = ({ icon, color, label, value, hint, spark, sparkColor }: { icon
 );
 
 const Card = ({ icon, title, sub, action, children, pad = true }: { icon: string; title: string; sub?: string; action?: ReactNode; children: ReactNode; pad?: boolean }) => (
-    <section className="bg-white rounded-2xl border border-[#c2c6d4]/30 shadow-sm overflow-hidden">
-        <header className="px-5 py-4 border-b border-[#c2c6d4]/30 flex items-center gap-3 flex-wrap">
+    <section className="bg-surface rounded-2xl border border-line/30 shadow-sm overflow-hidden">
+        <header className="px-5 py-4 border-b border-line/30 flex items-center gap-3 flex-wrap">
             <div className="w-9 h-9 rounded-lg bg-[#d7e2ff] flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-[#003f87]" style={{ fontSize: 20 }}>{icon}</span>
+                <span className="material-symbols-outlined text-brand-ink" style={{ fontSize: 20 }}>{icon}</span>
             </div>
             <div className="flex-1 min-w-0">
-                <h2 className="font-extrabold text-sm text-[#181c20] leading-tight">{title}</h2>
-                {sub && <p className="text-[11px] text-[#727784] leading-tight mt-0.5">{sub}</p>}
+                <h2 className="font-extrabold text-sm text-ink leading-tight">{title}</h2>
+                {sub && <p className="text-xs text-ink-500 leading-tight mt-0.5">{sub}</p>}
             </div>
             {action}
         </header>
@@ -227,44 +227,44 @@ const Card = ({ icon, title, sub, action, children, pad = true }: { icon: string
 
 const Loading = ({ text = 'Cargando...' }: { text?: string }) => (
     <div className="py-12 text-center">
-        <div className="w-7 h-7 border-2 border-[#003f87]/25 border-t-[#003f87] rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-xs font-semibold text-[#727784]">{text}</p>
+        <div className="w-7 h-7 border-2 border-brand/25 border-t-brand rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-xs font-semibold text-ink-500">{text}</p>
     </div>
 );
 
 const Empty = ({ icon, title, sub }: { icon: string; title: string; sub?: string }) => (
     <div className="py-12 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-[#f1f4f9] flex items-center justify-center mx-auto mb-3">
-            <span className="material-symbols-outlined text-[#727784]" style={{ fontSize: 28 }}>{icon}</span>
+        <div className="w-14 h-14 rounded-2xl bg-surface-3 flex items-center justify-center mx-auto mb-3">
+            <span className="material-symbols-outlined text-ink-500" style={{ fontSize: 28 }}>{icon}</span>
         </div>
-        <p className="text-sm font-bold text-[#424752]">{title}</p>
-        {sub && <p className="text-xs text-[#727784] mt-1">{sub}</p>}
+        <p className="text-sm font-bold text-ink-700">{title}</p>
+        {sub && <p className="text-xs text-ink-500 mt-1">{sub}</p>}
     </div>
 );
 
 const SearchBox = ({ value, onChange, placeholder, icon = 'search' }: { value: string; onChange: (v: string) => void; placeholder: string; icon?: string }) => (
     <div className="relative">
-        <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[#727784]" style={{ fontSize: 19 }}>{icon}</span>
+        <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500" style={{ fontSize: 19 }}>{icon}</span>
         <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-            className="w-full h-11 pl-11 pr-4 rounded-xl border border-[#c2c6d4] bg-[#f7f9ff] text-sm outline-none focus:border-[#003f87] focus:ring-2 focus:ring-[#003f87]/15 transition-all" />
+            className="w-full h-11 pl-11 pr-4 rounded-xl border border-line bg-canvas text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 transition-all" />
     </div>
 );
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
     <div>
-        <label className="text-[11px] font-bold text-[#424752] block mb-1.5">{label}</label>
+        <label className="text-xs font-bold text-ink-700 block mb-1.5">{label}</label>
         {children}
     </div>
 );
 
-const inputCls = 'w-full h-11 px-3 rounded-xl border border-[#c2c6d4] bg-[#f7f9ff] text-sm outline-none focus:border-[#003f87] focus:ring-2 focus:ring-[#003f87]/15 transition-all';
+const inputCls = 'w-full h-11 px-3 rounded-xl border border-line bg-canvas text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 transition-all';
 
 const StatChip = ({ label, value, color }: { label: string; value: number; color: string }) => (
-    <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-[#c2c6d4]/30 bg-[#f7f9ff]">
+    <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-line/30 bg-canvas">
         <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
         <div className="leading-none">
-            <p className="text-lg font-extrabold text-[#181c20]">{value}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-[#727784] mt-0.5">{label}</p>
+            <p className="text-lg font-extrabold text-ink">{value}</p>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-ink-500 mt-0.5">{label}</p>
         </div>
     </div>
 );
@@ -682,7 +682,7 @@ export const AdminPage = () => {
     /* ── BUSCADOR GLOBAL (Fase 5) ── */
     const renderGlobalSearch = (mobile: boolean) => (
         <div className={`relative ${mobile
-            ? 'md:hidden px-4 pt-3 pb-3 bg-gradient-to-r from-[#003f87] to-[#0056b3]'
+            ? 'md:hidden px-4 pt-3 pb-3 bg-gradient-to-r from-brand to-brand-500'
             : 'hidden md:block flex-1 max-w-[400px] mx-4'}`}>
             <div className="relative">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/70 z-10" style={{ fontSize: 17 }}>search</span>
@@ -695,29 +695,29 @@ export const AdminPage = () => {
                     placeholder="Buscar usuario, CP o alerta…"
                     aria-label="Buscar en el panel"
                     autoFocus={mobile}
-                    className="w-full h-9 pl-9 pr-3 rounded-xl bg-white/15 border border-white/20 text-white text-sm placeholder-white/60 outline-none focus:bg-white focus:text-[#181c20] focus:placeholder-[#727784] focus:border-white transition-all" />
+                    className="w-full h-9 pl-9 pr-3 rounded-xl bg-white/15 border border-white/20 text-white text-sm placeholder-white/60 outline-none focus:bg-surface focus:text-ink focus:placeholder-ink-500 focus:border-white transition-all" />
             </div>
             {gOpen && gResults !== null && (
-                <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl shadow-2xl border border-[#c2c6d4]/40 overflow-hidden max-h-[70vh] overflow-y-auto">
+                <div className="absolute left-0 right-0 top-full mt-1.5 bg-surface rounded-2xl shadow-2xl border border-line/40 overflow-hidden max-h-[70vh] overflow-y-auto">
                     {gResults.length === 0 ? (
                         <div className="px-4 py-5 text-center">
-                            <p className="text-xs font-bold text-[#424752]">Sin resultados para «{gSearch.trim()}»</p>
-                            <p className="text-[10px] text-[#727784] mt-1">Prueba con un email, un código postal (28001) o el nombre de una zona</p>
+                            <p className="text-xs font-bold text-ink-700">Sin resultados para «{gSearch.trim()}»</p>
+                            <p className="text-[11px] text-ink-500 mt-1">Prueba con un email, un código postal (28001) o el nombre de una zona</p>
                         </div>
                     ) : gResults.map(group => (
                         <div key={group.group}>
-                            <p className="px-4 pt-2.5 pb-1 text-[9px] font-extrabold uppercase tracking-wider text-[#727784] bg-[#f7f9ff]">{group.group}</p>
+                            <p className="px-4 pt-2.5 pb-1 text-xs font-extrabold uppercase tracking-wider text-ink-500 bg-canvas">{group.group}</p>
                             {group.items.map(it => (
                                 <button key={it.id} onMouseDown={e => { e.preventDefault(); it.go(); }}
-                                    className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-[#f7f9ff] transition-colors border-t border-[#c2c6d4]/20">
+                                    className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-canvas transition-colors border-t border-line/20">
                                     <span className="w-7 h-7 rounded-lg bg-[#d7e2ff] flex items-center justify-center flex-shrink-0">
-                                        <span className="material-symbols-outlined text-[#003f87]" style={{ fontSize: 15 }}>{it.icon}</span>
+                                        <span className="material-symbols-outlined text-brand-ink" style={{ fontSize: 15 }}>{it.icon}</span>
                                     </span>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-xs font-bold text-[#181c20] truncate">{it.label}</p>
-                                        {it.sub && <p className="text-[10px] text-[#727784] truncate">{it.sub}</p>}
+                                        <p className="text-xs font-bold text-ink truncate">{it.label}</p>
+                                        {it.sub && <p className="text-[11px] text-ink-500 truncate">{it.sub}</p>}
                                     </div>
-                                    <span className="material-symbols-outlined text-[#727784]" style={{ fontSize: 16 }}>arrow_forward</span>
+                                    <span className="material-symbols-outlined text-ink-500" style={{ fontSize: 16 }}>arrow_forward</span>
                                 </button>
                             ))}
                         </div>
@@ -957,17 +957,17 @@ export const AdminPage = () => {
     /* ══════════ LOGIN ══════════ */
     if (!token) {
         return (
-            <div className="min-h-screen bg-[#f7f9ff] flex items-center justify-center p-5 font-['Hanken_Grotesk',sans-serif]">
+            <div className="min-h-screen bg-canvas flex items-center justify-center p-5 font-['Hanken_Grotesk',sans-serif]">
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35 }} className="w-full max-w-[420px] flex flex-col gap-6">
                     <header className="flex flex-col items-center text-center gap-3">
-                        <div className="w-16 h-16 bg-gradient-to-br from-[#003f87] to-[#0056b3] rounded-2xl flex items-center justify-center shadow-lg">
+                        <div className="w-16 h-16 bg-gradient-to-br from-brand to-brand-500 rounded-2xl flex items-center justify-center shadow-lg">
                             <span className="material-symbols-outlined text-white" style={{ fontSize: 34 }}>admin_panel_settings</span>
                         </div>
-                        <h1 className="text-2xl font-extrabold text-[#003f87] tracking-tight">Panel de Administración</h1>
-                        <p className="text-sm text-[#424752]">Acceso restringido · MeteoAlerta España</p>
+                        <h1 className="text-2xl font-extrabold text-brand-ink tracking-tight">Panel de Administración</h1>
+                        <p className="text-sm text-ink-700">Acceso restringido · MeteoAlerta España</p>
                     </header>
 
-                    <section className="bg-white rounded-3xl shadow-xl border border-[#ebeef3] p-6">
+                    <section className="bg-surface rounded-3xl shadow-xl border border-surface-2 p-6">
                         <form onSubmit={handleLogin} className="flex flex-col gap-4">
                             {loginError && (
                                 <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-2">
@@ -977,27 +977,27 @@ export const AdminPage = () => {
                             )}
                             <Field label="Usuario">
                                 <div className="relative group">
-                                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[#727784] group-focus-within:text-[#003f87] transition-colors">person</span>
+                                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500 group-focus-within:text-brand-ink transition-colors">person</span>
                                     <input id="admin-user" type="text" required autoComplete="username" value={username} onChange={e => setUsername(e.target.value)}
-                                        className="w-full h-12 pl-11 pr-4 rounded-xl border border-[#c2c6d4] bg-[#f7f9ff] text-sm outline-none transition-all focus:border-[#003f87] focus:ring-2 focus:ring-[#003f87]/20" placeholder="Tu usuario" />
+                                        className="w-full h-12 pl-11 pr-4 rounded-xl border border-line bg-canvas text-sm outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20" placeholder="Tu usuario" />
                                 </div>
                             </Field>
                             <Field label="Contraseña">
                                 <div className="relative group">
-                                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[#727784] group-focus-within:text-[#003f87] transition-colors">lock</span>
+                                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500 group-focus-within:text-brand-ink transition-colors">lock</span>
                                     <input id="admin-pass" type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)}
-                                        className="w-full h-12 pl-11 pr-4 rounded-xl border border-[#c2c6d4] bg-[#f7f9ff] text-sm outline-none transition-all focus:border-[#003f87] focus:ring-2 focus:ring-[#003f87]/20" placeholder="••••••••" />
+                                        className="w-full h-12 pl-11 pr-4 rounded-xl border border-line bg-canvas text-sm outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20" placeholder="••••••••" />
                                 </div>
                             </Field>
                             <button type="submit" disabled={loginLoading}
-                                className={`${BTN} h-12 w-full mt-1 bg-gradient-to-r from-[#003f87] to-[#0056b3] text-white text-sm shadow-md hover:brightness-110`}>
+                                className={`${BTN} h-12 w-full mt-1 bg-gradient-to-r from-brand to-brand-500 text-white text-sm shadow-md hover:brightness-110`}>
                                 {loginLoading
                                     ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                     : <><span className="material-symbols-outlined" style={{ fontSize: 18 }}>login</span>Entrar al panel</>}
                             </button>
                         </form>
                     </section>
-                    <div className="text-center"><a href="/" className="text-sm text-[#003f87] font-bold hover:underline">← Volver a la app</a></div>
+                    <div className="text-center"><a href="/" className="text-sm text-brand-ink font-bold hover:underline">← Volver a la app</a></div>
                 </motion.div>
             </div>
         );
@@ -1025,10 +1025,10 @@ export const AdminPage = () => {
                             <p className="text-xs font-extrabold text-[#b91c1c]">
                                 {downServices.length} servicio{downServices.length > 1 ? 's' : ''} caído{downServices.length > 1 ? 's' : ''}
                             </p>
-                            <p className="text-[11px] text-red-700/80">{downServices.map(s => s.label).join(' · ')}</p>
+                            <p className="text-xs text-red-700/80">{downServices.map(s => s.label).join(' · ')}</p>
                         </div>
                         <button onClick={() => goto('tests')}
-                            className={`${BTN} px-3.5 py-2 bg-white border border-red-200 text-[#b91c1c] hover:bg-red-100`}>
+                            className={`${BTN} px-3.5 py-2 bg-surface border border-red-200 text-[#b91c1c] hover:bg-red-100`}>
                             <span className="material-symbols-outlined" style={{ fontSize: 15 }}>science</span>Probar ahora
                         </button>
                     </motion.div>
@@ -1044,7 +1044,7 @@ export const AdminPage = () => {
                             <p className="text-xs font-extrabold text-[#92400e]">
                                 {coverage.unmapped.length} alerta{coverage.unmapped.length > 1 ? 's' : ''} activa{coverage.unmapped.length > 1 ? 's' : ''} sin códigos postales que la reciban
                             </p>
-                            <p className="text-[11px] text-amber-700 truncate">Cobertura actual: {coverage.pct}% de las alertas · pulsa para revisar el mapeo</p>
+                            <p className="text-xs text-amber-700 truncate">Cobertura actual: {coverage.pct}% de las alertas · pulsa para revisar el mapeo</p>
                         </div>
                         <span className="material-symbols-outlined text-[#b45309] flex-shrink-0" style={{ fontSize: 18 }}>arrow_forward</span>
                     </motion.button>
@@ -1062,7 +1062,7 @@ export const AdminPage = () => {
                 <div className="grid lg:grid-cols-5 gap-5">
                     <div className="lg:col-span-3 space-y-5">
                         <Card icon="warning" title="Alertas activas" sub="Pulsa una fila para ver el detalle completo"
-                            action={<button onClick={() => goto('alertas')} className={`${BTN} px-3 py-2 bg-[#f1f4f9] text-[#424752] hover:bg-[#e5e8ee]`}>Ver todas</button>}>
+                            action={<button onClick={() => goto('alertas')} className={`${BTN} px-3 py-2 bg-surface-3 text-ink-700 hover:bg-surface-2`}>Ver todas</button>}>
                             {panelLoading ? <Loading /> : activeAlerts.length === 0 ? (
                                 <Empty icon="weather_sunny" title="Sin alertas activas" sub="Todo tranquilo por ahora" />
                             ) : (
@@ -1070,15 +1070,15 @@ export const AdminPage = () => {
                                     {activeAlerts.map(a => {
                                         const s = sev(a.severity);
                                         return (
-                                            <div key={a.id} className="flex items-center gap-3 p-3 rounded-xl border border-[#c2c6d4]/30 bg-[#f7f9ff] hover:border-[#003f87]/40 transition-colors">
+                                            <div key={a.id} className="flex items-center gap-3 p-3 rounded-xl border border-line/30 bg-canvas hover:border-brand/40 transition-colors">
                                                 <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>
                                                     <span className="material-symbols-outlined" style={{ fontSize: 19, color: s.fg }}>{s.icon}</span>
                                                 </span>
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="text-sm font-bold text-[#181c20] truncate">{a.event}</p>
-                                                    <p className="text-[11px] text-[#727784] truncate">{a.area_desc || 'España'}</p>
+                                                    <p className="text-sm font-bold text-ink truncate">{a.event}</p>
+                                                    <p className="text-xs text-ink-500 truncate">{a.area_desc || 'España'}</p>
                                                 </div>
-                                                <span className="text-[10px] font-extrabold px-2 py-1 rounded-full flex-shrink-0" style={{ background: s.bg, color: s.fg }}>{s.label}</span>
+                                                <span className="text-[11px] font-extrabold px-2 py-1 rounded-full flex-shrink-0" style={{ background: s.bg, color: s.fg }}>{s.label}</span>
                                             </div>
                                         );
                                     })}
@@ -1091,37 +1091,37 @@ export const AdminPage = () => {
                                 {services.map(svc => {
                                     const res = svc.test ? testResult[svc.test.id] : undefined;
                                     return (
-                                        <div key={svc.id} className="p-5 rounded-2xl bg-[#f7f9ff] border border-[#c2c6d4]/40 min-w-0 flex flex-col gap-3">
+                                        <div key={svc.id} className="p-5 rounded-2xl bg-canvas border border-line/40 min-w-0 flex flex-col gap-3">
                                             <div className="flex items-start gap-3 min-w-0">
                                                 <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${svc.color}1f` }}>
                                                     <span className="material-symbols-outlined" style={{ fontSize: 23, color: svc.color }}>{svc.icon}</span>
                                                 </span>
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <p className="text-sm font-extrabold text-[#181c20] truncate">{svc.label}</p>
+                                                        <p className="text-sm font-extrabold text-ink truncate">{svc.label}</p>
                                                         <HealthBadge state={svc.state} />
                                                     </div>
-                                                    <p className="text-xs font-bold text-[#424752] mt-1">
-                                                        Última ejecución: <span className="text-[#181c20] font-extrabold">{rel(svc.last)}</span>
-                                                        <span className="text-[#727784] font-medium"> · {fmtDT(svc.last)}</span>
+                                                    <p className="text-xs font-bold text-ink-700 mt-1">
+                                                        Última ejecución: <span className="text-ink font-extrabold">{rel(svc.last)}</span>
+                                                        <span className="text-ink-500 font-medium"> · {fmtDT(svc.last)}</span>
                                                     </p>
                                                 </div>
                                             </div>
-                                            <p className="text-[11px] text-[#727784] leading-relaxed">{svc.desc}</p>
-                                            <p className="text-[11px] text-[#424752] font-semibold flex items-center gap-1.5 mt-auto">
-                                                <span className="material-symbols-outlined text-[#003f87]" style={{ fontSize: 14 }}>schedule</span>
+                                            <p className="text-xs text-ink-500 leading-relaxed">{svc.desc}</p>
+                                            <p className="text-xs text-ink-700 font-semibold flex items-center gap-1.5 mt-auto">
+                                                <span className="material-symbols-outlined text-brand-ink" style={{ fontSize: 14 }}>schedule</span>
                                                 {svc.hint}
                                             </p>
                                             <div className="flex items-center gap-2">
                                                 <button onClick={() => runServiceTest(svc)} disabled={!svc.test || res?.loading}
-                                                    className={`${BTN} h-9 px-4 bg-white border border-[#c2c6d4] text-[#424752] hover:border-[#003f87]/60 hover:text-[#003f87] hover:shadow-sm`}>
+                                                    className={`${BTN} h-9 px-4 bg-surface border border-line text-ink-700 hover:border-brand/60 hover:text-brand-ink hover:shadow-sm`}>
                                                     {res?.loading
-                                                        ? <span className="inline-flex items-center gap-2"><span className="w-3.5 h-3.5 border-2 border-[#003f87]/30 border-t-[#003f87] rounded-full animate-spin" />Probando…</span>
+                                                        ? <span className="inline-flex items-center gap-2"><span className="w-3.5 h-3.5 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />Probando…</span>
                                                         : <><span className="material-symbols-outlined" style={{ fontSize: 15 }}>bolt</span>Probar ahora</>}
                                                 </button>
                                             </div>
                                             {res && !res.loading && (
-                                                <p className={`text-[11px] font-semibold px-3 py-2 rounded-xl border break-words ${res.ok
+                                                <p className={`text-xs font-semibold px-3 py-2 rounded-xl border break-words ${res.ok
                                                     ? 'bg-green-50 text-green-800 border-green-200'
                                                     : 'bg-red-50 text-red-700 border-red-200'}`}>
                                                     {res.ok ? '✓ ' : '✗ '}{res.msg.replace(/\s+/g, ' ').slice(0, 160)}
@@ -1137,19 +1137,19 @@ export const AdminPage = () => {
                             <div className="grid md:grid-cols-2 gap-5">
                                 <div className="min-w-0">
                                     <div className="flex items-center justify-between gap-2 mb-3">
-                                        <p className="text-xs font-extrabold text-[#424752]">Notificaciones · 30 días</p>
+                                        <p className="text-xs font-extrabold text-ink-700">Notificaciones · 30 días</p>
                                         <div className="flex items-center gap-2.5 flex-wrap justify-end">
-                                            <span className="flex items-center gap-1 text-[9px] font-bold text-[#727784]"><span className="w-2 h-2 rounded-sm" style={{ background: '#0277bd' }} />{logs30Stats.email} email</span>
-                                            <span className="flex items-center gap-1 text-[9px] font-bold text-[#727784]"><span className="w-2 h-2 rounded-sm" style={{ background: '#0088cc' }} />{logs30Stats.telegram} tg</span>
-                                            <span className="flex items-center gap-1 text-[9px] font-bold text-[#727784]"><span className="w-2 h-2 rounded-sm" style={{ background: '#5e35b1' }} />{logs30Stats.push} push</span>
+                                            <span className="flex items-center gap-1 text-xs font-bold text-ink-500"><span className="w-2 h-2 rounded-sm" style={{ background: '#0277bd' }} />{logs30Stats.email} email</span>
+                                            <span className="flex items-center gap-1 text-xs font-bold text-ink-500"><span className="w-2 h-2 rounded-sm" style={{ background: '#0088cc' }} />{logs30Stats.telegram} tg</span>
+                                            <span className="flex items-center gap-1 text-xs font-bold text-ink-500"><span className="w-2 h-2 rounded-sm" style={{ background: '#5e35b1' }} />{logs30Stats.push} push</span>
                                         </div>
                                     </div>
                                     <BarChart data={notifDaily} color="#0891b2" />
                                 </div>
-                                <div className="min-w-0 md:border-l md:border-[#c2c6d4]/30 md:pl-5">
+                                <div className="min-w-0 md:border-l md:border-line/30 md:pl-5">
                                     <div className="flex items-center justify-between gap-2 mb-3">
-                                        <p className="text-xs font-extrabold text-[#424752]">Altas de usuarios · 12 semanas</p>
-                                        <p className="text-[10px] font-bold text-[#727784]">{userWeekly.reduce((n, w) => n + w.value, 0)} nuevos</p>
+                                        <p className="text-xs font-extrabold text-ink-700">Altas de usuarios · 12 semanas</p>
+                                        <p className="text-[11px] font-bold text-ink-500">{userWeekly.reduce((n, w) => n + w.value, 0)} nuevos</p>
                                     </div>
                                     <BarChart data={userWeekly} color="#003f87" />
                                 </div>
@@ -1159,7 +1159,7 @@ export const AdminPage = () => {
 
                     <div className="lg:col-span-2">
                         <Card icon="notifications" title="Actividad reciente" sub="Últimas notificaciones enviadas"
-                            action={<button onClick={() => goto('notificaciones')} className={`${BTN} px-3 py-2 bg-[#f1f4f9] text-[#424752] hover:bg-[#e5e8ee]`}>Historial</button>}>
+                            action={<button onClick={() => goto('notificaciones')} className={`${BTN} px-3 py-2 bg-surface-3 text-ink-700 hover:bg-surface-2`}>Historial</button>}>
                             {panelLoading ? <Loading /> : logs.length === 0 ? (
                                 <Empty icon="notifications_off" title="Sin notificaciones" />
                             ) : (
@@ -1167,15 +1167,15 @@ export const AdminPage = () => {
                                     {logs.map(l => {
                                         const c = ch(l.type);
                                         return (
-                                            <div key={l.id} className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-[#f7f9ff] transition-colors">
+                                            <div key={l.id} className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-canvas transition-colors">
                                                 <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: c.bg }}>
                                                     <span className="material-symbols-outlined" style={{ fontSize: 15, color: c.fg }}>{c.icon}</span>
                                                 </span>
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="text-xs font-bold text-[#181c20] truncate">{l.users?.email || l.recipient || '—'}</p>
-                                                    <p className="text-[10px] text-[#727784] truncate">{l.alert_id || c.label}</p>
+                                                    <p className="text-xs font-bold text-ink truncate">{l.users?.email || l.recipient || '—'}</p>
+                                                    <p className="text-[11px] text-ink-500 truncate">{l.alert_id || c.label}</p>
                                                 </div>
-                                                <span className="text-[10px] text-[#727784] flex-shrink-0">{rel(l.created_at)}</span>
+                                                <span className="text-[11px] text-ink-500 flex-shrink-0">{rel(l.created_at)}</span>
                                             </div>
                                         );
                                     })}
@@ -1211,7 +1211,7 @@ export const AdminPage = () => {
                         <input type="number" min={1} max={500} value={wForm.limit} onChange={e => setWForm(f => ({ ...f, limit: e.target.value }))} className={inputCls} />
                     </Field>
                     <button onClick={() => loadWeather(true, wForm)} disabled={alertsLoading}
-                        className={`${BTN} h-11 px-5 bg-[#003f87] text-white shadow hover:brightness-110`}>
+                        className={`${BTN} h-11 px-5 bg-brand text-white shadow hover:brightness-110`}>
                         {alertsLoading ? 'Buscando...' : <><span className="material-symbols-outlined" style={{ fontSize: 16 }}>search</span>Buscar</>}
                     </button>
                 </div>
@@ -1229,47 +1229,47 @@ export const AdminPage = () => {
                 {alertsLoading ? <Loading text="Consultando el servicio AEMET..." /> : alerts.length === 0 ? (
                     <Empty icon="weather_sunny" title="Sin resultados" sub="Prueba a cambiar los filtros de búsqueda" />
                 ) : (
-                    <div className="divide-y divide-[#c2c6d4]/20">
+                    <div className="divide-y divide-line/20">
                         {alerts.map(a => {
                             const s = sev(a.severity);
                             const open = openAlert === a.id;
                             return (
                                 <div key={a.id}>
                                     <button onClick={() => setOpenAlert(open ? null : a.id)}
-                                        className="w-full text-left px-5 py-3.5 flex items-center gap-3 hover:bg-[#f7f9ff] transition-colors">
+                                        className="w-full text-left px-5 py-3.5 flex items-center gap-3 hover:bg-canvas transition-colors">
                                         <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>
                                             <span className="material-symbols-outlined" style={{ fontSize: 19, color: s.fg }}>{s.icon}</span>
                                         </span>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <p className="text-sm font-bold text-[#181c20]">{a.event}</p>
-                                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: s.bg, color: s.fg }}>{s.label}</span>
+                                                <p className="text-sm font-bold text-ink">{a.event}</p>
+                                                <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: s.bg, color: s.fg }}>{s.label}</span>
                                             </div>
-                                            <p className="text-[11px] text-[#727784] truncate">{a.area_desc || 'España'}</p>
+                                            <p className="text-xs text-ink-500 truncate">{a.area_desc || 'España'}</p>
                                         </div>
                                         <div className="text-right flex-shrink-0 hidden sm:block">
-                                            <p className={`text-[11px] font-bold ${expiresSoon(a.expires) ? 'text-[#e65100]' : 'text-[#727784]'}`}>{expiresSoon(a.expires) ? '⚡ ' : ''}Expira {fmtDT(a.expires)}</p>
-                                            <p className="text-[10px] text-[#727784]">Recibida {rel(a.created_at)}</p>
+                                            <p className={`text-xs font-bold ${expiresSoon(a.expires) ? 'text-[#e65100]' : 'text-ink-500'}`}>{expiresSoon(a.expires) ? '⚡ ' : ''}Expira {fmtDT(a.expires)}</p>
+                                            <p className="text-[11px] text-ink-500">Recibida {rel(a.created_at)}</p>
                                         </div>
-                                        <span className="material-symbols-outlined text-[#727784] transition-transform" style={{ fontSize: 20, transform: open ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+                                        <span className="material-symbols-outlined text-ink-500 transition-transform" style={{ fontSize: 20, transform: open ? 'rotate(180deg)' : 'none' }}>expand_more</span>
                                     </button>
                                     <AnimatePresence initial={false}>
                                         {open && (
                                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                                                transition={{ duration: .22 }} className="overflow-hidden bg-[#f7f9ff]">
-                                                <div className="px-5 py-4 grid md:grid-cols-2 gap-4 border-t border-[#c2c6d4]/30">
+                                                transition={{ duration: .22 }} className="overflow-hidden bg-canvas">
+                                                <div className="px-5 py-4 grid md:grid-cols-2 gap-4 border-t border-line/30">
                                                     <div>
-                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#727784] mb-1">Descripción</p>
-                                                        <p className="text-xs text-[#424752] leading-relaxed">{a.description || '—'}</p>
+                                                        <p className="text-[11px] font-bold uppercase tracking-wider text-ink-500 mb-1">Descripción</p>
+                                                        <p className="text-xs text-ink-700 leading-relaxed">{a.description || '—'}</p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#727784] mb-1">Instrucciones</p>
-                                                        <p className="text-xs text-[#424752] leading-relaxed">{a.instruction || '—'}</p>
+                                                        <p className="text-[11px] font-bold uppercase tracking-wider text-ink-500 mb-1">Instrucciones</p>
+                                                        <p className="text-xs text-ink-700 leading-relaxed">{a.instruction || '—'}</p>
                                                     </div>
-                                                    <div className="md:col-span-2 flex flex-wrap gap-4 text-[11px] text-[#727784]">
-                                                        <span><strong className="text-[#424752]">Efectiva:</strong> {fmtDT(a.effective)}</span>
-                                                        <span><strong className="text-[#424752]">Expira:</strong> {fmtDT(a.expires)}</span>
-                                                        <span className="font-mono"><strong className="font-sans text-[#424752]">ID:</strong> {a.aemet_id || a.id}</span>
+                                                    <div className="md:col-span-2 flex flex-wrap gap-4 text-xs text-ink-500">
+                                                        <span><strong className="text-ink-700">Efectiva:</strong> {fmtDT(a.effective)}</span>
+                                                        <span><strong className="text-ink-700">Expira:</strong> {fmtDT(a.expires)}</span>
+                                                        <span className="font-mono"><strong className="font-sans text-ink-700">ID:</strong> {a.aemet_id || a.id}</span>
                                                     </div>
                                                 </div>
                                             </motion.div>
@@ -1304,7 +1304,7 @@ export const AdminPage = () => {
                         <input type="number" min={1} max={500} value={lForm.limit} onChange={e => setLForm(f => ({ ...f, limit: e.target.value }))} className={inputCls} />
                     </Field>
                     <button onClick={() => loadLogs(true, lForm)} disabled={logsLoading}
-                        className={`${BTN} h-11 px-5 bg-[#003f87] text-white shadow hover:brightness-110`}>
+                        className={`${BTN} h-11 px-5 bg-brand text-white shadow hover:brightness-110`}>
                         {logsLoading ? 'Buscando...' : <><span className="material-symbols-outlined" style={{ fontSize: 16 }}>search</span>Buscar</>}
                     </button>
                 </div>
@@ -1324,7 +1324,7 @@ export const AdminPage = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="bg-[#f1f4f9] text-[10px] uppercase tracking-wider text-[#727784]">
+                                <tr className="bg-surface-3 text-[11px] uppercase tracking-wider text-ink-500">
                                     <th className="text-left px-5 py-3 font-bold">Fecha y hora</th>
                                     <th className="text-left px-5 py-3 font-bold">Canal</th>
                                     <th className="text-left px-5 py-3 font-bold">Destinatario</th>
@@ -1335,24 +1335,24 @@ export const AdminPage = () => {
                                 {logs.map((l, i) => {
                                     const c = ch(l.type);
                                     return (
-                                        <tr key={l.id} className={`border-t border-[#c2c6d4]/20 hover:bg-[#f7f9ff] transition-colors ${i % 2 === 1 ? 'bg-[#f7f9ff]/60' : ''}`}>
-                                            <td className="px-5 py-3 text-xs text-[#424752] whitespace-nowrap">{fmtDT(l.created_at)}</td>
+                                        <tr key={l.id} className={`border-t border-line/20 hover:bg-canvas transition-colors ${i % 2 === 1 ? 'bg-canvas/60' : ''}`}>
+                                            <td className="px-5 py-3 text-xs text-ink-700 whitespace-nowrap">{fmtDT(l.created_at)}</td>
                                             <td className="px-5 py-3">
-                                                <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-full" style={{ background: c.bg, color: c.fg }}>
+                                                <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold px-2.5 py-1 rounded-full" style={{ background: c.bg, color: c.fg }}>
                                                     <span className="material-symbols-outlined" style={{ fontSize: 13 }}>{c.icon}</span>{c.label}
                                                 </span>
                                             </td>
                                             <td className="px-5 py-3">
-                                                <p className="font-bold text-[#181c20] text-xs truncate max-w-[180px]">{l.users?.email || l.recipient || '—'}</p>
-                                                {l.users?.name && <p className="text-[10px] text-[#727784]">{l.users.name}</p>}
+                                                <p className="font-bold text-ink text-xs truncate max-w-[180px]">{l.users?.email || l.recipient || '—'}</p>
+                                                {l.users?.name && <p className="text-[11px] text-ink-500">{l.users.name}</p>}
                                             </td>
-                                            <td className="px-5 py-3 hidden md:table-cell text-[11px] text-[#727784] font-mono truncate max-w-[260px]">{l.alert_id || '—'}</td>
+                                            <td className="px-5 py-3 hidden md:table-cell text-xs text-ink-500 font-mono truncate max-w-[260px]">{l.alert_id || '—'}</td>
                                         </tr>
                                     );
                                 })}
                             </tbody>
                         </table>
-                        <p className="px-5 py-3 text-[11px] text-[#727784] border-t border-[#c2c6d4]/20">{logs.length} registros · {lStats.total} en total</p>
+                        <p className="px-5 py-3 text-xs text-ink-500 border-t border-line/20">{logs.length} registros · {lStats.total} en total</p>
                     </div>
                 )}
             </Card>
@@ -1383,9 +1383,9 @@ export const AdminPage = () => {
             nocp: users.filter(u => !u.postalCode).length,
         };
         const chipCls = (active: boolean) =>
-            `px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${active
-                ? 'bg-[#003f87] text-white border-[#003f87] shadow-sm'
-                : 'bg-white text-[#424752] border-[#c2c6d4] hover:border-[#003f87]/50 hover:text-[#003f87]'}`;
+            `px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${active
+                ? 'bg-brand text-white border-brand shadow-sm'
+                : 'bg-surface text-ink-700 border-line hover:border-brand/50 hover:text-brand-ink'}`;
         const hasFilters = userFilter !== 'all' || !!userProv || !!search;
         return (
             <div className="space-y-5">
@@ -1399,7 +1399,7 @@ export const AdminPage = () => {
                 <Card icon="person_search" title="Usuarios registrados" sub="Busca por nombre, email o código postal · pulsa una fila para ver la ficha" pad={false}
                     action={
                         <div className="flex gap-2">
-                            <button onClick={() => loadUsers(true)} disabled={usersLoading} className={`${BTN} px-3 py-2 bg-[#f1f4f9] text-[#424752] hover:bg-[#e5e8ee]`}>
+                            <button onClick={() => loadUsers(true)} disabled={usersLoading} className={`${BTN} px-3 py-2 bg-surface-3 text-ink-700 hover:bg-surface-2`}>
                                 <span className="material-symbols-outlined" style={{ fontSize: 15 }}>refresh</span>Recargar
                             </button>
                             <button onClick={exportUsersCsv} disabled={filteredUsers.length === 0}
@@ -1408,7 +1408,7 @@ export const AdminPage = () => {
                             </button>
                         </div>
                     }>
-                    <div className="flex flex-col gap-3 p-4 border-b border-[#c2c6d4]/30">
+                    <div className="flex flex-col gap-3 p-4 border-b border-line/30">
                         <SearchBox value={search} onChange={setSearch} placeholder="Buscar por nombre, email o código postal..." />
                         <div className="flex items-center gap-2 flex-wrap">
                             {([
@@ -1416,27 +1416,27 @@ export const AdminPage = () => {
                                 ['withcp', 'Con CP'], ['nocp', 'Sin CP'],
                             ] as const).map(([id, label]) => (
                                 <button key={id} onClick={() => setUserFilter(id)} className={chipCls(userFilter === id)}>
-                                    {label} <span className={userFilter === id ? 'text-white/70' : 'text-[#727784]'}>({counts[id]})</span>
+                                    {label} <span className={userFilter === id ? 'text-white/70' : 'text-ink-500'}>({counts[id]})</span>
                                 </button>
                             ))}
                             {provinceOptions.length > 0 ? (
                                 <select value={userProv} onChange={e => setUserProv(e.target.value)}
-                                    className="h-8 pl-2.5 pr-8 rounded-full border border-[#c2c6d4] bg-white text-[11px] font-bold text-[#424752] outline-none focus:border-[#003f87] cursor-pointer">
+                                    className="h-8 pl-2.5 pr-8 rounded-full border border-line bg-surface text-xs font-bold text-ink-700 outline-none focus:border-brand cursor-pointer">
                                     <option value="">Provincia (todas)</option>
                                     {provinceOptions.map(([pref, name]) => <option key={pref} value={pref}>{name}</option>)}
                                 </select>
                             ) : (
                                 <button onClick={() => void loadPostalCodes()} disabled={postalProgress.loading}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border border-dashed transition-all ${postalProgress.loading
-                                        ? 'text-[#727784] border-[#c2c6d4] cursor-wait'
-                                        : 'text-[#003f87] border-[#003f87]/50 hover:bg-[#003f87]/5'}`}>
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border border-dashed transition-all ${postalProgress.loading
+                                        ? 'text-ink-500 border-line cursor-wait'
+                                        : 'text-brand-ink border-brand/50 hover:bg-brand/5'}`}>
                                     <span className="material-symbols-outlined" style={{ fontSize: 13 }}>download</span>
                                     {postalProgress.loading ? `Cargando CP ${postalProgress.done}/${TOTAL_POSTAL_PAGES}…` : 'Cargar provincias'}
                                 </button>
                             )}
                             {hasFilters && (
                                 <button onClick={() => { setSearch(''); setUserFilter('all'); setUserProv(''); }}
-                                    className="px-3 py-1.5 rounded-full text-[11px] font-bold text-[#b91c1c] bg-red-50 border border-red-200 hover:bg-red-100 transition-all">
+                                    className="px-3 py-1.5 rounded-full text-xs font-bold text-[#b91c1c] bg-red-50 border border-red-200 hover:bg-red-100 transition-all">
                                     Limpiar filtros
                                 </button>
                             )}
@@ -1454,7 +1454,7 @@ export const AdminPage = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="bg-[#f1f4f9] text-[10px] uppercase tracking-wider text-[#727784]">
+                                    <tr className="bg-surface-3 text-[11px] uppercase tracking-wider text-ink-500">
                                         <th className="text-left px-5 py-3 font-bold">Usuario</th>
                                         <th className="text-left px-5 py-3 font-bold hidden md:table-cell">Código Postal</th>
                                         <th className="text-left px-5 py-3 font-bold hidden lg:table-cell">Alertas</th>
@@ -1465,7 +1465,7 @@ export const AdminPage = () => {
                                 <tbody>
                                     {filteredUsers.map((u, i) => (
                                         <tr key={u.id} onClick={() => setSelUser(u)}
-                                            className={`border-t border-[#c2c6d4]/20 hover:bg-[#f7f9ff] transition-colors cursor-pointer ${i % 2 === 1 ? 'bg-[#f7f9ff]/60' : ''}`}>
+                                            className={`border-t border-line/20 hover:bg-canvas transition-colors cursor-pointer ${i % 2 === 1 ? 'bg-canvas/60' : ''}`}>
                                             <td className="px-5 py-3">
                                                 <div className="flex items-center gap-2.5">
                                                     <div className="w-8 h-8 rounded-full bg-[#d7e2ff] flex items-center justify-center text-[#003f87] font-bold text-xs flex-shrink-0">
@@ -1476,13 +1476,13 @@ export const AdminPage = () => {
                                                             <p className="font-bold truncate max-w-[180px]">{u.name || '—'}</p>
                                                             {u.isVerified && <span className="material-symbols-outlined text-[#16a34a] flex-shrink-0" style={{ fontSize: 14 }} title="Verificado">verified</span>}
                                                         </div>
-                                                        <p className="text-[11px] text-[#727784] truncate max-w-[180px]">{u.email}</p>
+                                                        <p className="text-xs text-ink-500 truncate max-w-[180px]">{u.email}</p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-5 py-3 hidden md:table-cell"><span className="font-mono font-bold text-[#424752]">{u.postalCode || '—'}</span></td>
-                                            <td className="px-5 py-3 hidden lg:table-cell"><span className="text-[10px] font-bold bg-[#ebeef3] text-[#424752] px-2 py-1 rounded-full">{u.preferredSeverities.length} niveles</span></td>
-                                            <td className="px-5 py-3 hidden lg:table-cell text-xs text-[#727784]">{fmtD(u.createdAt)}</td>
+                                            <td className="px-5 py-3 hidden md:table-cell"><span className="font-mono font-bold text-ink-700">{u.postalCode || '—'}</span></td>
+                                            <td className="px-5 py-3 hidden lg:table-cell"><span className="text-[11px] font-bold bg-surface-2 text-ink-700 px-2 py-1 rounded-full">{u.preferredSeverities.length} niveles</span></td>
+                                            <td className="px-5 py-3 hidden lg:table-cell text-xs text-ink-500">{fmtD(u.createdAt)}</td>
                                             <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
                                                 <button onClick={() => handleDeleteUser(u)}
                                                     className={`${BTN} px-3 py-1.5 bg-red-50 hover:bg-red-100 text-[#ba1a1a] ml-auto`}>
@@ -1493,7 +1493,7 @@ export const AdminPage = () => {
                                     ))}
                                 </tbody>
                             </table>
-                            <p className="px-5 py-3 text-[11px] text-[#727784] border-t border-[#c2c6d4]/20">{filteredUsers.length} de {users.length} usuarios · pulsa una fila para abrir la ficha</p>
+                            <p className="px-5 py-3 text-xs text-ink-500 border-t border-line/20">{filteredUsers.length} de {users.length} usuarios · pulsa una fila para abrir la ficha</p>
                         </div>
                     )}
                 </Card>
@@ -1511,16 +1511,16 @@ export const AdminPage = () => {
             </div>
 
             {postalProgress.loading && (
-                <div className="bg-white rounded-2xl border border-[#c2c6d4]/30 shadow-sm p-5">
+                <div className="bg-surface rounded-2xl border border-line/30 shadow-sm p-5">
                     <div className="flex items-center justify-between mb-2.5">
-                        <p className="text-xs font-bold text-[#424752] flex items-center gap-2">
-                            <span className="w-4 h-4 border-2 border-[#003f87]/30 border-t-[#003f87] rounded-full animate-spin inline-block" />
+                        <p className="text-xs font-bold text-ink-700 flex items-center gap-2">
+                            <span className="w-4 h-4 border-2 border-brand/30 border-t-brand rounded-full animate-spin inline-block" />
                             Descargando la base de datos completa…
                         </p>
-                        <p className="text-xs font-extrabold text-[#003f87]">{postalProgress.done}/{TOTAL_POSTAL_PAGES}</p>
+                        <p className="text-xs font-extrabold text-brand-ink">{postalProgress.done}/{TOTAL_POSTAL_PAGES}</p>
                     </div>
-                    <div className="h-2 rounded-full bg-[#ebeef3] overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-[#003f87] to-[#0056b3] transition-all duration-300"
+                    <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-brand to-brand-500 transition-all duration-300"
                             style={{ width: `${(postalProgress.done / TOTAL_POSTAL_PAGES) * 100}%` }} />
                     </div>
                 </div>
@@ -1530,7 +1530,7 @@ export const AdminPage = () => {
                 sub="Alertas activas cuyas zonas AEMET no tienen ningún código postal asignado y errores de la base"
                 action={
                     <button onClick={() => goto('mapa')}
-                        className={`${BTN} px-3 py-2 bg-[#f1f4f9] text-[#424752] hover:bg-[#e5e8ee]`}>
+                        className={`${BTN} px-3 py-2 bg-surface-3 text-ink-700 hover:bg-surface-2`}>
                         <span className="material-symbols-outlined" style={{ fontSize: 15 }}>map</span>Ver en el mapa
                     </button>
                 }>
@@ -1556,14 +1556,14 @@ export const AdminPage = () => {
                         </span>
                         <div>
                             <p className="text-xs font-extrabold text-[#15803d]">Cobertura completa</p>
-                            <p className="text-[11px] text-green-700/80">Las {coverage.total} alertas activas tienen zonas con CP asignados y la base está limpia</p>
+                            <p className="text-xs text-green-700/80">Las {coverage.total} alertas activas tienen zonas con CP asignados y la base está limpia</p>
                         </div>
                     </div>
                 ) : (
                     <div className="space-y-4">
                         {coverage.unmapped.length > 0 && (
                             <div>
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-[#b3261e] mb-2">
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-[#b3261e] mb-2">
                                     Alertas sin ningún CP que las reciba ({coverage.unmapped.length})
                                 </p>
                                 <div className="flex flex-col gap-2">
@@ -1575,22 +1575,22 @@ export const AdminPage = () => {
                                                     <span className="material-symbols-outlined" style={{ fontSize: 17, color: s.fg }}>{s.icon}</span>
                                                 </span>
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="text-xs font-bold text-[#181c20] truncate">{alert.event}</p>
-                                                    <p className="text-[10px] text-[#b3261e] truncate">Sin CP: {missing.join(', ')}</p>
+                                                    <p className="text-xs font-bold text-ink truncate">{alert.event}</p>
+                                                    <p className="text-[11px] text-[#b3261e] truncate">Sin CP: {missing.join(', ')}</p>
                                                 </div>
                                                 <button onClick={() => setPostalModal({
                                                     cp: '',
                                                     zone: missing[0].charAt(0).toUpperCase() + missing[0].slice(1),
                                                     prov: '', isNew: true,
                                                 })}
-                                                    className={`${BTN} px-3 py-1.5 bg-white border border-red-200 text-[#b3261e] hover:bg-red-50 flex-shrink-0`}>
+                                                    className={`${BTN} px-3 py-1.5 bg-surface border border-red-200 text-[#b3261e] hover:bg-red-50 flex-shrink-0`}>
                                                     <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add_location</span>Mapear CP
                                                 </button>
                                             </div>
                                         );
                                     })}
                                     {coverage.unmapped.length > 8 && (
-                                        <p className="text-[11px] text-[#727784] pl-1">…y {coverage.unmapped.length - 8} alertas más sin cobertura</p>
+                                        <p className="text-xs text-ink-500 pl-1">…y {coverage.unmapped.length - 8} alertas más sin cobertura</p>
                                     )}
                                 </div>
                             </div>
@@ -1599,13 +1599,13 @@ export const AdminPage = () => {
                             <div className="grid sm:grid-cols-2 gap-4">
                                 {coverage.invalid.length > 0 && (
                                     <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 min-w-0">
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#b45309] mb-1.5">CP con formato inválido ({coverage.invalid.length})</p>
+                                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#b45309] mb-1.5">CP con formato inválido ({coverage.invalid.length})</p>
                                         <p className="text-xs text-amber-800 font-mono break-all">{coverage.invalid.slice(0, 12).map(p => p.postal_code || '(vacío)').join(' · ')}</p>
                                     </div>
                                 )}
                                 {coverage.duplicates.length > 0 && (
                                     <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 min-w-0">
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#b45309] mb-1.5">CP duplicados ({coverage.duplicates.length})</p>
+                                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#b45309] mb-1.5">CP duplicados ({coverage.duplicates.length})</p>
                                         <p className="text-xs text-amber-800 font-mono break-all">{coverage.duplicates.slice(0, 12).join(' · ')}</p>
                                     </div>
                                 )}
@@ -1619,16 +1619,16 @@ export const AdminPage = () => {
                 action={
                     <div className="flex gap-2">
                         <button onClick={() => loadPostalCodes(true)} disabled={postalProgress.loading}
-                            className={`${BTN} px-3 py-2 bg-[#f1f4f9] text-[#424752] hover:bg-[#e5e8ee]`}>
+                            className={`${BTN} px-3 py-2 bg-surface-3 text-ink-700 hover:bg-surface-2`}>
                             <span className="material-symbols-outlined" style={{ fontSize: 15 }}>refresh</span>Recargar
                         </button>
                         <button onClick={() => setPostalModal({ cp: '', zone: '', prov: '', isNew: true })}
-                            className={`${BTN} px-3.5 py-2 bg-[#003f87] text-white shadow hover:brightness-110`}>
+                            className={`${BTN} px-3.5 py-2 bg-brand text-white shadow hover:brightness-110`}>
                             <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add</span>Nuevo
                         </button>
                     </div>
                 }>
-                <div className="p-4 border-b border-[#c2c6d4]/30">
+                <div className="p-4 border-b border-line/30">
                     <SearchBox value={postalSearch} onChange={setPostalSearch} placeholder="Buscar código postal, zona o provincia..." />
                 </div>
 
@@ -1641,7 +1641,7 @@ export const AdminPage = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="bg-[#f1f4f9] text-[10px] uppercase tracking-wider text-[#727784]">
+                                    <tr className="bg-surface-3 text-[11px] uppercase tracking-wider text-ink-500">
                                         <th className="text-left px-5 py-3 font-bold">Código Postal</th>
                                         <th className="text-left px-5 py-3 font-bold">Zona AEMET</th>
                                         <th className="text-left px-5 py-3 font-bold hidden sm:table-cell">Provincia</th>
@@ -1650,13 +1650,13 @@ export const AdminPage = () => {
                                 </thead>
                                 <tbody>
                                     {postalFiltered.slice(0, 300).map((p, i) => (
-                                        <tr key={p.postal_code} className={`border-t border-[#c2c6d4]/20 hover:bg-[#f7f9ff] transition-colors ${i % 2 === 1 ? 'bg-[#f7f9ff]/60' : ''}`}>
-                                            <td className="px-5 py-2.5"><span className="font-mono font-extrabold text-[#181c20]">{p.postal_code}</span></td>
-                                            <td className="px-5 py-2.5 text-[#424752]">{p.aemet_zone_name}</td>
-                                            <td className="px-5 py-2.5 text-[#727784] hidden sm:table-cell">{p.province}</td>
+                                        <tr key={p.postal_code} className={`border-t border-line/20 hover:bg-canvas transition-colors ${i % 2 === 1 ? 'bg-canvas/60' : ''}`}>
+                                            <td className="px-5 py-2.5"><span className="font-mono font-extrabold text-ink">{p.postal_code}</span></td>
+                                            <td className="px-5 py-2.5 text-ink-700">{p.aemet_zone_name}</td>
+                                            <td className="px-5 py-2.5 text-ink-500 hidden sm:table-cell">{p.province}</td>
                                             <td className="px-5 py-2.5 text-right whitespace-nowrap">
                                                 <button onClick={() => setPostalModal({ cp: p.postal_code, zone: p.aemet_zone_name, prov: p.province, isNew: false })}
-                                                    className={`${BTN} px-2.5 py-1.5 bg-[#f1f4f9] hover:bg-[#e5e8ee] text-[#424752] mr-1.5`}>
+                                                    className={`${BTN} px-2.5 py-1.5 bg-surface-3 hover:bg-surface-2 text-ink-700 mr-1.5`}>
                                                     <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit</span>
                                                 </button>
                                                 <button onClick={() => deletePostal(p.postal_code)}
@@ -1669,7 +1669,7 @@ export const AdminPage = () => {
                                 </tbody>
                             </table>
                         </div>
-                        <p className="px-5 py-3 text-[11px] text-[#727784] border-t border-[#c2c6d4]/20">
+                        <p className="px-5 py-3 text-xs text-ink-500 border-t border-line/20">
                             Mostrando {Math.min(300, postalFiltered.length)} de {postalFiltered.length} coincidencias · {postal.length} en total
                         </p>
                     </>
@@ -1711,17 +1711,17 @@ export const AdminPage = () => {
                                 </Field>
                             </div>
                             <button onClick={() => saveConfigValues([['daily_forecast_time', cfg.daily_forecast_time || '']])}
-                                className={`${BTN} h-11 px-5 bg-[#003f87] text-white shadow hover:brightness-110`}>Guardar</button>
+                                className={`${BTN} h-11 px-5 bg-brand text-white shadow hover:brightness-110`}>Guardar</button>
                         </div>
-                        <p className="text-[11px] text-[#727784] mt-2.5 flex items-center gap-1.5">
+                        <p className="text-xs text-ink-500 mt-2.5 flex items-center gap-1.5">
                             <span className="inline-block w-2 h-2 rounded-full" style={{ background: cfg.last_daily_sent_id ? '#22c55e' : '#9ca3af' }} />
-                            Último envío: <strong className="text-[#181c20]">{cfg.last_daily_sent_id || 'Ninguno'}</strong>
-                            {cfg.last_daily_sent_date && <span className="text-[#727784]">· registrado {cfg.last_daily_sent_date}</span>}
+                            Último envío: <strong className="text-ink">{cfg.last_daily_sent_id || 'Ninguno'}</strong>
+                            {cfg.last_daily_sent_date && <span className="text-ink-500">· registrado {cfg.last_daily_sent_date}</span>}
                         </p>
                     </ConfigBlock>
 
                     <ConfigBlock title="Resumen Telegram" icon="send">
-                        <p className="text-xs text-[#727784] mb-3">Horas (0-23, separadas por coma) y niveles de alerta que se envían al canal.</p>
+                        <p className="text-xs text-ink-500 mb-3">Horas (0-23, separadas por coma) y niveles de alerta que se envían al canal.</p>
                         <div className="grid sm:grid-cols-2 gap-4">
                             <Field label="Horas (ej: 9, 17)">
                                 <input type="text" defaultValue={parseHours(cfg.telegram_summary_hours, [9, 17]).join(', ')} id="tg-hours" placeholder="9, 17" className={inputCls} />
@@ -1731,7 +1731,7 @@ export const AdminPage = () => {
                                     {(['red', 'orange', 'yellow'] as const).map(lvl => (
                                         <label key={lvl} className="flex items-center gap-1.5 text-sm font-semibold capitalize cursor-pointer">
                                             <input type="checkbox" value={lvl} defaultChecked={parseLevels(cfg.telegram_summary_levels).includes(lvl)} data-tg-level
-                                                className="rounded border-[#727784] text-[#003f87] focus:ring-[#003f87] h-4 w-4" />
+                                                className="rounded border-ink-500 text-brand-ink focus:ring-brand h-4 w-4" />
                                             {lvl === 'red' ? 'Rojo' : lvl === 'orange' ? 'Naranja' : 'Amarillo'}
                                         </label>
                                     ))}
@@ -1747,7 +1747,7 @@ export const AdminPage = () => {
                     </ConfigBlock>
 
                     <ConfigBlock title="Autoposting Twitter/X" icon="alternate_email">
-                        <p className="text-xs text-[#727784] mb-3">Horas (0-23, separadas por coma) en las que se publica la previsión nacional automáticamente.</p>
+                        <p className="text-xs text-ink-500 mb-3">Horas (0-23, separadas por coma) en las que se publica la previsión nacional automáticamente.</p>
                         <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
                             <div className="flex-1">
                                 <Field label="Horas de envío (ej: 8, 20)">
@@ -1763,7 +1763,7 @@ export const AdminPage = () => {
                     </ConfigBlock>
 
                     <ConfigBlock title="Frecuencia y Rendimiento AEMET" icon="network_check">
-                        <p className="text-xs text-[#727784] mb-3">Ajusta la frecuencia de descarga de alertas para evitar bloqueos por límite de peticiones (429).</p>
+                        <p className="text-xs text-ink-500 mb-3">Ajusta la frecuencia de descarga de alertas para evitar bloqueos por límite de peticiones (429).</p>
                         <div className="grid sm:grid-cols-2 gap-4">
                             <Field label="Intervalo de comprobación (minutos)">
                                 <input type="number" min={1} max={60} defaultValue={cfg.aemet_check_interval_minutes || '15'} id="aemet-interval" className={inputCls} />
@@ -1780,7 +1780,7 @@ export const AdminPage = () => {
                     </ConfigBlock>
 
                     <ConfigBlock title="Soporte y Contacto" icon="contact_support">
-                        <p className="text-xs text-[#727784] mb-3">Destino de los mensajes de los formularios de contacto de la app (pestaña Información y Soporte y modal de reporte).</p>
+                        <p className="text-xs text-ink-500 mb-3">Destino de los mensajes de los formularios de contacto de la app (pestaña Información y Soporte y modal de reporte).</p>
                         <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
                             <div className="flex-1">
                                 <Field label="Email de destino">
@@ -1792,42 +1792,42 @@ export const AdminPage = () => {
                                 const v = (cfg.support_email || '').trim();
                                 if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { notify('err', 'Introduce un email válido'); return; }
                                 void saveConfigValues([['support_email', v]], 'Email de soporte guardado');
-                            }} className={`${BTN} h-11 px-5 bg-[#003f87] text-white shadow hover:brightness-110`}>Guardar</button>
+                            }} className={`${BTN} h-11 px-5 bg-brand text-white shadow hover:brightness-110`}>Guardar</button>
                         </div>
-                        <p className="text-[11px] text-[#727784] mt-2.5">
-                            Actual: <strong className="text-[#181c20]">{cfg.support_email || 'ochentainueve@gmail.com (por defecto)'}</strong>
+                        <p className="text-xs text-ink-500 mt-2.5">
+                            Actual: <strong className="text-ink">{cfg.support_email || 'ochentainueve@gmail.com (por defecto)'}</strong>
                         </p>
                     </ConfigBlock>
 
                     <ConfigBlock title="Actividad del panel" icon="history">
-                        <p className="text-xs text-[#727784] mb-3">Registro de las últimas acciones realizadas en el panel (borrados, cambios de configuración y CP). Se conservan las 100 más recientes.</p>
+                        <p className="text-xs text-ink-500 mb-3">Registro de las últimas acciones realizadas en el panel (borrados, cambios de configuración y CP). Se conservan las 100 más recientes.</p>
                         {auditEntries.length === 0 ? (
-                            <div className="p-4 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30 text-center">
-                                <p className="text-xs font-bold text-[#424752]">Sin actividad registrada</p>
-                                <p className="text-[11px] text-[#727784] mt-0.5">Las acciones que realices a partir de ahora aparecerán aquí</p>
+                            <div className="p-4 rounded-xl bg-canvas border border-line/30 text-center">
+                                <p className="text-xs font-bold text-ink-700">Sin actividad registrada</p>
+                                <p className="text-xs text-ink-500 mt-0.5">Las acciones que realices a partir de ahora aparecerán aquí</p>
                             </div>
                         ) : (
-                            <div className="rounded-xl border border-[#c2c6d4]/30 overflow-hidden">
-                                <div className="max-h-[260px] overflow-y-auto divide-y divide-[#c2c6d4]/20">
+                            <div className="rounded-xl border border-line/30 overflow-hidden">
+                                <div className="max-h-[260px] overflow-y-auto divide-y divide-line/20">
                                     {auditEntries.map((e, i) => (
-                                        <div key={`${e.t}-${i}`} className="flex items-start gap-3 px-3.5 py-2.5 hover:bg-[#f7f9ff] transition-colors">
+                                        <div key={`${e.t}-${i}`} className="flex items-start gap-3 px-3.5 py-2.5 hover:bg-canvas transition-colors">
                                             <span className="w-7 h-7 rounded-lg bg-[#d7e2ff] flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                <span className="material-symbols-outlined text-[#003f87]" style={{ fontSize: 14 }}>admin_panel_settings</span>
+                                                <span className="material-symbols-outlined text-brand-ink" style={{ fontSize: 14 }}>admin_panel_settings</span>
                                             </span>
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-xs font-semibold text-[#181c20] break-words">{e.what}</p>
-                                                <p className="text-[10px] text-[#727784] mt-0.5">{e.who} · {fmtDT(e.t)} · {rel(e.t)}</p>
+                                                <p className="text-xs font-semibold text-ink break-words">{e.what}</p>
+                                                <p className="text-[11px] text-ink-500 mt-0.5">{e.who} · {fmtDT(e.t)} · {rel(e.t)}</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="flex justify-end px-3.5 py-2.5 border-t border-[#c2c6d4]/20 bg-[#f7f9ff]">
+                                <div className="flex justify-end px-3.5 py-2.5 border-t border-line/20 bg-canvas">
                                     <button onClick={() => {
                                         if (!confirm('¿Borrar el registro de actividad?')) return;
                                         void saveRawConfig('admin_audit_log', '[]');
                                         notify('ok', 'Registro de actividad borrado');
                                     }}
-                                        className={`${BTN} px-3 py-1.5 bg-white border border-[#c2c6d4] text-[#b3261e] hover:bg-red-50 hover:border-red-200`}>
+                                        className={`${BTN} px-3 py-1.5 bg-surface border border-line text-[#b3261e] hover:bg-red-50 hover:border-red-200`}>
                                         <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete_sweep</span>Borrar registro
                                     </button>
                                 </div>
@@ -1921,11 +1921,11 @@ export const AdminPage = () => {
             </TestSection>
 
             <TestSection icon="wb_sunny" title="Predicción Nacional AEMET — Hoy" sub="Texto de predicción nacional obtenido de la API en tiempo real">
-                <div className="p-5 text-sm leading-relaxed text-[#424752] whitespace-pre-wrap max-h-[350px] overflow-y-auto font-mono bg-[#f7f9ff] rounded-xl border border-[#c2c6d4]/30">
+                <div className="p-5 text-sm leading-relaxed text-ink-700 whitespace-pre-wrap max-h-[350px] overflow-y-auto font-mono bg-canvas rounded-xl border border-line/30">
                     {nationalPrediction}
                 </div>
                 <button onClick={() => { setNationalPrediction('Cargando...'); loaded.current.delete('tests'); loadWorkerData(true); }}
-                    className={`${BTN} mt-3 h-10 px-4 bg-white border border-[#c2c6d4] text-[#424752] hover:bg-[#f1f4f9]`}>
+                    className={`${BTN} mt-3 h-10 px-4 bg-surface border border-line text-ink-700 hover:bg-surface-3`}>
                     <span className="material-symbols-outlined" style={{ fontSize: 15 }}>refresh</span>Actualizar predicción
                 </button>
             </TestSection>
@@ -1947,29 +1947,29 @@ export const AdminPage = () => {
         const pushRes = testResult[`u-push-${u.id}`];
 
         const dataCell = (label: string, value: ReactNode) => (
-            <div className="p-3 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30 min-w-0">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-[#727784]">{label}</p>
-                <p className="text-xs font-extrabold text-[#181c20] mt-1 truncate" title={typeof value === 'string' ? value : undefined}>{value}</p>
+            <div className="p-3 rounded-xl bg-canvas border border-line/30 min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-ink-500">{label}</p>
+                <p className="text-xs font-extrabold text-ink mt-1 truncate" title={typeof value === 'string' ? value : undefined}>{value}</p>
             </div>
         );
 
         return (
             <motion.aside initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
                 transition={{ type: 'tween', duration: .22, ease: 'easeOut' }}
-                className="absolute right-0 top-0 h-full w-full sm:max-w-[440px] bg-white shadow-2xl flex flex-col"
+                className="absolute right-0 top-0 h-full w-full sm:max-w-[440px] bg-surface shadow-2xl flex flex-col"
                 role="dialog" aria-label={`Ficha de ${u.email}`}>
-                <header className="px-5 py-4 bg-gradient-to-r from-[#003f87] to-[#0056b3] text-white flex items-start gap-3 flex-shrink-0">
+                <header className="px-5 py-4 bg-gradient-to-r from-brand to-brand-500 text-white flex items-start gap-3 flex-shrink-0">
                     <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center font-extrabold text-lg flex-shrink-0">
                         {(u.name || u.email || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
                         <p className="font-extrabold leading-tight truncate">{u.name || 'Sin nombre'}</p>
-                        <p className="text-[11px] text-white/75 truncate">{u.email}</p>
+                        <p className="text-xs text-white/75 truncate">{u.email}</p>
                         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                            <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${u.isVerified ? 'bg-green-400/25 text-green-100' : 'bg-white/15 text-white/80'}`}>
+                            <span className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${u.isVerified ? 'bg-green-400/25 text-green-100' : 'bg-white/15 text-white/80'}`}>
                                 {u.isVerified ? '✓ Verificado' : 'Sin verificar'}
                             </span>
-                            <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-white/15 text-white/80 font-mono">
+                            <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-white/15 text-white/80 font-mono">
                                 {u.postalCode || 'sin CP'}
                             </span>
                         </div>
@@ -1989,44 +1989,44 @@ export const AdminPage = () => {
                     </div>
 
                     <section>
-                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#727784] mb-2">Zona AEMET y alertas activas</h4>
+                        <h4 className="text-[11px] font-bold uppercase tracking-wider text-ink-500 mb-2">Zona AEMET y alertas activas</h4>
                         {!u.postalCode ? (
-                            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
+                            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
                                 Este usuario no tiene código postal: no recibe alertas por zona.
                             </div>
                         ) : postal.length === 0 ? (
                             <button onClick={() => void loadPostalCodes()} disabled={postalProgress.loading}
-                                className={`${BTN} h-10 px-4 bg-white border border-[#c2c6d4] text-[#003f87] hover:border-[#003f87]/50`}>
+                                className={`${BTN} h-10 px-4 bg-surface border border-line text-brand-ink hover:border-brand/50`}>
                                 <span className="material-symbols-outlined" style={{ fontSize: 15 }}>download</span>
                                 {postalProgress.loading ? 'Descargando zonas…' : 'Cargar zonas AEMET para ver su zona'}
                             </button>
                         ) : !zone ? (
-                            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-[11px] text-red-700">
+                            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
                                 El CP <strong className="font-mono">{u.postalCode}</strong> no está asignado a ninguna zona: este usuario no recibiría alertas.
                             </div>
                         ) : (
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="material-symbols-outlined text-[#003f87]" style={{ fontSize: 15 }}>location_on</span>
-                                    <p className="text-xs font-extrabold text-[#181c20]">{zone}</p>
-                                    <span className="text-[10px] text-[#727784]">· {zoneAlerts.length} alerta{zoneAlerts.length === 1 ? '' : 's'} activa{zoneAlerts.length === 1 ? '' : 's'}</span>
+                                    <span className="material-symbols-outlined text-brand-ink" style={{ fontSize: 15 }}>location_on</span>
+                                    <p className="text-xs font-extrabold text-ink">{zone}</p>
+                                    <span className="text-[11px] text-ink-500">· {zoneAlerts.length} alerta{zoneAlerts.length === 1 ? '' : 's'} activa{zoneAlerts.length === 1 ? '' : 's'}</span>
                                 </div>
                                 {zoneAlerts.length === 0 ? (
-                                    <p className="p-3 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30 text-[11px] text-[#727784]">
+                                    <p className="p-3 rounded-xl bg-canvas border border-line/30 text-xs text-ink-500">
                                         Su zona está tranquila ahora mismo: no hay alertas activas.
                                     </p>
                                 ) : zoneAlerts.slice(0, 4).map(a => {
                                     const s = sev(a.severity);
                                     return (
-                                        <div key={a.id} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-[#c2c6d4]/30 bg-[#f7f9ff]">
+                                        <div key={a.id} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-line/30 bg-canvas">
                                             <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>
                                                 <span className="material-symbols-outlined" style={{ fontSize: 15, color: s.fg }}>{s.icon}</span>
                                             </span>
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-[11px] font-bold text-[#181c20] truncate">{a.event}</p>
-                                                <p className="text-[10px] text-[#727784]">Expira {fmtDT(a.expires)}</p>
+                                                <p className="text-xs font-bold text-ink truncate">{a.event}</p>
+                                                <p className="text-[11px] text-ink-500">Expira {fmtDT(a.expires)}</p>
                                             </div>
-                                            <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: s.bg, color: s.fg }}>{s.label}</span>
+                                            <span className="text-xs font-extrabold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: s.bg, color: s.fg }}>{s.label}</span>
                                         </div>
                                     );
                                 })}
@@ -2035,18 +2035,18 @@ export const AdminPage = () => {
                     </section>
 
                     <section>
-                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#727784] mb-2">Preferencias de notificación</h4>
+                        <h4 className="text-[11px] font-bold uppercase tracking-wider text-ink-500 mb-2">Preferencias de notificación</h4>
                         <div className="flex flex-wrap gap-1.5">
                             {u.preferredSeverities.length === 0 && u.preferredEventTypes.length === 0 ? (
-                                <p className="text-[11px] text-[#727784]">Sin preferencias guardadas</p>
+                                <p className="text-xs text-ink-500">Sin preferencias guardadas</p>
                             ) : (
                                 <>
                                     {u.preferredSeverities.map(sv => {
                                         const s = sev(sv);
-                                        return <span key={sv} className="text-[10px] font-extrabold px-2 py-1 rounded-full" style={{ background: s.bg, color: s.fg }}>{s.label}</span>;
+                                        return <span key={sv} className="text-[11px] font-extrabold px-2 py-1 rounded-full" style={{ background: s.bg, color: s.fg }}>{s.label}</span>;
                                     })}
                                     {u.preferredEventTypes.map(ev => (
-                                        <span key={ev} className="text-[10px] font-bold px-2 py-1 rounded-full bg-[#ebeef3] text-[#424752]">{ev}</span>
+                                        <span key={ev} className="text-[11px] font-bold px-2 py-1 rounded-full bg-surface-2 text-ink-700">{ev}</span>
                                     ))}
                                 </>
                             )}
@@ -2054,9 +2054,9 @@ export const AdminPage = () => {
                     </section>
 
                     <section>
-                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#727784] mb-2">Últimas notificaciones</h4>
+                        <h4 className="text-[11px] font-bold uppercase tracking-wider text-ink-500 mb-2">Últimas notificaciones</h4>
                         {userLogs.length === 0 ? (
-                            <p className="p-3 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/30 text-[11px] text-[#727784]">
+                            <p className="p-3 rounded-xl bg-canvas border border-line/30 text-xs text-ink-500">
                                 Sin registros visibles. Entra por la pestaña Usuarios para cargar el historial completo.
                             </p>
                         ) : (
@@ -2064,12 +2064,12 @@ export const AdminPage = () => {
                                 {userLogs.map(l => {
                                     const c = ch(l.type);
                                     return (
-                                        <div key={l.id} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#f7f9ff] border border-[#c2c6d4]/25">
+                                        <div key={l.id} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-canvas border border-line/25">
                                             <span className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: c.bg }}>
                                                 <span className="material-symbols-outlined" style={{ fontSize: 13, color: c.fg }}>{c.icon}</span>
                                             </span>
-                                            <p className="text-[11px] font-semibold text-[#424752] truncate flex-1">{c.label}{l.alert_id ? ` · ${l.alert_id.slice(0, 18)}` : ''}</p>
-                                            <span className="text-[10px] text-[#727784] flex-shrink-0">{rel(l.created_at)}</span>
+                                            <p className="text-xs font-semibold text-ink-700 truncate flex-1">{c.label}{l.alert_id ? ` · ${l.alert_id.slice(0, 18)}` : ''}</p>
+                                            <span className="text-[11px] text-ink-500 flex-shrink-0">{rel(l.created_at)}</span>
                                         </div>
                                     );
                                 })}
@@ -2078,7 +2078,7 @@ export const AdminPage = () => {
                     </section>
                 </div>
 
-                <footer className="p-4 border-t border-[#c2c6d4]/30 flex-shrink-0 space-y-2.5">
+                <footer className="p-4 border-t border-line/30 flex-shrink-0 space-y-2.5">
                     <div className="grid grid-cols-2 gap-2.5">
                         <button onClick={() => {
                             if (!targetId) return;
@@ -2105,7 +2105,7 @@ export const AdminPage = () => {
                         const r = mailRes || pushRes;
                         if (!r || r.loading) return null;
                         return (
-                            <p className={`text-[10px] font-semibold px-3 py-2 rounded-xl border break-words ${r.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                            <p className={`text-[11px] font-semibold px-3 py-2 rounded-xl border break-words ${r.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
                                 {r.msg.replace(/\s+/g, ' ').slice(0, 220)}
                             </p>
                         );
@@ -2132,16 +2132,16 @@ export const AdminPage = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-[#f7f9ff] font-['Hanken_Grotesk',sans-serif] text-[#181c20]">
+        <div className="min-h-screen bg-canvas font-['Hanken_Grotesk',sans-serif] text-ink">
             {/* Header */}
-            <header className="bg-gradient-to-r from-[#003f87] to-[#0056b3] text-white px-4 sm:px-7 py-3.5 flex justify-between items-center shadow-md sticky top-0 z-30">
+            <header className="bg-gradient-to-r from-brand to-brand-500 text-white px-4 sm:px-7 py-3.5 flex justify-between items-center shadow-md sticky top-0 z-30">
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0 backdrop-blur">
                         <span className="material-symbols-outlined" style={{ fontSize: 22 }}>admin_panel_settings</span>
                     </div>
                     <div className="min-w-0">
                         <h1 className="text-base font-extrabold leading-tight truncate">Panel de Administración</h1>
-                        <p className="text-[11px] text-white/70 leading-tight">MeteoAlerta España · <span className="font-mono">{clock}</span></p>
+                        <p className="text-xs text-white/70 leading-tight">MeteoAlerta España · <span className="font-mono">{clock}</span></p>
                     </div>
                 </div>
                 {renderGlobalSearch(false)}
@@ -2152,7 +2152,7 @@ export const AdminPage = () => {
                     </button>
                     {downServices.length > 0 && (
                         <button onClick={() => goto('panel')} title={`${downServices.length} servicios caídos: ${downServices.map(s => s.label).join(', ')}`}
-                            className="flex items-center gap-1.5 bg-red-500/90 hover:bg-red-500 px-2.5 py-2 rounded-xl text-[11px] font-extrabold transition-all">
+                            className="flex items-center gap-1.5 bg-red-500/90 hover:bg-red-500 px-2.5 py-2 rounded-xl text-xs font-extrabold transition-all">
                             <span className="material-symbols-outlined animate-pulse" style={{ fontSize: 16 }}>error</span>
                             <span className="hidden sm:inline">{downServices.length} caído{downServices.length > 1 ? 's' : ''}</span>
                         </button>
@@ -2177,14 +2177,14 @@ export const AdminPage = () => {
             )}
 
             {/* Tabs */}
-            <div className="sticky top-[68px] z-20 bg-[#f7f9ff]/95 backdrop-blur border-b border-[#c2c6d4]/30">
+            <div className="sticky top-[68px] z-20 bg-canvas/95 backdrop-blur border-b border-line/30">
                 <div className="max-w-7xl mx-auto px-3 sm:px-7">
                     <div className="flex gap-1.5 py-2.5 overflow-x-auto">
                         {TABS.map(([id, icon, label]) => (
                             <button key={id} onClick={() => goto(id)}
                                 className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 ${tab === id
-                                    ? 'bg-[#003f87] text-white shadow-md shadow-[#003f87]/25'
-                                    : 'text-[#727784] hover:bg-white hover:text-[#003f87] border border-transparent hover:border-[#c2c6d4]/40'}`}>
+                                    ? 'bg-brand text-white shadow-md shadow-brand/25'
+                                    : 'text-ink-500 hover:bg-surface hover:text-brand-ink border border-transparent hover:border-line/40'}`}>
                                 <span className="material-symbols-outlined" style={{ fontSize: 17 }}>{icon}</span>
                                 <span>{label}</span>
                             </button>
@@ -2225,7 +2225,7 @@ export const AdminPage = () => {
                 </AnimatePresence>
 
                 <div className="text-center mt-8">
-                    <a href="/" className="text-sm text-[#003f87] font-bold hover:underline">← Volver a la app</a>
+                    <a href="/" className="text-sm text-brand-ink font-bold hover:underline">← Volver a la app</a>
                 </div>
             </main>
 
@@ -2236,8 +2236,8 @@ export const AdminPage = () => {
                         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
                         onClick={e => { if (e.target === e.currentTarget) setPostalModal(null); }}>
                         <motion.div initial={{ scale: .94, y: 14 }} animate={{ scale: 1, y: 0 }} exit={{ scale: .94, y: 14 }}
-                            className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
-                            <div className="px-6 py-5 bg-gradient-to-r from-[#003f87] to-[#0056b3] text-white flex items-center justify-between">
+                            className="w-full max-w-md bg-surface rounded-3xl shadow-2xl overflow-hidden">
+                            <div className="px-6 py-5 bg-gradient-to-r from-brand to-brand-500 text-white flex items-center justify-between">
                                 <div className="flex items-center gap-2.5">
                                     <span className="material-symbols-outlined" style={{ fontSize: 22 }}>{postalModal.isNew ? 'add_circle' : 'edit'}</span>
                                     <h3 className="font-extrabold">{postalModal.isNew ? 'Nuevo código postal' : `Editar ${postalModal.cp}`}</h3>
@@ -2264,7 +2264,7 @@ export const AdminPage = () => {
                                                     zone: m.zone && uniqueZones.includes(m.zone) ? m.zone : '',
                                                 }))}
                                                 title="Volver al desplegable de zonas"
-                                                className="h-11 px-3 rounded-xl border border-[#c2c6d4] bg-[#f7f9ff] text-[#424752] hover:border-[#003f87]/60 hover:text-[#003f87] transition-all flex-shrink-0">
+                                                className="h-11 px-3 rounded-xl border border-line bg-canvas text-ink-700 hover:border-brand/60 hover:text-brand-ink transition-all flex-shrink-0">
                                                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>list</span>
                                             </button>
                                         </div>
@@ -2285,7 +2285,7 @@ export const AdminPage = () => {
                                     )}
                                     <datalist id="aemet-zones">{uniqueZones.map(z => <option key={z} value={z} />)}</datalist>
                                     {uniqueZones.length > 0 && (
-                                        <p className="text-[10px] text-[#727784] mt-1">{uniqueZones.length} zonas disponibles en la base{postalModal.zone && !useManualZone ? ` · seleccionada: ${postalModal.zone}` : ''}</p>
+                                        <p className="text-[11px] text-ink-500 mt-1">{uniqueZones.length} zonas disponibles en la base{postalModal.zone && !useManualZone ? ` · seleccionada: ${postalModal.zone}` : ''}</p>
                                     )}
                                 </Field>
                                 <Field label="Provincia">
@@ -2296,9 +2296,9 @@ export const AdminPage = () => {
                                 </Field>
                                 <div className="flex gap-3 pt-1">
                                     <button onClick={() => setPostalModal(null)}
-                                        className={`${BTN} flex-1 h-11 bg-[#f1f4f9] text-[#424752] hover:bg-[#e5e8ee]`}>Cancelar</button>
+                                        className={`${BTN} flex-1 h-11 bg-surface-3 text-ink-700 hover:bg-surface-2`}>Cancelar</button>
                                     <button onClick={savePostal} disabled={postalSaving}
-                                        className={`${BTN} flex-1 h-11 bg-gradient-to-r from-[#003f87] to-[#0056b3] text-white shadow hover:brightness-110`}>
+                                        className={`${BTN} flex-1 h-11 bg-gradient-to-r from-brand to-brand-500 text-white shadow hover:brightness-110`}>
                                         {postalSaving ? 'Guardando...' : 'Guardar'}
                                     </button>
                                 </div>
@@ -2325,9 +2325,9 @@ export const AdminPage = () => {
 /* ══════════════ SUBCOMPONENTES ══════════════ */
 
 const ConfigBlock = ({ title, icon, children }: { title: string; icon: string; children: ReactNode }) => (
-    <div className="border-t border-[#c2c6d4]/30 pt-6 first:border-0 first:pt-0">
-        <h3 className="font-extrabold text-[#181c20] mb-3.5 flex items-center gap-2 text-[15px]">
-            <span className="material-symbols-outlined text-[#003f87]" style={{ fontSize: 20 }}>{icon}</span>
+    <div className="border-t border-line/30 pt-6 first:border-0 first:pt-0">
+        <h3 className="font-extrabold text-ink mb-3.5 flex items-center gap-2 text-[15px]">
+            <span className="material-symbols-outlined text-brand-ink" style={{ fontSize: 20 }}>{icon}</span>
             {title}
         </h3>
         {children}
@@ -2335,17 +2335,17 @@ const ConfigBlock = ({ title, icon, children }: { title: string; icon: string; c
 );
 
 const TestSection = ({ icon, title, sub, children }: { icon: string; title: string; sub: string; children: ReactNode }) => (
-    <div className="bg-white rounded-2xl border border-[#c2c6d4]/30 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 bg-gradient-to-r from-[#f1f4f9] to-white border-b border-[#c2c6d4]/30 flex items-center gap-3">
+    <div className="bg-surface rounded-2xl border border-line/30 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 bg-gradient-to-r from-surface-3 to-white border-b border-line/30 flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-[#d7e2ff] flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-[#003f87]" style={{ fontSize: 20 }}>{icon}</span>
+                <span className="material-symbols-outlined text-brand-ink" style={{ fontSize: 20 }}>{icon}</span>
             </div>
             <div>
-                <p className="font-extrabold text-sm text-[#181c20] leading-tight">{title}</p>
-                <p className="text-[11px] text-[#727784] leading-tight mt-0.5">{sub}</p>
+                <p className="font-extrabold text-sm text-ink leading-tight">{title}</p>
+                <p className="text-xs text-ink-500 leading-tight mt-0.5">{sub}</p>
             </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#c2c6d4]/20">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line/20">
             {children}
         </div>
     </div>
@@ -2372,17 +2372,17 @@ interface TestCardProps {
 }
 
 const TestCard = ({ badge, badgeClass, title, desc, btnClass, label, onClick, result, selectLabel, selectId, options, select2Label, select2Id, options2, isImage }: TestCardProps) => (
-    <div className="p-5 hover:bg-[#f7f9ff]/50 transition-colors">
+    <div className="p-5 hover:bg-canvas/50 transition-colors">
         <div className="flex items-center gap-2 mb-2">
-            <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${badgeClass}`}>{badge}</span>
-            <span className="font-extrabold text-sm text-[#181c20]">{title}</span>
+            <span className={`text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${badgeClass}`}>{badge}</span>
+            <span className="font-extrabold text-sm text-ink">{title}</span>
         </div>
-        <p className="text-xs text-[#727784] leading-relaxed mb-3">{desc}</p>
+        <p className="text-xs text-ink-500 leading-relaxed mb-3">{desc}</p>
 
         {selectLabel && selectId && (
             <div className="mb-2">
-                <label className="text-[11px] font-bold text-[#424752] block mb-1">{selectLabel}</label>
-                <select id={selectId} className="w-full h-10 px-2 rounded-xl border border-[#c2c6d4] bg-[#f7f9ff] text-xs outline-none focus:border-[#003f87] transition-all">
+                <label className="text-xs font-bold text-ink-700 block mb-1">{selectLabel}</label>
+                <select id={selectId} className="w-full h-10 px-2 rounded-xl border border-line bg-canvas text-xs outline-none focus:border-brand transition-all">
                     {(options?.length ? options : [{ value: '', label: 'No hay datos disponibles' }]).map(o => (
                         <option key={o.value} value={o.value}>{o.label}</option>
                     ))}
@@ -2391,8 +2391,8 @@ const TestCard = ({ badge, badgeClass, title, desc, btnClass, label, onClick, re
         )}
         {select2Label && select2Id && (
             <div className="mb-3">
-                <label className="text-[11px] font-bold text-[#424752] block mb-1">{select2Label}</label>
-                <select id={select2Id} className="w-full h-10 px-2 rounded-xl border border-[#c2c6d4] bg-[#f7f9ff] text-xs outline-none focus:border-[#003f87] transition-all">
+                <label className="text-xs font-bold text-ink-700 block mb-1">{select2Label}</label>
+                <select id={select2Id} className="w-full h-10 px-2 rounded-xl border border-line bg-canvas text-xs outline-none focus:border-brand transition-all">
                     {(options2?.length ? options2 : [{ value: '', label: 'No hay datos disponibles' }]).map(o => (
                         <option key={o.value} value={o.value}>{o.label}</option>
                     ))}
@@ -2406,11 +2406,11 @@ const TestCard = ({ badge, badgeClass, title, desc, btnClass, label, onClick, re
         </button>
 
         {result && !result.loading && (
-            <div className={`mt-3 p-2.5 rounded-xl text-[11px] border break-all ${result.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+            <div className={`mt-3 p-2.5 rounded-xl text-xs border break-all ${result.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
                 {isImage && result.ok ? (
                     <img src={result.msg} alt="Mapa de alertas" className="w-full rounded-lg" />
                 ) : (
-                    <pre className="whitespace-pre-wrap max-h-40 overflow-y-auto font-mono text-[10px]">{result.msg}</pre>
+                    <pre className="whitespace-pre-wrap max-h-40 overflow-y-auto font-mono text-[11px]">{result.msg}</pre>
                 )}
             </div>
         )}

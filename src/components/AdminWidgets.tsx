@@ -16,7 +16,7 @@ const HEALTH_META: Record<HealthState, { dot: string; fg: string; label: string 
 export const HealthBadge = ({ state, text }: { state: HealthState; text?: string }) => {
     const m = HEALTH_META[state];
     return (
-        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide"
+        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wide"
             style={{ background: `${m.dot}18`, color: m.fg }} role="status">
             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.dot, boxShadow: state === 'down' ? `0 0 0 3px ${m.dot}30` : 'none' }} />
             {text || m.label}
@@ -55,7 +55,7 @@ export const BarChart = ({ data, color = '#003f87', height = 110, empty = 'Sin d
 }) => {
     if (data.length === 0 || data.every(d => d.value === 0)) {
         return (
-            <div className="flex items-center justify-center text-[11px] text-[#727784]" style={{ height }}>
+            <div className="flex items-center justify-center text-xs text-ink-500" style={{ height }}>
                 {empty}
             </div>
         );
@@ -82,7 +82,7 @@ export const BarChart = ({ data, color = '#003f87', height = 110, empty = 'Sin d
                     );
                 })}
             </div>
-            <div className="flex justify-between mt-1.5 text-[9px] font-bold uppercase tracking-wide text-[#727784]">
+            <div className="flex justify-between mt-1.5 text-xs font-bold uppercase tracking-wide text-ink-500">
                 <span>{data[0].label}</span>
                 <span>{data[data.length - 1].label}</span>
             </div>
