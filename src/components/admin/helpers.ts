@@ -107,6 +107,44 @@ export const CHANNEL: Record<string, { bg: string; fg: string; label: string; ic
 };
 export const ch = (t: string) => CHANNEL[t] || { bg: 'rgba(120,120,120,.14)', fg: '#5f6368', label: t || '—', icon: 'apps' };
 
+/* ══════════════ ERRORES DE EDGE FUNCTIONS (UX) ══════════════ */
+
+/**
+ * Convierte el error genérico de `supabase.functions.invoke` ("non-2xx status code")
+ * en un mensaje legible, leyendo el body JSON que devuelve la Edge Function
+ * ({ success:false, error:'…' }). Detecta además la caducidad de sesión para que
+ * el caller pueda cerrar la sesión automáticamente.
+ */
+export const extractFnError = async (
+    response: Response | undefined,
+    error: unknown,
+): Promise<{ message: string; sessionExpired: boolean }> => {
+    // 1) Cuerpo real devuelto por la Edge Function (sin consumir todavía)
+    if (response && typeof response.clone === 'function') {
+        try {
+            const payload = await response.clone().json() as { error?: string; message?: string } | null;
+            const msg = String(payload?.error || payload?.message || '').trim();
+            if (msg) {
+                return { message: msg, sessionExpired: response.status === 401 || /sesi[oó]n/i.test(msg) };
+            }
+        } catch { /* body no JSON → seguimos con los fallbacks */ }
+    }
+
+    // 2) Fallbacks según el tipo de error / estado
+    const name = (error as { name?: string } | null)?.name;
+    if (name === 'FunctionsFetchError') {
+        return { message: 'No se pudo conectar con el servidor. Comprueba tu conexión a internet.', sessionExpired: false };
+    }
+    if (name === 'FunctionsRelayError') {
+        return { message: 'Error del relay de Supabase al llamar a la Edge Function.', sessionExpired: false };
+    }
+    if (response?.status === 401) {
+        return { message: 'Sesión no válida o caducada. Inicia sesión de nuevo.', sessionExpired: true };
+    }
+    const fallback = (error as Error | null)?.message || 'Error de conexión con el servidor.';
+    return { message: fallback, sessionExpired: false };
+};
+
 /* ══════════════ NORMALIZACIÓN DE ZONAS (A1 + cobertura) ══════════════ */
 
 /**

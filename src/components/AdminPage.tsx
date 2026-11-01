@@ -15,7 +15,7 @@ import type {
 import { TOKEN_KEY, ADMIN_USER_KEY, TOTAL_POSTAL_PAGES } from './admin/types';
 import {
     parseV, fmtDT, fmtD, rel, expiresSoon, parseHours, parseLevels, parseAudit,
-    dayKey, weekStart, downloadCsv, sev, ch, normalizeZone, alertZoneKeys,
+    dayKey, weekStart, downloadCsv, sev, ch, normalizeZone, alertZoneKeys, extractFnError,
 } from './admin/helpers';
 import {
     BTN, inputCls, StatCard, Card, Loading, Empty, SearchBox, Field, StatChip, ConfigBlock,
@@ -159,12 +159,19 @@ export const AdminPage = () => {
     }, [selUser]);
 
     const invoke = async (fn: string, body: Record<string, unknown>) => {
-        const { data, error } = await supabase.functions.invoke(fn, { body: { ...body, token } });
+        const { data, error, response } = await supabase.functions.invoke(fn, { body: { ...body, token } });
+
+        // El cliente de Supabase resume los fallos HTTP como "non-2xx status code".
+        // La Edge Function devuelve el motivo real en el body JSON → lo extraemos aquí.
+        if (error) {
+            const real = await extractFnError(response, error);
+            if (real.sessionExpired) logout(real.message);
+            throw new Error(real.message);
+        }
         if (data && data.success === false) {
             if (String(data.error || '').includes('Sesión')) logout();
             throw new Error(data.error || 'Error en la API');
         }
-        if (error) throw error;
         return data;
     };
     const callApi = (body: Record<string, unknown>) => invoke('admin-api', body);
@@ -451,7 +458,7 @@ export const AdminPage = () => {
         }
     };
 
-    const logout = () => {
+    const logout = (reason?: string) => {
         sessionStorage.removeItem(TOKEN_KEY);
         sessionStorage.removeItem(ADMIN_USER_KEY);
         setToken(null);
@@ -460,6 +467,7 @@ export const AdminPage = () => {
         setSelUser(null); setGSearch(''); setGOpen(false);
         setLogs30([]);
         setTab('panel');
+        if (reason) setLoginError(reason);
     };
 
     const goto = (t: Tab, force = false) => {
@@ -2040,7 +2048,7 @@ export const AdminPage = () => {
                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${autoRefresh ? 'bg-green-300 animate-pulse' : 'bg-white/40'}`} />
                         <span className="hidden sm:inline">Auto</span>
                     </button>
-                    <button onClick={logout}
+                    <button onClick={() => logout()}
                         className="flex items-center gap-1.5 bg-white/10 hover:bg-white/25 text-white/90 px-3 py-2 rounded-xl text-xs font-bold transition-all">
                         <span className="material-symbols-outlined" style={{ fontSize: 16 }}>logout</span><span className="hidden sm:inline">Salir</span>
                     </button>
