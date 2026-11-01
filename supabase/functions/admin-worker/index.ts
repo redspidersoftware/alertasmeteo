@@ -24,6 +24,8 @@ const ALLOWED_TESTS = new Set([
     '/test-push-notification',
     '/test-national-prediction',
     '/test-twitter',
+    '/health',
+    '/api/health',
 ])
 
 async function verifyToken(token: string): Promise<boolean> {
@@ -49,8 +51,8 @@ async function verifyToken(token: string): Promise<boolean> {
 // Login to the worker and return the session cookie value (cached in isolate memory)
 let cachedCookie: { value: string; expires: number } | null = null
 
-async function getWorkerSession(): Promise<string> {
-    if (cachedCookie && cachedCookie.expires > Date.now()) return cachedCookie.value
+async function getWorkerSession(force = false): Promise<string> {
+    if (!force && cachedCookie && cachedCookie.expires > Date.now()) return cachedCookie.value
     if (!WORKER_USER || !WORKER_PASS) {
         throw new Error("WORKER_USER / WORKER_PASS secrets no configurados")
     }
@@ -70,17 +72,36 @@ async function getWorkerSession(): Promise<string> {
     return cookie
 }
 
-async function workerGet(path: string, cookie: string): Promise<Response> {
-    return await fetch(`${WORKER_URL}${path}`, {
-        headers: { 'Cookie': cookie },
+async function workerFetch(path: string, options: RequestInit = {}): Promise<Response> {
+    let cookie = await getWorkerSession()
+    let resp = await fetch(`${WORKER_URL}${path}`, {
+        ...options,
+        headers: { ...(options.headers || {}), 'Cookie': cookie },
         redirect: 'manual',
     })
+
+    // Detectar caducidad de sesión: 401, redirección o invalidación
+    if (resp.status === 401 || resp.status === 302) {
+        cachedCookie = null
+        cookie = await getWorkerSession(true)
+        resp = await fetch(`${WORKER_URL}${path}`, {
+            ...options,
+            headers: { ...(options.headers || {}), 'Cookie': cookie },
+            redirect: 'manual',
+        })
+    }
+
+    return resp
 }
 
-async function workerPost(path: string, cookie: string, body: unknown): Promise<Response> {
-    return await fetch(`${WORKER_URL}${path}`, {
+async function workerGet(path: string): Promise<Response> {
+    return await workerFetch(path, { method: 'GET' })
+}
+
+async function workerPost(path: string, body: unknown): Promise<Response> {
+    return await workerFetch(path, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Cookie': cookie },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
     })
 }
@@ -112,14 +133,17 @@ serve(async (req: Request) => {
             })
         }
 
-        const cookie = await getWorkerSession()
-
         if (action === 'get-config') {
-            const resp = await workerGet('/api/config', cookie)
-            const data = await resp.json()
+            let resp = await workerGet('/api/config')
+            let data = await resp.json()
+            if (data && typeof data === 'object' && data.redirect === '/login') {
+                cachedCookie = null
+                resp = await workerGet('/api/config')
+                data = await resp.json()
+            }
             if (!data.success) throw new Error('Error leyendo configuración')
             // Never expose dashboard credentials to the client
-            const cfg = { ...data.config }
+            const cfg = { ...(data.config || {}) }
             delete cfg.dashboard_user
             delete cfg.dashboard_pass
             return json({ success: true, config: cfg })
@@ -127,40 +151,61 @@ serve(async (req: Request) => {
 
         if (action === 'save-config') {
             if (!key || value === undefined) throw new Error('Faltan key o value')
-            const resp = await fetch(`${WORKER_URL}/api/save-config`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Cookie': cookie },
-                body: JSON.stringify({ key, value }),
-            })
-            const data = await resp.json()
+            let resp = await workerPost('/api/save-config', { key, value })
+            let data = await resp.json()
+            if (data && typeof data === 'object' && data.redirect === '/login') {
+                cachedCookie = null
+                resp = await workerPost('/api/save-config', { key, value })
+                data = await resp.json()
+            }
             if (!data.success) throw new Error(data.message || 'Error al guardar')
             return json({ success: true })
         }
 
         if (action === 'get-users') {
-            const resp = await workerGet('/api/users', cookie)
-            const data = await resp.json()
+            let resp = await workerGet('/api/users')
+            let data = await resp.json()
+            if (data && typeof data === 'object' && data.redirect === '/login') {
+                cachedCookie = null
+                resp = await workerGet('/api/users')
+                data = await resp.json()
+            }
             if (!data.success) throw new Error('Error leyendo usuarios')
             return json({ success: true, users: data.users || [] })
         }
 
         if (action === 'get-alerts') {
-            const resp = await workerGet('/api/recent-alerts', cookie)
-            const data = await resp.json()
+            let resp = await workerGet('/api/recent-alerts')
+            let data = await resp.json()
+            if (data && typeof data === 'object' && data.redirect === '/login') {
+                cachedCookie = null
+                resp = await workerGet('/api/recent-alerts')
+                data = await resp.json()
+            }
             if (!data.success) throw new Error('Error leyendo alertas')
             return json({ success: true, alerts: data.alerts || [] })
         }
 
         if (action === 'get-weather-alerts') {
-            const resp = await workerGet(`/api/weather-alerts${buildQuery(params)}`, cookie)
-            const data = await resp.json()
+            let resp = await workerGet(`/api/weather-alerts${buildQuery(params)}`)
+            let data = await resp.json()
+            if (data && typeof data === 'object' && data.redirect === '/login') {
+                cachedCookie = null
+                resp = await workerGet(`/api/weather-alerts${buildQuery(params)}`)
+                data = await resp.json()
+            }
             if (!data.success) throw new Error(data.message || 'Error leyendo alertas meteorológicas')
             return json({ success: true, stats: data.stats || {}, alerts: data.alerts || [] })
         }
 
         if (action === 'get-logs') {
-            const resp = await workerGet(`/api/notification-logs${buildQuery(params)}`, cookie)
-            const data = await resp.json()
+            let resp = await workerGet(`/api/notification-logs${buildQuery(params)}`)
+            let data = await resp.json()
+            if (data && typeof data === 'object' && data.redirect === '/login') {
+                cachedCookie = null
+                resp = await workerGet(`/api/notification-logs${buildQuery(params)}`)
+                data = await resp.json()
+            }
             if (!data.success) throw new Error(data.message || 'Error leyendo notificaciones')
             return json({ success: true, stats: data.stats || {}, logs: data.logs || [] })
         }
@@ -168,8 +213,13 @@ serve(async (req: Request) => {
         if (action === 'get-postal-codes') {
             const page = Number(params?.page ?? 0)
             if (!Number.isFinite(page) || page < 0 || page > 200) throw new Error('Página no válida')
-            const resp = await workerGet(`/api/postal-codes?page=${page}`, cookie)
-            const data = await resp.json()
+            let resp = await workerGet(`/api/postal-codes?page=${page}`)
+            let data = await resp.json()
+            if (data && typeof data === 'object' && data.redirect === '/login') {
+                cachedCookie = null
+                resp = await workerGet(`/api/postal-codes?page=${page}`)
+                data = await resp.json()
+            }
             if (!data.success) throw new Error(data.message || 'Error leyendo códigos postales')
             return json({ success: true, mappings: data.mappings || [] })
         }
@@ -178,21 +228,36 @@ serve(async (req: Request) => {
             if (!params?.postal_code || !params?.aemet_zone_name || !params?.province) {
                 throw new Error('Faltan datos del código postal')
             }
-            const resp = await workerPost('/api/save-postal-code', cookie, {
+            let resp = await workerPost('/api/save-postal-code', {
                 postal_code: params.postal_code,
                 aemet_zone_name: params.aemet_zone_name,
                 province: params.province,
                 old_postal_code: params.old_postal_code || params.postal_code,
             })
-            const data = await resp.json()
+            let data = await resp.json()
+            if (data && typeof data === 'object' && data.redirect === '/login') {
+                cachedCookie = null
+                resp = await workerPost('/api/save-postal-code', {
+                    postal_code: params.postal_code,
+                    aemet_zone_name: params.aemet_zone_name,
+                    province: params.province,
+                    old_postal_code: params.old_postal_code || params.postal_code,
+                })
+                data = await resp.json()
+            }
             if (!data.success) throw new Error(data.message || 'Error al guardar el código postal')
             return json({ success: true })
         }
 
         if (action === 'delete-postal-code') {
             if (!params?.postal_code) throw new Error('Falta el código postal')
-            const resp = await workerPost('/api/delete-postal-code', cookie, { postal_code: params.postal_code })
-            const data = await resp.json()
+            let resp = await workerPost('/api/delete-postal-code', { postal_code: params.postal_code })
+            let data = await resp.json()
+            if (data && typeof data === 'object' && data.redirect === '/login') {
+                cachedCookie = null
+                resp = await workerPost('/api/delete-postal-code', { postal_code: params.postal_code })
+                data = await resp.json()
+            }
             if (!data.success) throw new Error(data.message || 'Error al eliminar el código postal')
             return json({ success: true })
         }
@@ -208,13 +273,43 @@ serve(async (req: Request) => {
                 }
             }
             const suffix = qs.toString() ? `?${qs.toString()}` : ''
-            const resp = await workerGet(`${path}${suffix}`, cookie)
-            const text = await resp.text()
+            let resp = await workerGet(`${path}${suffix}`)
+            const cType = resp.headers.get('content-type') || ''
 
-            let parsed: unknown = null
-            try { parsed = JSON.parse(text) } catch { /* not json */ }
+            // Si el endpoint devuelve una imagen binaria (ej. mapa estático)
+            if (cType.startsWith('image/')) {
+                const arrayBuffer = await resp.arrayBuffer()
+                const bytes = new Uint8Array(arrayBuffer)
+                let binary = ''
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binary += String.fromCharCode(bytes[i])
+                }
+                const base64 = btoa(binary)
+                const dataUrl = `data:${cType};base64,${base64}`
+                return json({ success: true, status: resp.status, data: { url: dataUrl }, text: dataUrl })
+            }
 
-            return json({ success: resp.ok, status: resp.status, data: parsed, text })
+            let text = await resp.text()
+            let parsed: Record<string, unknown> | null = null
+            try { parsed = JSON.parse(text) as Record<string, unknown> } catch { /* not json */ }
+
+            // Si la sesión expiró y devolvió redirect /login
+            if (parsed && typeof parsed === 'object' && parsed.redirect === '/login') {
+                cachedCookie = null
+                resp = await workerGet(`${path}${suffix}`)
+                text = await resp.text()
+                try { parsed = JSON.parse(text) } catch { /* not json */ }
+            }
+
+            const isInnerError = parsed && typeof parsed === 'object' && (
+                parsed.success === false ||
+                parsed.ok === false ||
+                Boolean(parsed.error)
+            )
+
+            const ok = resp.ok && !isInnerError
+
+            return json({ success: ok, status: resp.status, data: parsed, text })
         }
 
         throw new Error('Acción no reconocida')

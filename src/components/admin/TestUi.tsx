@@ -43,51 +43,69 @@ interface TestCardProps {
     isImage?: boolean;
 }
 
-export const TestCard = ({ badge, badgeClass, title, desc, btnClass, label, onClick, result, select, select2, isImage }: TestCardProps) => (
-    <div className="p-5 hover:bg-canvas/50 transition-colors">
-        <div className="flex items-center gap-2 mb-2">
-            <span className={`text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${badgeClass}`}>{badge}</span>
-            <span className="font-extrabold text-sm text-ink">{title}</span>
-        </div>
-        <p className="text-xs text-ink-500 leading-relaxed mb-3">{desc}</p>
+export const TestCard = ({ badge, badgeClass, title, desc, btnClass, label, onClick, result, select, select2, isImage }: TestCardProps) => {
+    const val1 = select ? (select.value || select.options[0]?.value || '') : '';
+    const val2 = select2 ? (select2.value || select2.options[0]?.value || '') : '';
 
-        {select && (
-            <div className="mb-2">
-                <label className="text-xs font-bold text-ink-700 block mb-1">{select.label}</label>
-                <select value={select.value} onChange={e => select.onChange(e.target.value)}
-                    className="w-full h-10 px-2 rounded-xl border border-line bg-canvas text-xs outline-none focus:border-brand transition-all">
-                    {(select.options.length ? select.options : [{ value: '', label: 'No hay datos disponibles' }]).map(o => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                </select>
-            </div>
-        )}
-        {select2 && (
-            <div className="mb-3">
-                <label className="text-xs font-bold text-ink-700 block mb-1">{select2.label}</label>
-                <select value={select2.value} onChange={e => select2.onChange(e.target.value)}
-                    className="w-full h-10 px-2 rounded-xl border border-line bg-canvas text-xs outline-none focus:border-brand transition-all">
-                    {(select2.options.length ? select2.options : [{ value: '', label: 'No hay datos disponibles' }]).map(o => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                </select>
-            </div>
-        )}
+    return (
+        <div className="p-5 hover:bg-canvas/50 transition-colors flex flex-col justify-between">
+            <div>
+                <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${badgeClass}`}>{badge}</span>
+                    <span className="font-extrabold text-sm text-ink">{title}</span>
+                </div>
+                <p className="text-xs text-ink-500 leading-relaxed mb-3">{desc}</p>
 
-        <button onClick={onClick} disabled={result?.loading}
-            className={`w-full py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-50 active:scale-[.98] ${btnClass}`}>
-            {result?.loading ? <span className="inline-flex items-center gap-2"><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />Ejecutando...</span> : label}
-        </button>
-
-        {result && !result.loading && (
-            <div className={`mt-3 p-2.5 rounded-xl text-xs border break-all ${result.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                {isImage && result.ok ? (
-                    <img src={result.msg} alt="Mapa de alertas" className="w-full rounded-lg" />
-                ) : (
-                    <pre className="whitespace-pre-wrap max-h-40 overflow-y-auto font-mono text-[11px]">{result.msg}</pre>
+                {select && (
+                    <div className="mb-2">
+                        <label className="text-xs font-bold text-ink-700 block mb-1">{select.label}</label>
+                        <select value={val1} onChange={e => select.onChange(e.target.value)}
+                            className="w-full h-10 px-2 rounded-xl border border-line bg-canvas text-xs outline-none focus:border-brand transition-all">
+                            {(select.options.length ? select.options : [{ value: '', label: 'No hay datos disponibles' }]).map(o => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+                {select2 && (
+                    <div className="mb-3">
+                        <label className="text-xs font-bold text-ink-700 block mb-1">{select2.label}</label>
+                        <select value={val2} onChange={e => select2.onChange(e.target.value)}
+                            className="w-full h-10 px-2 rounded-xl border border-line bg-canvas text-xs outline-none focus:border-brand transition-all">
+                            {(select2.options.length ? select2.options : [{ value: '', label: 'No hay datos disponibles' }]).map(o => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                        </select>
+                    </div>
                 )}
             </div>
-        )}
-    </div>
-);
 
+            <div>
+                <button onClick={onClick} disabled={result?.loading}
+                    className={`w-full py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-50 active:scale-[.98] ${btnClass}`}>
+                    {result?.loading ? <span className="inline-flex items-center gap-2"><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />Ejecutando...</span> : label}
+                </button>
+
+                {result && !result.loading && (
+                    <div className={`mt-3 p-2.5 rounded-xl text-xs border break-all transition-all ${result.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                        <div className="flex items-center justify-between gap-1 mb-1 font-bold text-[11px]">
+                            <span>{result.ok ? '✓ Resultado' : '✗ Fallo'}</span>
+                            {result.msg && !isImage && (
+                                <button type="button" onClick={() => void navigator.clipboard?.writeText(result.msg)}
+                                    className="text-[10px] px-1.5 py-0.5 rounded bg-surface/60 hover:bg-surface border border-line/30 text-ink-700 font-semibold"
+                                    title="Copiar texto">
+                                    Copiar
+                                </button>
+                            )}
+                        </div>
+                        {isImage && result.ok ? (
+                            <img src={result.msg} alt="Mapa de alertas" className="w-full rounded-lg shadow-sm" />
+                        ) : (
+                            <pre className="whitespace-pre-wrap max-h-48 overflow-y-auto font-mono text-[11px] leading-relaxed select-all">{result.msg}</pre>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};

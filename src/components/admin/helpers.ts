@@ -7,10 +7,22 @@ export const parseV = (v: unknown): Date | null => {
     if (typeof v === 'number') { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
     const s = String(v).trim();
     if (/^\d{10,}$/.test(s)) { const d = new Date(Number(s)); return isNaN(d.getTime()) ? null : d; }
+    // Formato YYYYMMDD (8 dígitos, ej: 20261101)
+    const ymd8 = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+    if (ymd8) {
+        const d = new Date(Date.UTC(Number(ymd8[1]), Number(ymd8[2]) - 1, Number(ymd8[3])));
+        return isNaN(d.getTime()) ? null : d;
+    }
     // Formato español dd/MM/yyyy (opcionalmente con hora) → interpretado en UTC para no desplazar el día
     const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[\s,]+(\d{1,2}):(\d{1,2}))?$/);
     if (dmy) {
         const d = new Date(Date.UTC(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]), Number(dmy[4] || 0), Number(dmy[5] || 0)));
+        return isNaN(d.getTime()) ? null : d;
+    }
+    // Formato que contiene fecha ISO (ej: forecast-2026-11-01)
+    const isoSub = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (isoSub && isNaN(new Date(s).getTime())) {
+        const d = new Date(Date.UTC(Number(isoSub[1]), Number(isoSub[2]) - 1, Number(isoSub[3])));
         return isNaN(d.getTime()) ? null : d;
     }
     const d = new Date(s);
@@ -61,7 +73,10 @@ export const parseAudit = (raw?: string): AuditEntry[] => {
 
 export const dayKey = (v: string): string => {
     const d = parseV(v);
-    return d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '—';
+    if (!d) return '—';
+    return new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(d);
 };
 
 export const weekStart = (d: Date): Date => {

@@ -419,8 +419,47 @@ export const AdminPage = () => {
             callWorker({ action: 'get-users' }),
             callWorker({ action: 'run-test', path: '/test-national-prediction' }),
         ]);
-        if (alertsRes.status === 'fulfilled') setWorkerAlerts(alertsRes.value.alerts || []);
-        if (usersRes.status === 'fulfilled') setWorkerUsers(usersRes.value.users || []);
+
+        let fAlerts: WeatherAlert[] = [];
+        if (alertsRes.status === 'fulfilled' && Array.isArray(alertsRes.value.alerts) && alertsRes.value.alerts.length > 0) {
+            fAlerts = alertsRes.value.alerts;
+        } else if (alerts.length > 0) {
+            fAlerts = alerts;
+        } else {
+            try {
+                const recent = await callWorker({ action: 'get-weather-alerts', params: { limit: '50' } });
+                if (recent.alerts?.length) fAlerts = recent.alerts;
+            } catch { /* ignore */ }
+        }
+        setWorkerAlerts(fAlerts);
+
+        let fUsers: WorkerUser[] = [];
+        if (usersRes.status === 'fulfilled' && Array.isArray(usersRes.value.users) && usersRes.value.users.length > 0) {
+            fUsers = usersRes.value.users;
+        } else if (users.length > 0) {
+            fUsers = users.map(u => ({ id: u.id, email: u.email }));
+        }
+        setWorkerUsers(fUsers);
+
+        // Preseleccionar valores por defecto para que los selects nunca queden vacíos
+        if (fAlerts.length > 0) {
+            const firstAlertId = fAlerts[0].aemet_id || fAlerts[0].id;
+            testSel.ensure('info-id', firstAlertId);
+            testSel.ensure('email-id', firstAlertId);
+            testSel.ensure('push-id', firstAlertId);
+        }
+        if (fUsers.length > 0) {
+            const firstUserWithEmail = fUsers.find(u => u.email)?.email || '';
+            const firstUserId = fUsers[0].id;
+            if (firstUserWithEmail) {
+                testSel.ensure('email-to', firstUserWithEmail);
+                testSel.ensure('map-to', firstUserWithEmail);
+            }
+            if (firstUserId) {
+                testSel.ensure('push-user', firstUserId);
+            }
+        }
+
         setNationalPrediction(predRes.status === 'fulfilled'
             ? (predRes.value.data?.text || predRes.value.text || 'Sin datos')
             : 'Error cargando la predicción nacional');
@@ -431,11 +470,27 @@ export const AdminPage = () => {
         setTestResult(prev => ({ ...prev, [id]: { loading: true, msg: 'Ejecutando...' } }));
         try {
             const data = await callWorker({ action: 'run-test', path, params });
-            if (showImage && data.data?.url) {
-                setTestResult(prev => ({ ...prev, [id]: { loading: false, ok: true, msg: data.data.url } }));
+            const innerData = data.data;
+            const isInnerError = innerData && typeof innerData === 'object' && (
+                innerData.success === false ||
+                innerData.ok === false ||
+                Boolean(innerData.error)
+            );
+            const isSuccess = Boolean(data.success && !isInnerError && (!data.status || data.status < 400));
+
+            const imgUrl = showImage && (
+                (typeof innerData?.url === 'string' && innerData.url) ||
+                (typeof innerData?.imageUrl === 'string' && innerData.imageUrl) ||
+                (typeof innerData?.image_url === 'string' && innerData.image_url) ||
+                (typeof innerData?.mapUrl === 'string' && innerData.mapUrl) ||
+                (typeof data.text === 'string' && (data.text.startsWith('http') || data.text.startsWith('data:image/')) && data.text.trim())
+            );
+
+            if (imgUrl) {
+                setTestResult(prev => ({ ...prev, [id]: { loading: false, ok: true, msg: imgUrl } }));
             } else {
-                const pretty = data.data ? JSON.stringify(data.data, null, 2) : (data.text || 'OK');
-                setTestResult(prev => ({ ...prev, [id]: { loading: false, ok: data.success, msg: pretty } }));
+                const pretty = innerData ? JSON.stringify(innerData, null, 2) : (data.text || (isSuccess ? 'OK' : 'Error en la respuesta'));
+                setTestResult(prev => ({ ...prev, [id]: { loading: false, ok: isSuccess, msg: pretty } }));
             }
         } catch (err) {
             setTestResult(prev => ({ ...prev, [id]: { loading: false, ok: false, msg: err instanceof Error ? err.message : 'Error' } }));
@@ -449,12 +504,99 @@ export const AdminPage = () => {
             const text = data.data?.text;
             if (text) {
                 window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank');
-                setTestResult(prev => ({ ...prev, twitter: { loading: false, ok: true, msg: 'Ventana de publicación abierta.' } }));
+                setTestResult(prev => ({ ...prev, twitter: { loading: false, ok: true, msg: `Ventana de publicación abierta con texto:\n\n"${text}"` } }));
             } else {
                 setTestResult(prev => ({ ...prev, twitter: { loading: false, ok: false, msg: data.text || 'Error al generar el texto' } }));
             }
         } catch (err) {
             setTestResult(prev => ({ ...prev, twitter: { loading: false, ok: false, msg: err instanceof Error ? err.message : 'Error' } }));
+        }
+    };
+
+    const runSupabaseConnTest = async () => {
+        setTestResult(prev => ({ ...prev, 'supabase-conn': { loading: true, msg: 'Probando conexión con Supabase...' } }));
+        try {
+            const start = performance.now();
+            const data = await callApi({ action: 'list' });
+            const elapsed = Math.round(performance.now() - start);
+            const userCount = Array.isArray(data.users) ? data.users.length : 0;
+            const verified = data.stats?.verified ?? 0;
+            setTestResult(prev => ({
+                ...prev,
+                'supabase-conn': {
+                    loading: false,
+                    ok: true,
+                    msg: `Conexión con Supabase OK (${elapsed} ms)\n\n• Base de datos (Postgres): Accesible\n• Auth Admin API: Accesible\n• Total usuarios: ${userCount}\n• Verificados: ${verified}`,
+                },
+            }));
+        } catch (err) {
+            setTestResult(prev => ({
+                ...prev,
+                'supabase-conn': {
+                    loading: false,
+                    ok: false,
+                    msg: `Fallo de conexión con Supabase: ${err instanceof Error ? err.message : 'Error desconocido'}`,
+                },
+            }));
+        }
+    };
+
+    const runAemetConnTest = async () => {
+        setTestResult(prev => ({ ...prev, 'aemet-conn': { loading: true, msg: 'Consultando API OpenData de AEMET...' } }));
+        try {
+            const apiKey = import.meta.env.VITE_AEMET_API_KEY || '';
+            if (!apiKey) {
+                setTestResult(prev => ({
+                    ...prev,
+                    'aemet-conn': {
+                        loading: false,
+                        ok: false,
+                        msg: 'VITE_AEMET_API_KEY no está configurada en las variables de entorno.',
+                    },
+                }));
+                return;
+            }
+            const res = await fetch(`https://opendata.aemet.es/opendata/api/prediccion/nacional/hoy?api_key=${encodeURIComponent(apiKey)}`, {
+                headers: { Accept: 'application/json' },
+            });
+            const data = await res.json();
+            if (res.status === 200 && data.estado === 200) {
+                setTestResult(prev => ({
+                    ...prev,
+                    'aemet-conn': {
+                        loading: false,
+                        ok: true,
+                        msg: `Conexión con AEMET OK (HTTP 200)\n\n• Clave API: Válida\n• URL de datos: ${data.datos ? 'Generada' : 'N/A'}\n• Descripción: ${data.descripcion || 'OK'}`,
+                    },
+                }));
+            } else if (res.status === 401 || data.estado === 401) {
+                setTestResult(prev => ({
+                    ...prev,
+                    'aemet-conn': {
+                        loading: false,
+                        ok: false,
+                        msg: `AEMET API Key expirada o no autorizada (HTTP ${res.status}):\n\n"${data.descripcion || 'Credencial no autorizada'}"\n\nAcción requerida: Renovar la credencial en opendata.aemet.es y actualizar VITE_AEMET_API_KEY en Vercel.`,
+                    },
+                }));
+            } else {
+                setTestResult(prev => ({
+                    ...prev,
+                    'aemet-conn': {
+                        loading: false,
+                        ok: false,
+                        msg: `Respuesta de AEMET: Estado ${data.estado || res.status} — ${data.descripcion || 'Error en la petición'}`,
+                    },
+                }));
+            }
+        } catch (err) {
+            setTestResult(prev => ({
+                ...prev,
+                'aemet-conn': {
+                    loading: false,
+                    ok: false,
+                    msg: `Error al conectar con AEMET: ${err instanceof Error ? err.message : 'Error de red'}`,
+                },
+            }));
         }
     };
 
@@ -646,7 +788,7 @@ export const AdminPage = () => {
         return items;
     }, [cfg]);
 
-    const downServices = services.filter(s => s.state === 'down');
+    const downServices = (panelLoading || Object.keys(cfg).length === 0) ? [] : services.filter(s => s.state === 'down');
 
     /* ── COBERTURA CP↔ZONA (Fase 2) ── */
     const coverage = useMemo<CoverageInfo>(() => {
@@ -816,6 +958,10 @@ export const AdminPage = () => {
     const runServiceTest = (svc: ServiceHealth) => {
         if (!svc.test) return;
         if (svc.test.confirm && !window.confirm(svc.test.confirm)) return;
+        if (svc.id === 'twitter') {
+            void runTwitterIntent();
+            return;
+        }
         void runTest(svc.test.id, svc.test.path);
     };
 
@@ -1713,6 +1859,21 @@ export const AdminPage = () => {
                 </p>
             </div>
 
+            <TestSection icon="hub" title="Conectividad y Salud del Sistema" sub="Verificación directa del estado de conexión con cada servicio esencial">
+                <TestCard badge="WORKER" badgeClass="bg-emerald-100 text-emerald-800" title="Cloudflare Worker"
+                    desc="Prueba el endpoint /health del Worker y verifica que la sesión interna y el proxy de Supabase funcionan."
+                    btnClass="bg-emerald-600" label="Verificar Conexión Worker"
+                    onClick={() => runTest('worker-conn', '/health')} result={testResult['worker-conn']} />
+                <TestCard badge="SUPABASE" badgeClass="bg-teal-100 text-teal-800" title="Base de Datos (Supabase)"
+                    desc="Verifica la conexión directa con Postgres, Auth Admin API y la función admin-api."
+                    btnClass="bg-teal-600" label="Verificar Conexión BD"
+                    onClick={runSupabaseConnTest} result={testResult['supabase-conn']} />
+                <TestCard badge="AEMET" badgeClass="bg-blue-100 text-blue-800" title="API OpenData AEMET"
+                    desc="Realiza una consulta a la API oficial de AEMET para verificar que la clave API esté vigente y activa."
+                    btnClass="bg-blue-600" label="Verificar API AEMET"
+                    onClick={runAemetConnTest} result={testResult['aemet-conn']} />
+            </TestSection>
+
             <TestSection icon="cloud_sync" title="Procesamiento de Alertas AEMET" sub="Descarga y procesamiento manual desde la API de AEMET">
                 <TestCard badge="AEMET" badgeClass="bg-orange-100 text-orange-700" title="Ejecutar Cron"
                     desc="Descarga y procesa manualmente las alertas activas. Equivale al cron automático."
@@ -1729,7 +1890,14 @@ export const AdminPage = () => {
                         label: 'Seleccionar Alerta', value: testSel.get('info-id'), onChange: testSel.set('info-id'),
                         options: workerAlerts.map(a => ({ value: a.aemet_id || a.id, label: `[${(a.severity || 'INFO').toUpperCase()}] ${a.event} (${a.area_desc || 'España'})` })),
                     }}
-                    onClick={() => runTest('info', '/test-info', { id: testSel.get('info-id') })}
+                    onClick={() => {
+                        const alertId = testSel.get('info-id', workerAlerts[0]?.aemet_id || workerAlerts[0]?.id || '');
+                        if (!alertId) {
+                            setTestResult(prev => ({ ...prev, info: { loading: false, ok: false, msg: 'No hay alertas en la base de datos para consultar. Ejecuta primero el Cron de AEMET.' } }));
+                            return;
+                        }
+                        runTest('info', '/test-info', { id: alertId });
+                    }}
                     result={testResult.info} />
             </TestSection>
 
@@ -1745,10 +1913,15 @@ export const AdminPage = () => {
                         label: 'Destinatario', value: testSel.get('email-to'), onChange: testSel.set('email-to'),
                         options: workerUsers.filter(u => u.email).map(u => ({ value: u.email, label: u.email })),
                     }}
-                    onClick={() => runTest('email', '/test-email', {
-                        id: testSel.get('email-id'),
-                        email: testSel.get('email-to'),
-                    })} result={testResult.email} />
+                    onClick={() => {
+                        const alertId = testSel.get('email-id', workerAlerts[0]?.aemet_id || workerAlerts[0]?.id || '');
+                        const toEmail = testSel.get('email-to', workerUsers.find(u => u.email)?.email || '');
+                        if (!alertId || !toEmail) {
+                            setTestResult(prev => ({ ...prev, email: { loading: false, ok: false, msg: !alertId ? 'No hay alertas disponibles para enviar' : 'No hay usuarios registrados con email' } }));
+                            return;
+                        }
+                        runTest('email', '/test-email', { id: alertId, email: toEmail });
+                    }} result={testResult.email} />
                 <TestCard badge="EMAIL" badgeClass="bg-sky-100 text-sky-700" title="Mapa por Email"
                     desc="Genera el mapa de alertas y lo envía por correo al destinatario seleccionado."
                     btnClass="bg-[#0ea5e9]" label="Enviar Mapa x Email"
@@ -1756,7 +1929,14 @@ export const AdminPage = () => {
                         label: 'Destinatario', value: testSel.get('map-to'), onChange: testSel.set('map-to'),
                         options: workerUsers.filter(u => u.email).map(u => ({ value: u.email, label: u.email })),
                     }}
-                    onClick={() => runTest('map', '/test-map', { email: testSel.get('map-to') })}
+                    onClick={() => {
+                        const toEmail = testSel.get('map-to', workerUsers.find(u => u.email)?.email || '');
+                        if (!toEmail) {
+                            setTestResult(prev => ({ ...prev, map: { loading: false, ok: false, msg: 'No hay usuarios registrados con email para recibir el mapa' } }));
+                            return;
+                        }
+                        runTest('map', '/test-map', { email: toEmail });
+                    }}
                     result={testResult.map} />
                 <TestCard badge="EMAIL" badgeClass="bg-sky-100 text-sky-700" title="Informe Diario"
                     desc="Envía el resumen de actividad diaria del sistema al administrador."
@@ -1791,10 +1971,15 @@ export const AdminPage = () => {
                         label: 'Seleccionar Alerta', value: testSel.get('push-id'), onChange: testSel.set('push-id'),
                         options: workerAlerts.map(a => ({ value: a.aemet_id || a.id, label: `[${(a.severity || 'INFO').toUpperCase()}] ${a.event}` })),
                     }}
-                    onClick={() => runTest('push', '/test-push-notification', {
-                        userId: testSel.get('push-user'),
-                        alertId: testSel.get('push-id'),
-                    })} result={testResult.push} />
+                    onClick={() => {
+                        const targetUser = testSel.get('push-user', workerUsers[0]?.id || '');
+                        const alertId = testSel.get('push-id', workerAlerts[0]?.aemet_id || workerAlerts[0]?.id || '');
+                        if (!targetUser || !alertId) {
+                            setTestResult(prev => ({ ...prev, push: { loading: false, ok: false, msg: !targetUser ? 'No hay usuarios para enviar la notificación push' : 'No hay alertas disponibles' } }));
+                            return;
+                        }
+                        runTest('push', '/test-push-notification', { userId: targetUser, alertId });
+                    }} result={testResult.push} />
             </TestSection>
 
             <TestSection icon="wb_sunny" title="Predicción Nacional AEMET — Hoy" sub="Texto de predicción nacional obtenido de la API en tiempo real">
@@ -1817,7 +2002,7 @@ export const AdminPage = () => {
         const zoneAlerts = zone
             ? alerts.filter(a => (a.area_desc || '').toLowerCase().split(';').some(part => part.trim() === zone.toLowerCase()))
             : [];
-        const target = zoneAlerts[0] || alerts[0];
+        const target = zoneAlerts[0] || alerts[0] || workerAlerts[0];
         const targetId = target?.aemet_id || target?.id || '';
         const userLogs = logs.filter(l => (l.users?.email || l.recipient || '') === u.email).slice(0, 6);
         const mailRes = testResult[`u-mail-${u.id}`];
@@ -1978,15 +2163,16 @@ export const AdminPage = () => {
                                 : <><span className="material-symbols-outlined" style={{ fontSize: 15 }}>notifications_active</span>Push de prueba</>}
                         </button>
                     </div>
-                    {(mailRes || pushRes) && (() => {
-                        const r = mailRes || pushRes;
-                        if (!r || r.loading) return null;
-                        return (
-                            <p className={`text-[11px] font-semibold px-3 py-2 rounded-xl border break-words ${r.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                                {r.msg.replace(/\s+/g, ' ').slice(0, 220)}
-                            </p>
-                        );
-                    })()}
+                    {mailRes && !mailRes.loading && (
+                        <p className={`text-[11px] font-semibold px-3 py-2 rounded-xl border break-words ${mailRes.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                            <span className="font-bold">Email: </span>{mailRes.msg.replace(/\s+/g, ' ').slice(0, 200)}
+                        </p>
+                    )}
+                    {pushRes && !pushRes.loading && (
+                        <p className={`text-[11px] font-semibold px-3 py-2 rounded-xl border break-words ${pushRes.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                            <span className="font-bold">Push: </span>{pushRes.msg.replace(/\s+/g, ' ').slice(0, 200)}
+                        </p>
+                    )}
                     <button onClick={() => handleDeleteUser(u)}
                         className={`${BTN} h-10 w-full bg-red-50 border border-red-200 text-[#b3261e] hover:bg-red-100`}>
                         <span className="material-symbols-outlined" style={{ fontSize: 15 }}>delete</span>Eliminar usuario
