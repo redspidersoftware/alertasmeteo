@@ -89,3 +89,63 @@ export const BarChart = ({ data, color = '#003f87', height = 110, empty = 'Sin d
         </div>
     );
 };
+
+/* ══════════════ DONUT (distribución por severidad) ══════════════ */
+
+export interface DonutSlice { label: string; value: number; color: string }
+
+export const DonutChart = ({ slices, size = 132, thickness = 18, centerLabel, centerValue }: {
+    slices: DonutSlice[]; size?: number; thickness?: number; centerLabel?: string; centerValue?: string | number;
+}) => {
+    const total = slices.reduce((n, s) => n + s.value, 0);
+    if (total === 0) {
+        return (
+            <div className="flex items-center justify-center text-xs text-ink-500" style={{ width: size, height: size }}>
+                Sin datos
+            </div>
+        );
+    }
+    const r = (size - thickness) / 2;
+    const c = 2 * Math.PI * r;
+    // Precalcula los segmentos con su offset acumulado (sin mutar nada)
+    const segs = slices.filter(s => s.value > 0).reduce<{ segs: { label: string; color: string; dash: number; offset: number }[]; acc: number }>(
+        (state, s) => {
+            const dash = (s.value / total) * c;
+            state.segs.push({ label: s.label, color: s.color, dash, offset: -state.acc });
+            state.acc += dash;
+            return state;
+        }, { segs: [], acc: 0 },
+    ).segs;
+    return (
+        <div className="flex items-center gap-4">
+            <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+                <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} role="img" aria-label="Distribución por severidad">
+                    <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
+                        {segs.map(s => (
+                            <circle key={s.label} cx={size / 2} cy={size / 2} r={r} fill="none"
+                                stroke={s.color} strokeWidth={thickness}
+                                strokeDasharray={`${s.dash} ${c - s.dash}`} strokeDashoffset={s.offset}
+                                strokeLinecap="butt" />
+                        ))}
+                    </g>
+                </svg>
+                {(centerValue !== undefined || centerLabel) && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        {centerValue !== undefined && <p className="text-xl font-extrabold text-ink leading-none">{centerValue}</p>}
+                        {centerLabel && <p className="text-[10px] font-bold uppercase tracking-wide text-ink-500 mt-0.5">{centerLabel}</p>}
+                    </div>
+                )}
+            </div>
+            <ul className="flex flex-col gap-1.5 min-w-0">
+                {slices.map(s => (
+                    <li key={s.label} className="flex items-center gap-2 text-xs min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                        <span className="font-semibold text-ink-700 truncate">{s.label}</span>
+                        <span className="font-extrabold text-ink ml-auto pl-2">{s.value}</span>
+                        <span className="text-ink-500 w-10 text-right">{total ? Math.round((s.value / total) * 100) : 0}%</span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};

@@ -4,270 +4,27 @@ import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AdminMap } from './AdminMap';
 import type { MapPoint } from './AdminMap';
-import { HealthBadge, SparkLine, BarChart } from './AdminWidgets';
-import type { HealthState, BarPoint } from './AdminWidgets';
+import { HealthBadge, BarChart, DonutChart } from './AdminWidgets';
+import type { BarPoint } from './AdminWidgets';
 
-/* ══════════════ TIPOS ══════════════ */
-
-interface AdminUser {
-    id: string;
-    name: string | null;
-    email: string;
-    phone: string | null;
-    postalCode: string | null;
-    language: string | null;
-    isVerified: boolean;
-    createdAt: string;
-    preferredSeverities: string[];
-    preferredEventTypes: string[];
-}
-
-interface AdminStats { total: number; verified: number; withPostalCode: number }
-
-interface WorkerUser { id: string; email: string; phone?: string; daily_forecast?: boolean }
-
-interface WeatherAlert {
-    id: string;
-    aemet_id?: string;
-    event: string;
-    severity: string;
-    area_desc: string;
-    headline?: string;
-    description?: string;
-    instruction?: string;
-    status?: string;
-    created_at?: string;
-    effective?: string;
-    expires?: string;
-}
-
-interface NotifLog {
-    id: string;
-    type: string;
-    recipient?: string;
-    alert_id?: string | null;
-    created_at: string;
-    users?: { name?: string; email?: string } | null;
-}
-
-interface PostalMapping { postal_code: string; aemet_zone_name: string; province: string }
-
-interface WStats { extreme: number; severe: number; moderate: number; minor: number; total: number }
-interface LStats { email: number; telegram: number; push: number; total: number }
-
-interface AuditEntry { t: string; who: string; what: string }
-
-interface ServiceHealth {
-    id: string;
-    label: string;
-    desc: string;
-    icon: string;
-    color: string;
-    last: Date | null;
-    state: HealthState;
-    hint: string;
-    test?: { id: string; path: string; confirm?: string };
-}
-
-interface CoverageInfo {
-    pct: number;
-    total: number;
-    unmapped: { alert: WeatherAlert; missing: string[] }[];
-    invalid: PostalMapping[];
-    duplicates: string[];
-}
-
-type Tab = 'panel' | 'alertas' | 'notificaciones' | 'usuarios' | 'codigos' | 'mapa' | 'config' | 'tests';
-
-const TOKEN_KEY = 'meteoalerta-admin-token';
-const ADMIN_USER_KEY = 'meteoalerta-admin-user';
-const TOTAL_POSTAL_PAGES = 38;
-
-/* ══════════════ ESTILOS ══════════════ */
-
-const SEVERITY: Record<string, { bg: string; fg: string; label: string; icon: string }> = {
-    Extreme: { bg: 'rgba(179,38,30,.14)', fg: '#b3261e', label: 'Extrema', icon: 'crisis_alert' },
-    Severe: { bg: 'rgba(230,81,0,.14)', fg: '#e65100', label: 'Severa', icon: 'warning' },
-    Moderate: { bg: 'rgba(255,160,0,.16)', fg: '#a35d00', label: 'Moderada', icon: 'error_outline' },
-    Minor: { bg: 'rgba(2,119,189,.14)', fg: '#0277bd', label: 'Leve', icon: 'info_outline' },
-};
-const sev = (s: string) => SEVERITY[s] || { bg: 'rgba(120,120,120,.14)', fg: '#5f6368', label: s || 'Info', icon: 'help' };
-
-const CHANNEL: Record<string, { bg: string; fg: string; label: string; icon: string }> = {
-    email: { bg: 'rgba(2,119,189,.13)', fg: '#0277bd', label: 'Email', icon: 'mail' },
-    telegram: { bg: 'rgba(0,136,204,.13)', fg: '#0088cc', label: 'Telegram', icon: 'send' },
-    push: { bg: 'rgba(94,53,177,.13)', fg: '#5e35b1', label: 'Push', icon: 'notifications_active' },
-};
-const ch = (t: string) => CHANNEL[t] || { bg: 'rgba(120,120,120,.14)', fg: '#5f6368', label: t || '—', icon: 'apps' };
-
-const BTN = 'inline-flex items-center justify-center gap-2 rounded-xl text-xs font-bold transition-all active:scale-[.97] disabled:opacity-50 disabled:pointer-events-none';
-
-/* ══════════════ HELPERS ══════════════ */
-
-const parseV = (v: unknown): Date | null => {
-    if (v === null || v === undefined || v === '') return null;
-    if (typeof v === 'number') { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
-    const s = String(v).trim();
-    if (/^\d{10,}$/.test(s)) { const d = new Date(Number(s)); return isNaN(d.getTime()) ? null : d; }
-    // Formato español dd/MM/yyyy (opcionalmente con hora) → interpretado en UTC para no desplazar el día
-    const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[\s,]+(\d{1,2}):(\d{1,2}))?$/);
-    if (dmy) {
-        const d = new Date(Date.UTC(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]), Number(dmy[4] || 0), Number(dmy[5] || 0)));
-        return isNaN(d.getTime()) ? null : d;
-    }
-    const d = new Date(s);
-    return isNaN(d.getTime()) ? null : d;
-};
-
-const fmtDT = (v: unknown): string => {
-    const d = parseV(v);
-    return d ? d.toLocaleString('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
-};
-
-const fmtD = (v: unknown): string => {
-    const d = parseV(v);
-    return d ? d.toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-};
-
-const rel = (v: unknown): string => {
-    const d = parseV(v);
-    if (!d) return '—';
-    const s = Math.round((Date.now() - d.getTime()) / 1000);
-    const fut = s < 0; const a = Math.abs(s);
-    const str = a < 60 ? `${a} s` : a < 3600 ? `${Math.round(a / 60)} min` : a < 86400 ? `${Math.round(a / 3600)} h` : `${Math.round(a / 86400)} d`;
-    return fut ? `en ${str}` : `hace ${str}`;
-};
-
-const expiresSoon = (v?: string): boolean => {
-    const d = parseV(v);
-    return !!d && d.getTime() - Date.now() < 3 * 3600 * 1000;
-};
-
-const parseHours = (raw: string, fallback: number[]): number[] => {
-    if (!raw) return fallback;
-    try { const p = JSON.parse(raw); if (Array.isArray(p)) return p.map(Number); } catch { /* ignore */ }
-    return fallback;
-};
-const parseLevels = (raw: string): string[] => {
-    if (!raw) return ['red', 'orange'];
-    try { const p = JSON.parse(raw); if (Array.isArray(p)) return p.map(String); } catch { /* ignore */ }
-    return ['red', 'orange'];
-};
-
-const parseAudit = (raw?: string): AuditEntry[] => {
-    if (!raw) return [];
-    try { const p = JSON.parse(raw); if (Array.isArray(p)) return p.filter(e => e && typeof e.t === 'string' && typeof e.what === 'string'); } catch { /* ignore */ }
-    return [];
-};
-
-const dayKey = (v: string): string => {
-    const d = parseV(v);
-    return d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '—';
-};
-
-const weekStart = (d: Date): Date => {
-    const x = new Date(d);
-    const dow = (x.getDay() + 6) % 7;
-    x.setDate(x.getDate() - dow);
-    x.setHours(0, 0, 0, 0);
-    return x;
-};
-
-const downloadCsv = (filename: string, rows: (string | number)[][]) => {
-    const esc = (v: string | number) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const csv = rows.map(r => r.map(esc).join(';')).join('\r\n');
-    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-};
-
-/* ══════════════ COMPONENTES REUTILIZABLES ══════════════ */
-
-const StatCard = ({ icon, color, label, value, hint, spark, sparkColor }: { icon: string; color: string; label: string; value: ReactNode; hint?: string; spark?: number[]; sparkColor?: string }) => (
-    <div className="bg-surface rounded-2xl border border-line/30 shadow-sm p-5 hover:shadow-md transition-shadow">
-        <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-500">{label}</p>
-                <p className="text-3xl font-extrabold text-ink mt-1.5 leading-none">{value}</p>
-                {hint && <p className="text-xs text-ink-500 mt-1.5 truncate">{hint}</p>}
-            </div>
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: color }}>
-                <span className="material-symbols-outlined text-white" style={{ fontSize: 22 }}>{icon}</span>
-            </div>
-        </div>
-        {spark && spark.length > 1 && (
-            <div className="mt-3 -mx-1">
-                <SparkLine data={spark} color={sparkColor || '#003f87'} />
-            </div>
-        )}
-    </div>
-);
-
-const Card = ({ icon, title, sub, action, children, pad = true }: { icon: string; title: string; sub?: string; action?: ReactNode; children: ReactNode; pad?: boolean }) => (
-    <section className="bg-surface rounded-2xl border border-line/30 shadow-sm overflow-hidden">
-        <header className="px-5 py-4 border-b border-line/30 flex items-center gap-3 flex-wrap">
-            <div className="w-9 h-9 rounded-lg bg-[#d7e2ff] flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-brand-ink" style={{ fontSize: 20 }}>{icon}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-                <h2 className="font-extrabold text-sm text-ink leading-tight">{title}</h2>
-                {sub && <p className="text-xs text-ink-500 leading-tight mt-0.5">{sub}</p>}
-            </div>
-            {action}
-        </header>
-        <div className={pad ? 'p-5' : ''}>{children}</div>
-    </section>
-);
-
-const Loading = ({ text = 'Cargando...' }: { text?: string }) => (
-    <div className="py-12 text-center">
-        <div className="w-7 h-7 border-2 border-brand/25 border-t-brand rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-xs font-semibold text-ink-500">{text}</p>
-    </div>
-);
-
-const Empty = ({ icon, title, sub }: { icon: string; title: string; sub?: string }) => (
-    <div className="py-12 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-surface-3 flex items-center justify-center mx-auto mb-3">
-            <span className="material-symbols-outlined text-ink-500" style={{ fontSize: 28 }}>{icon}</span>
-        </div>
-        <p className="text-sm font-bold text-ink-700">{title}</p>
-        {sub && <p className="text-xs text-ink-500 mt-1">{sub}</p>}
-    </div>
-);
-
-const SearchBox = ({ value, onChange, placeholder, icon = 'search' }: { value: string; onChange: (v: string) => void; placeholder: string; icon?: string }) => (
-    <div className="relative">
-        <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500" style={{ fontSize: 19 }}>{icon}</span>
-        <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-            className="w-full h-11 pl-11 pr-4 rounded-xl border border-line bg-canvas text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 transition-all" />
-    </div>
-);
-
-const Field = ({ label, children }: { label: string; children: ReactNode }) => (
-    <div>
-        <label className="text-xs font-bold text-ink-700 block mb-1.5">{label}</label>
-        {children}
-    </div>
-);
-
-const inputCls = 'w-full h-11 px-3 rounded-xl border border-line bg-canvas text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 transition-all';
-
-const StatChip = ({ label, value, color }: { label: string; value: number; color: string }) => (
-    <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-line/30 bg-canvas">
-        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
-        <div className="leading-none">
-            <p className="text-lg font-extrabold text-ink">{value}</p>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-ink-500 mt-0.5">{label}</p>
-        </div>
-    </div>
-);
+// Módulos del panel (refactor C1): tipos, helpers y UI reutilizable
+import type {
+    AdminUser, AdminStats, WorkerUser, WeatherAlert, NotifLog, PostalMapping,
+    WStats, LStats, AuditEntry, ServiceHealth, CoverageInfo, Tab,
+} from './admin/types';
+import { TOKEN_KEY, ADMIN_USER_KEY, TOTAL_POSTAL_PAGES } from './admin/types';
+import {
+    parseV, fmtDT, fmtD, rel, expiresSoon, parseHours, parseLevels, parseAudit,
+    dayKey, weekStart, downloadCsv, sev, ch, normalizeZone, alertZoneKeys,
+} from './admin/helpers';
+import {
+    BTN, inputCls, StatCard, Card, Loading, Empty, SearchBox, Field, StatChip, ConfigBlock,
+} from './admin/AdminUi';
+import { TestSection, TestCard } from './admin/TestUi';
+import { useTestSelects } from './admin/useTestSelects';
+import { DataTable } from './admin/DataTable';
+import { RecipientPreview } from './admin/RecipientPreview';
+import { PostalTools } from './admin/PostalTools';
 
 /* ══════════════ PÁGINA ADMIN ══════════════ */
 
@@ -335,6 +92,31 @@ export const AdminPage = () => {
     const [gSearch, setGSearch] = useState('');
     const [gOpen, setGOpen] = useState(false);
 
+    // A2 · auto-refresco del panel (cada 2 min mientras la pestaña está visible)
+    const [autoRefresh, setAutoRefresh] = useState(true);
+    const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+
+    // A1 · preview de destinatarios de una alerta
+    const [previewAlert, setPreviewAlert] = useState<WeatherAlert | null>(null);
+
+    // C2 · borrador editable de la configuración (sin getElementById)
+    const [cfgDraft, setCfgDraft] = useState({
+        tgHours: '', tgLevels: ['red', 'orange'] as string[], twHours: '',
+        aemetInterval: '15', aemetRetry: '2',
+    });
+
+    // C2 · selects controlados de la pestaña Tests
+    const testSel = useTestSelects();
+
+    // C2 · rellena el borrador de configuración a partir de los valores cargados
+    const syncCfgDraft = (c: Record<string, string>) => setCfgDraft({
+        tgHours: parseHours(c.telegram_summary_hours, [9, 17]).join(', '),
+        tgLevels: parseLevels(c.telegram_summary_levels),
+        twHours: parseHours(c.twitter_forecast_hours, [8, 20]).join(', '),
+        aemetInterval: String(c.aemet_check_interval_minutes || '15'),
+        aemetRetry: String(c.aemet_retry_delay_seconds || '2'),
+    });
+
     const notify = (type: 'ok' | 'err', msg: string) => {
         setToast({ type, msg });
         window.setTimeout(() => setToast(null), 3800);
@@ -353,6 +135,21 @@ export const AdminPage = () => {
         const iv = window.setInterval(tick, 1000);
         return () => window.clearInterval(iv);
     }, []);
+
+    // A2 · auto-refresco: recarga la pestaña activa cada 2 min si la pestaña del navegador está visible
+    useEffect(() => {
+        if (!token || !autoRefresh) return undefined;
+        const refresh = () => {
+            if (document.hidden) return;
+            goto(tab, true);
+            setLastRefresh(new Date());
+        };
+        const iv = window.setInterval(refresh, 2 * 60 * 1000);
+        const onVis = () => { if (!document.hidden) refresh(); };
+        document.addEventListener('visibilitychange', onVis);
+        return () => { window.clearInterval(iv); document.removeEventListener('visibilitychange', onVis); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token, autoRefresh, tab]);
 
     useEffect(() => {
         if (!selUser) return undefined;
@@ -389,7 +186,7 @@ export const AdminPage = () => {
             if (a.status === 'fulfilled') { setAlerts(a.value.alerts || []); setWStats(a.value.stats || wStats); }
             if (l.status === 'fulfilled') { setLogs(l.value.logs || []); setLStats(l.value.stats || lStats); }
             if (u.status === 'fulfilled') { setUsers(u.value.users || []); setStats(u.value.stats || null); }
-            if (c.status === 'fulfilled') setCfg(c.value.config || {});
+            if (c.status === 'fulfilled') { setCfg(c.value.config || {}); syncCfgDraft(c.value.config || {}); }
             if (l30.status === 'fulfilled') setLogs30(l30.value.logs || []);
             loaded.current.add('panel');
             loaded.current.add('usuarios');
@@ -547,10 +344,10 @@ export const AdminPage = () => {
         for (const p of postal) {
             const zone = (p.aemet_zone_name || '').trim();
             if (!zone || !p.postal_code) continue;
-            const zoneLc = zone.toLowerCase();
-            // AEMET lista las áreas afectadas separadas por ';' → comparamos cada una (case-insensitive)
-            const matched = mapAlerts.filter(a =>
-                (a.area_desc || '').toLowerCase().split(';').some(part => part.trim() === zoneLc));
+            const zoneKey = normalizeZone(zone);
+            // AEMET lista las áreas afectadas separadas por ';' → comparamos cada una
+            // normalizando acentos y mayúsculas (p. ej. "Costa - Ampurdán" ≈ "costa ampurdan")
+            const matched = mapAlerts.filter(a => alertZoneKeys(a.area_desc).includes(zoneKey));
             if (matched.length > 0) {
                 points.push({ postalCode: p.postal_code, zone, province: p.province || '', alerts: matched });
             }
@@ -577,6 +374,7 @@ export const AdminPage = () => {
         try {
             const data = await callWorker({ action: 'get-config' });
             setCfg(data.config || {});
+            syncCfgDraft(data.config || {});
             loaded.current.add('config');
         } catch (err) { notify('err', err instanceof Error ? err.message : 'Error cargando configuración'); }
         finally { setCfgLoading(false); }
@@ -844,17 +642,19 @@ export const AdminPage = () => {
 
     /* ── COBERTURA CP↔ZONA (Fase 2) ── */
     const coverage = useMemo<CoverageInfo>(() => {
-        const zoneSet = new Set(postal.map(p => (p.aemet_zone_name || '').toLowerCase().trim()).filter(Boolean));
+        // Comparamos zonas normalizadas (sin acentos ni puntuación) para no marcar
+        // falsos "sin CP" por diferencias de mayúsculas/acentos de AEMET
+        const zoneSet = new Set(postal.map(p => normalizeZone(p.aemet_zone_name)).filter(Boolean));
         const unmapped: { alert: WeatherAlert; missing: string[] }[] = [];
         for (const a of alerts) {
             const parts = (a.area_desc || '')
-                .split(';').map(s => s.trim().toLowerCase()).filter(Boolean)
-                .filter(p => p !== 'españa');
+                .split(';').map(s => s.trim()).filter(Boolean)
+                .filter(p => normalizeZone(p) !== 'espana');
             if (parts.length === 0) continue;
-            const missing = parts.filter(p => !zoneSet.has(p));
+            const missing = parts.filter(p => !zoneSet.has(normalizeZone(p)));
             if (missing.length > 0) unmapped.push({ alert: a, missing });
         }
-        const total = alerts.filter(a => (a.area_desc || '').split(';').map(s => s.trim().toLowerCase()).filter(p => p && p !== 'españa').length > 0).length;
+        const total = alerts.filter(a => (a.area_desc || '').split(';').map(s => s.trim()).filter(p => p && normalizeZone(p) !== 'espana').length > 0).length;
         const pct = total === 0 ? 100 : Math.round(((total - unmapped.length) / total) * 100);
         const invalid = postal.filter(p => {
             const cp = p.postal_code || '';
@@ -1155,6 +955,23 @@ export const AdminPage = () => {
                                 </div>
                             </div>
                         </Card>
+
+                        <Card icon="donut_small" title="Distribución de alertas activas" sub="Reparto por nivel de severidad según AEMET">
+                            {alerts.length === 0 ? (
+                                <Empty icon="weather_sunny" title="Sin alertas activas" />
+                            ) : (
+                                <DonutChart
+                                    centerValue={wStats.total || alerts.length}
+                                    centerLabel="activas"
+                                    slices={[
+                                        { label: 'Extremas', value: wStats.extreme, color: '#b3261e' },
+                                        { label: 'Severas', value: wStats.severe, color: '#e65100' },
+                                        { label: 'Moderadas', value: wStats.moderate, color: '#f59e0b' },
+                                        { label: 'Leves', value: wStats.minor, color: '#0277bd' },
+                                    ]}
+                                />
+                            )}
+                        </Card>
                     </div>
 
                     <div className="lg:col-span-2">
@@ -1271,6 +1088,16 @@ export const AdminPage = () => {
                                                         <span><strong className="text-ink-700">Expira:</strong> {fmtDT(a.expires)}</span>
                                                         <span className="font-mono"><strong className="font-sans text-ink-700">ID:</strong> {a.aemet_id || a.id}</span>
                                                     </div>
+                                                    <div className="md:col-span-2">
+                                                        <button onClick={() => {
+                                                            if (postal.length === 0 && !postalProgress.loading) void loadPostalCodes();
+                                                            if (users.length === 0 && !usersLoading) void loadUsers();
+                                                            setPreviewAlert(a);
+                                                        }}
+                                                            className={`${BTN} px-3.5 py-2 bg-brand text-white shadow hover:brightness-110`}>
+                                                            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>groups</span>Ver quién la recibe
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </motion.div>
                                         )}
@@ -1318,42 +1145,50 @@ export const AdminPage = () => {
             </div>
 
             <Card icon="notifications" title="Historial de notificaciones" sub={`${logs.length} registros mostrados`} pad={false}>
-                {logsLoading ? <Loading text="Cargando notificaciones..." /> : logs.length === 0 ? (
-                    <Empty icon="notifications_off" title="Sin registros" sub="No hay notificaciones con ese filtro" />
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-surface-3 text-[11px] uppercase tracking-wider text-ink-500">
-                                    <th className="text-left px-5 py-3 font-bold">Fecha y hora</th>
-                                    <th className="text-left px-5 py-3 font-bold">Canal</th>
-                                    <th className="text-left px-5 py-3 font-bold">Destinatario</th>
-                                    <th className="text-left px-5 py-3 font-bold hidden md:table-cell">Asunto / Alerta</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {logs.map((l, i) => {
+                {logsLoading ? <Loading text="Cargando notificaciones..." /> : (
+                    <DataTable<NotifLog>
+                        columns={[
+                            {
+                                key: 'fecha', label: 'Fecha y hora', className: 'whitespace-nowrap',
+                                sortValue: l => l.created_at,
+                                render: l => <span className="text-xs text-ink-700">{fmtDT(l.created_at)}</span>,
+                            },
+                            {
+                                key: 'canal', label: 'Canal',
+                                sortValue: l => l.type,
+                                render: l => {
                                     const c = ch(l.type);
                                     return (
-                                        <tr key={l.id} className={`border-t border-line/20 hover:bg-canvas transition-colors ${i % 2 === 1 ? 'bg-canvas/60' : ''}`}>
-                                            <td className="px-5 py-3 text-xs text-ink-700 whitespace-nowrap">{fmtDT(l.created_at)}</td>
-                                            <td className="px-5 py-3">
-                                                <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold px-2.5 py-1 rounded-full" style={{ background: c.bg, color: c.fg }}>
-                                                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>{c.icon}</span>{c.label}
-                                                </span>
-                                            </td>
-                                            <td className="px-5 py-3">
-                                                <p className="font-bold text-ink text-xs truncate max-w-[180px]">{l.users?.email || l.recipient || '—'}</p>
-                                                {l.users?.name && <p className="text-[11px] text-ink-500">{l.users.name}</p>}
-                                            </td>
-                                            <td className="px-5 py-3 hidden md:table-cell text-xs text-ink-500 font-mono truncate max-w-[260px]">{l.alert_id || '—'}</td>
-                                        </tr>
+                                        <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold px-2.5 py-1 rounded-full" style={{ background: c.bg, color: c.fg }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: 13 }}>{c.icon}</span>{c.label}
+                                        </span>
                                     );
-                                })}
-                            </tbody>
-                        </table>
-                        <p className="px-5 py-3 text-xs text-ink-500 border-t border-line/20">{logs.length} registros · {lStats.total} en total</p>
-                    </div>
+                                },
+                            },
+                            {
+                                key: 'destinatario', label: 'Destinatario',
+                                sortValue: l => l.users?.email || l.recipient || '',
+                                render: l => (
+                                    <div className="min-w-0">
+                                        <p className="font-bold text-ink text-xs truncate max-w-[180px]">{l.users?.email || l.recipient || '—'}</p>
+                                        {l.users?.name && <p className="text-[11px] text-ink-500">{l.users.name}</p>}
+                                    </div>
+                                ),
+                            },
+                            {
+                                key: 'alerta', label: 'Asunto / Alerta', className: 'hidden md:table-cell font-mono',
+                                sortValue: l => l.alert_id || '',
+                                render: l => <span className="text-xs text-ink-500 truncate max-w-[260px] block">{l.alert_id || '—'}</span>,
+                            },
+                        ]}
+                        rows={logs}
+                        rowKey={l => l.id}
+                        pageSize={50}
+                        emptyIcon="notifications_off"
+                        emptyTitle="Sin registros"
+                        emptySub="No hay notificaciones con ese filtro"
+                        footer={(shown, total) => `${shown} en esta página · ${total} registros mostrados · ${lStats.total} en total`}
+                    />
                 )}
             </Card>
         </div>
@@ -1448,53 +1283,61 @@ export const AdminPage = () => {
                             <p className="text-xs text-red-700">{usersError}</p>
                         </div>
                     )}
-                    {usersLoading ? <Loading text="Cargando usuarios..." /> : filteredUsers.length === 0 ? (
-                        <Empty icon="group_off" title="No se encontraron usuarios" sub={hasFilters ? 'Prueba a quitar algún filtro' : undefined} />
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="bg-surface-3 text-[11px] uppercase tracking-wider text-ink-500">
-                                        <th className="text-left px-5 py-3 font-bold">Usuario</th>
-                                        <th className="text-left px-5 py-3 font-bold hidden md:table-cell">Código Postal</th>
-                                        <th className="text-left px-5 py-3 font-bold hidden lg:table-cell">Alertas</th>
-                                        <th className="text-left px-5 py-3 font-bold hidden lg:table-cell">Alta</th>
-                                        <th className="text-right px-5 py-3 font-bold">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredUsers.map((u, i) => (
-                                        <tr key={u.id} onClick={() => setSelUser(u)}
-                                            className={`border-t border-line/20 hover:bg-canvas transition-colors cursor-pointer ${i % 2 === 1 ? 'bg-canvas/60' : ''}`}>
-                                            <td className="px-5 py-3">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className="w-8 h-8 rounded-full bg-[#d7e2ff] flex items-center justify-center text-[#003f87] font-bold text-xs flex-shrink-0">
-                                                        {(u.name || u.email || '?').charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <p className="font-bold truncate max-w-[180px]">{u.name || '—'}</p>
-                                                            {u.isVerified && <span className="material-symbols-outlined text-[#16a34a] flex-shrink-0" style={{ fontSize: 14 }} title="Verificado">verified</span>}
-                                                        </div>
-                                                        <p className="text-xs text-ink-500 truncate max-w-[180px]">{u.email}</p>
-                                                    </div>
+                    {usersLoading ? <Loading text="Cargando usuarios..." /> : (
+                        <DataTable<AdminUser>
+                            columns={[
+                                {
+                                    key: 'usuario', label: 'Usuario',
+                                    sortValue: u => (u.name || u.email || '').toLowerCase(),
+                                    render: u => (
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-8 h-8 rounded-full bg-[#d7e2ff] flex items-center justify-center text-[#003f87] font-bold text-xs flex-shrink-0">
+                                                {(u.name || u.email || '?').charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-1.5">
+                                                    <p className="font-bold truncate max-w-[180px]">{u.name || '—'}</p>
+                                                    {u.isVerified && <span className="material-symbols-outlined text-[#16a34a] flex-shrink-0" style={{ fontSize: 14 }} title="Verificado">verified</span>}
                                                 </div>
-                                            </td>
-                                            <td className="px-5 py-3 hidden md:table-cell"><span className="font-mono font-bold text-ink-700">{u.postalCode || '—'}</span></td>
-                                            <td className="px-5 py-3 hidden lg:table-cell"><span className="text-[11px] font-bold bg-surface-2 text-ink-700 px-2 py-1 rounded-full">{u.preferredSeverities.length} niveles</span></td>
-                                            <td className="px-5 py-3 hidden lg:table-cell text-xs text-ink-500">{fmtD(u.createdAt)}</td>
-                                            <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
-                                                <button onClick={() => handleDeleteUser(u)}
-                                                    className={`${BTN} px-3 py-1.5 bg-red-50 hover:bg-red-100 text-[#ba1a1a] ml-auto`}>
-                                                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete</span><span className="hidden sm:inline">Eliminar</span>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            <p className="px-5 py-3 text-xs text-ink-500 border-t border-line/20">{filteredUsers.length} de {users.length} usuarios · pulsa una fila para abrir la ficha</p>
-                        </div>
+                                                <p className="text-xs text-ink-500 truncate max-w-[180px]">{u.email}</p>
+                                            </div>
+                                        </div>
+                                    ),
+                                },
+                                {
+                                    key: 'cp', label: 'Código Postal', className: 'hidden md:table-cell',
+                                    sortValue: u => u.postalCode || '',
+                                    render: u => <span className="font-mono font-bold text-ink-700">{u.postalCode || '—'}</span>,
+                                },
+                                {
+                                    key: 'alertas', label: 'Alertas', className: 'hidden lg:table-cell',
+                                    sortValue: u => u.preferredSeverities.length,
+                                    render: u => <span className="text-[11px] font-bold bg-surface-2 text-ink-700 px-2 py-1 rounded-full">{u.preferredSeverities.length} niveles</span>,
+                                },
+                                {
+                                    key: 'alta', label: 'Alta', className: 'hidden lg:table-cell',
+                                    sortValue: u => u.createdAt || '',
+                                    render: u => <span className="text-xs text-ink-500">{fmtD(u.createdAt)}</span>,
+                                },
+                                {
+                                    key: 'acciones', label: 'Acciones', className: 'text-right',
+                                    render: u => (
+                                        <button onClick={e => { e.stopPropagation(); handleDeleteUser(u); }}
+                                            className={`${BTN} px-3 py-1.5 bg-red-50 hover:bg-red-100 text-[#ba1a1a] ml-auto`}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete</span><span className="hidden sm:inline">Eliminar</span>
+                                        </button>
+                                    ),
+                                },
+                            ]}
+                            rows={filteredUsers}
+                            rowKey={u => u.id}
+                            pageSize={25}
+                            onRowClick={u => setSelUser(u)}
+                            emptyIcon="group_off"
+                            emptyTitle="No se encontraron usuarios"
+                            emptySub={hasFilters ? 'Prueba a quitar algún filtro' : undefined}
+                            footer={(shown, total) => `${shown} en esta página · ${total} de ${users.length} usuarios · pulsa una fila para abrir la ficha`}
+                        />
                     )}
                 </Card>
             </div>
@@ -1509,6 +1352,21 @@ export const AdminPage = () => {
                 <StatCard icon="map" color="linear-gradient(135deg,#0891b2,#06b6d4)" label="Zonas AEMET" value={uniqueZones.length || '—'} hint="provincias y zonas costeras" />
                 <StatCard icon="location_city" color="linear-gradient(135deg,#f97316,#ea580c)" label="Provincias" value={uniqueProvinces.length || '—'} />
             </div>
+
+            <PostalTools
+                postal={postal}
+                onSave={async m => {
+                    await callWorker({
+                        action: 'save-postal-code',
+                        params: { postal_code: m.postal_code, aemet_zone_name: m.aemet_zone_name, province: m.province, old_postal_code: m.postal_code },
+                    });
+                    setPostal(prev => {
+                        const next = [...prev.filter(p => p.postal_code !== m.postal_code), m];
+                        next.sort((a, b) => a.postal_code.localeCompare(b.postal_code));
+                        return next;
+                    });
+                }}
+            />
 
             {postalProgress.loading && (
                 <div className="bg-surface rounded-2xl border border-line/30 shadow-sm p-5">
@@ -1724,13 +1582,17 @@ export const AdminPage = () => {
                         <p className="text-xs text-ink-500 mb-3">Horas (0-23, separadas por coma) y niveles de alerta que se envían al canal.</p>
                         <div className="grid sm:grid-cols-2 gap-4">
                             <Field label="Horas (ej: 9, 17)">
-                                <input type="text" defaultValue={parseHours(cfg.telegram_summary_hours, [9, 17]).join(', ')} id="tg-hours" placeholder="9, 17" className={inputCls} />
+                                <input type="text" value={cfgDraft.tgHours} onChange={e => setCfgDraft(p => ({ ...p, tgHours: e.target.value }))} placeholder="9, 17" className={inputCls} />
                             </Field>
                             <Field label="Niveles de alerta">
                                 <div className="flex gap-4 h-11 items-center">
                                     {(['red', 'orange', 'yellow'] as const).map(lvl => (
                                         <label key={lvl} className="flex items-center gap-1.5 text-sm font-semibold capitalize cursor-pointer">
-                                            <input type="checkbox" value={lvl} defaultChecked={parseLevels(cfg.telegram_summary_levels).includes(lvl)} data-tg-level
+                                            <input type="checkbox" checked={cfgDraft.tgLevels.includes(lvl)}
+                                                onChange={() => setCfgDraft(p => ({
+                                                    ...p,
+                                                    tgLevels: p.tgLevels.includes(lvl) ? p.tgLevels.filter(x => x !== lvl) : [...p.tgLevels, lvl],
+                                                }))}
                                                 className="rounded border-ink-500 text-brand-ink focus:ring-brand h-4 w-4" />
                                             {lvl === 'red' ? 'Rojo' : lvl === 'orange' ? 'Naranja' : 'Amarillo'}
                                         </label>
@@ -1739,10 +1601,8 @@ export const AdminPage = () => {
                             </Field>
                         </div>
                         <button onClick={() => {
-                            const hours = (document.getElementById('tg-hours') as HTMLInputElement)?.value || '';
-                            const hoursArr = hours.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
-                            const levels = Array.from(document.querySelectorAll<HTMLInputElement>('[data-tg-level]')).filter(c => c.checked).map(c => c.value);
-                            saveConfigValues([['telegram_summary_hours', JSON.stringify(hoursArr)], ['telegram_summary_levels', JSON.stringify(levels)]], 'Configuración de Telegram guardada');
+                            const hoursArr = cfgDraft.tgHours.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+                            saveConfigValues([['telegram_summary_hours', JSON.stringify(hoursArr)], ['telegram_summary_levels', JSON.stringify(cfgDraft.tgLevels)]], 'Configuración de Telegram guardada');
                         }} className={`${BTN} mt-4 h-11 px-5 bg-[#0088cc] text-white shadow hover:brightness-110`}>Guardar Config. Telegram</button>
                     </ConfigBlock>
 
@@ -1751,12 +1611,11 @@ export const AdminPage = () => {
                         <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
                             <div className="flex-1">
                                 <Field label="Horas de envío (ej: 8, 20)">
-                                    <input type="text" defaultValue={parseHours(cfg.twitter_forecast_hours, [8, 20]).join(', ')} id="tw-hours" placeholder="8, 20" className={inputCls} />
+                                    <input type="text" value={cfgDraft.twHours} onChange={e => setCfgDraft(p => ({ ...p, twHours: e.target.value }))} placeholder="8, 20" className={inputCls} />
                                 </Field>
                             </div>
                             <button onClick={() => {
-                                const v = (document.getElementById('tw-hours') as HTMLInputElement)?.value || '';
-                                const arr = v.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n >= 0 && n <= 23);
+                                const arr = cfgDraft.twHours.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n >= 0 && n <= 23);
                                 saveConfigValues([['twitter_forecast_hours', JSON.stringify(arr)]], 'Configuración de Twitter guardada');
                             }} className={`${BTN} h-11 px-5 bg-[#475569] text-white shadow hover:brightness-110`}>Guardar Twitter</button>
                         </div>
@@ -1766,16 +1625,14 @@ export const AdminPage = () => {
                         <p className="text-xs text-ink-500 mb-3">Ajusta la frecuencia de descarga de alertas para evitar bloqueos por límite de peticiones (429).</p>
                         <div className="grid sm:grid-cols-2 gap-4">
                             <Field label="Intervalo de comprobación (minutos)">
-                                <input type="number" min={1} max={60} defaultValue={cfg.aemet_check_interval_minutes || '15'} id="aemet-interval" className={inputCls} />
+                                <input type="number" min={1} max={60} value={cfgDraft.aemetInterval} onChange={e => setCfgDraft(p => ({ ...p, aemetInterval: e.target.value }))} className={inputCls} />
                             </Field>
                             <Field label="Retraso tras error/429 (segundos)">
-                                <input type="number" min={1} max={10} defaultValue={cfg.aemet_retry_delay_seconds || '2'} id="aemet-retry" className={inputCls} />
+                                <input type="number" min={1} max={10} value={cfgDraft.aemetRetry} onChange={e => setCfgDraft(p => ({ ...p, aemetRetry: e.target.value }))} className={inputCls} />
                             </Field>
                         </div>
                         <button onClick={() => {
-                            const i = (document.getElementById('aemet-interval') as HTMLInputElement)?.value || '15';
-                            const r = (document.getElementById('aemet-retry') as HTMLInputElement)?.value || '2';
-                            saveConfigValues([['aemet_check_interval_minutes', i], ['aemet_retry_delay_seconds', r]], 'Ajustes de AEMET guardados');
+                            saveConfigValues([['aemet_check_interval_minutes', cfgDraft.aemetInterval || '15'], ['aemet_retry_delay_seconds', cfgDraft.aemetRetry || '2']], 'Ajustes de AEMET guardados');
                         }} className={`${BTN} mt-4 h-11 px-5 bg-[#f97316] text-white shadow hover:brightness-110`}>Guardar Ajustes AEMET</button>
                     </ConfigBlock>
 
@@ -1860,9 +1717,11 @@ export const AdminPage = () => {
                 <TestCard badge="AEMET" badgeClass="bg-orange-100 text-orange-700" title="Consultar Alerta"
                     desc="Inspecciona los datos completos de una alerta concreta almacenada en base de datos."
                     btnClass="bg-[#f97316]" label="Consultar Datos"
-                    selectLabel="Seleccionar Alerta" selectId="test-info-id"
-                    options={workerAlerts.map(a => ({ value: a.aemet_id || a.id, label: `[${(a.severity || 'INFO').toUpperCase()}] ${a.event} (${a.area_desc || 'España'})` }))}
-                    onClick={() => runTest('info', '/test-info', { id: (document.getElementById('test-info-id') as HTMLSelectElement)?.value || '' })}
+                    select={{
+                        label: 'Seleccionar Alerta', value: testSel.get('info-id'), onChange: testSel.set('info-id'),
+                        options: workerAlerts.map(a => ({ value: a.aemet_id || a.id, label: `[${(a.severity || 'INFO').toUpperCase()}] ${a.event} (${a.area_desc || 'España'})` })),
+                    }}
+                    onClick={() => runTest('info', '/test-info', { id: testSel.get('info-id') })}
                     result={testResult.info} />
             </TestSection>
 
@@ -1870,20 +1729,26 @@ export const AdminPage = () => {
                 <TestCard badge="EMAIL" badgeClass="bg-sky-100 text-sky-700" title="Enviar Alerta"
                     desc="Simula el envío de una alerta específica por email a un usuario registrado."
                     btnClass="bg-[#0ea5e9]" label="Enviar Email"
-                    selectLabel="Seleccionar Alerta" selectId="test-email-id"
-                    options={workerAlerts.map(a => ({ value: a.aemet_id || a.id, label: `[${(a.severity || 'INFO').toUpperCase()}] ${a.event}` }))}
-                    select2Label="Destinatario" select2Id="test-email-to"
-                    options2={workerUsers.filter(u => u.email).map(u => ({ value: u.email, label: u.email }))}
+                    select={{
+                        label: 'Seleccionar Alerta', value: testSel.get('email-id'), onChange: testSel.set('email-id'),
+                        options: workerAlerts.map(a => ({ value: a.aemet_id || a.id, label: `[${(a.severity || 'INFO').toUpperCase()}] ${a.event}` })),
+                    }}
+                    select2={{
+                        label: 'Destinatario', value: testSel.get('email-to'), onChange: testSel.set('email-to'),
+                        options: workerUsers.filter(u => u.email).map(u => ({ value: u.email, label: u.email })),
+                    }}
                     onClick={() => runTest('email', '/test-email', {
-                        id: (document.getElementById('test-email-id') as HTMLSelectElement)?.value || '',
-                        email: (document.getElementById('test-email-to') as HTMLSelectElement)?.value || '',
+                        id: testSel.get('email-id'),
+                        email: testSel.get('email-to'),
                     })} result={testResult.email} />
                 <TestCard badge="EMAIL" badgeClass="bg-sky-100 text-sky-700" title="Mapa por Email"
                     desc="Genera el mapa de alertas y lo envía por correo al destinatario seleccionado."
                     btnClass="bg-[#0ea5e9]" label="Enviar Mapa x Email"
-                    selectLabel="Destinatario" selectId="test-map-to"
-                    options={workerUsers.filter(u => u.email).map(u => ({ value: u.email, label: u.email }))}
-                    onClick={() => runTest('map', '/test-map', { email: (document.getElementById('test-map-to') as HTMLSelectElement)?.value || '' })}
+                    select={{
+                        label: 'Destinatario', value: testSel.get('map-to'), onChange: testSel.set('map-to'),
+                        options: workerUsers.filter(u => u.email).map(u => ({ value: u.email, label: u.email })),
+                    }}
+                    onClick={() => runTest('map', '/test-map', { email: testSel.get('map-to') })}
                     result={testResult.map} />
                 <TestCard badge="EMAIL" badgeClass="bg-sky-100 text-sky-700" title="Informe Diario"
                     desc="Envía el resumen de actividad diaria del sistema al administrador."
@@ -1910,13 +1775,17 @@ export const AdminPage = () => {
                 <TestCard badge="PUSH" badgeClass="bg-violet-100 text-violet-700" title="Push de Alerta"
                     desc="Envía una alerta existente por Push al navegador o móvil de un usuario."
                     btnClass="bg-[#5e35b1]" label="Enviar Push"
-                    selectLabel="Usuario Destino" selectId="test-push-user"
-                    options={workerUsers.map(u => ({ value: u.id, label: u.email || u.id }))}
-                    select2Label="Seleccionar Alerta" select2Id="test-push-id"
-                    options2={workerAlerts.map(a => ({ value: a.aemet_id || a.id, label: `[${(a.severity || 'INFO').toUpperCase()}] ${a.event}` }))}
+                    select={{
+                        label: 'Usuario Destino', value: testSel.get('push-user'), onChange: testSel.set('push-user'),
+                        options: workerUsers.map(u => ({ value: u.id, label: u.email || u.id })),
+                    }}
+                    select2={{
+                        label: 'Seleccionar Alerta', value: testSel.get('push-id'), onChange: testSel.set('push-id'),
+                        options: workerAlerts.map(a => ({ value: a.aemet_id || a.id, label: `[${(a.severity || 'INFO').toUpperCase()}] ${a.event}` })),
+                    }}
                     onClick={() => runTest('push', '/test-push-notification', {
-                        userId: (document.getElementById('test-push-user') as HTMLSelectElement)?.value || '',
-                        alertId: (document.getElementById('test-push-id') as HTMLSelectElement)?.value || '',
+                        userId: testSel.get('push-user'),
+                        alertId: testSel.get('push-id'),
                     })} result={testResult.push} />
             </TestSection>
 
@@ -2161,6 +2030,16 @@ export const AdminPage = () => {
                         className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl text-xs font-bold transition-all">
                         <span className="material-symbols-outlined" style={{ fontSize: 16 }}>refresh</span><span className="hidden sm:inline">Actualizar</span>
                     </button>
+                    <button onClick={() => setAutoRefresh(p => !p)}
+                        title={autoRefresh
+                            ? `Auto-activado${lastRefresh ? ` · última recarga ${lastRefresh.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : ''} — pulsa para desactivar`
+                            : 'Auto-refresco desactivado — pulsa para activarlo cada 2 min'}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${autoRefresh
+                            ? 'bg-white/25 hover:bg-white/35 text-white'
+                            : 'bg-white/10 hover:bg-white/20 text-white/70'}`}>
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${autoRefresh ? 'bg-green-300 animate-pulse' : 'bg-white/40'}`} />
+                        <span className="hidden sm:inline">Auto</span>
+                    </button>
                     <button onClick={logout}
                         className="flex items-center gap-1.5 bg-white/10 hover:bg-white/25 text-white/90 px-3 py-2 rounded-xl text-xs font-bold transition-all">
                         <span className="material-symbols-outlined" style={{ fontSize: 16 }}>logout</span><span className="hidden sm:inline">Salir</span>
@@ -2308,6 +2187,40 @@ export const AdminPage = () => {
                 )}
             </AnimatePresence>
 
+            {/* Modal preview de destinatarios (A1) */}
+            <AnimatePresence>
+                {previewAlert && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                        onClick={e => { if (e.target === e.currentTarget) setPreviewAlert(null); }}>
+                        <motion.div initial={{ scale: .94, y: 14 }} animate={{ scale: 1, y: 0 }} exit={{ scale: .94, y: 14 }}
+                            className="w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-surface rounded-3xl shadow-2xl">
+                            <div className="px-5 py-4 bg-gradient-to-r from-brand to-brand-500 text-white flex items-start justify-between gap-3 sticky top-0 z-10">
+                                <div className="min-w-0">
+                                    <h3 className="font-extrabold leading-tight truncate">Destinatarios de la alerta</h3>
+                                    <p className="text-xs text-white/75 truncate">{previewAlert.event} · {previewAlert.area_desc || 'España'}</p>
+                                </div>
+                                <button onClick={() => setPreviewAlert(null)} className="hover:bg-white/20 rounded-lg p-1 transition-colors flex-shrink-0">
+                                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
+                                </button>
+                            </div>
+                            <div className="p-5">
+                                <RecipientPreview
+                                    alert={previewAlert}
+                                    postal={postal}
+                                    users={users}
+                                    loadingPostal={postalProgress.loading}
+                                    onMapCp={zone => {
+                                        setPreviewAlert(null);
+                                        setPostalModal({ cp: '', zone, prov: '', isNew: true });
+                                    }}
+                                />
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Ficha de usuario (drawer) */}
             <AnimatePresence>
                 {selUser && (
@@ -2321,98 +2234,3 @@ export const AdminPage = () => {
         </div>
     );
 };
-
-/* ══════════════ SUBCOMPONENTES ══════════════ */
-
-const ConfigBlock = ({ title, icon, children }: { title: string; icon: string; children: ReactNode }) => (
-    <div className="border-t border-line/30 pt-6 first:border-0 first:pt-0">
-        <h3 className="font-extrabold text-ink mb-3.5 flex items-center gap-2 text-[15px]">
-            <span className="material-symbols-outlined text-brand-ink" style={{ fontSize: 20 }}>{icon}</span>
-            {title}
-        </h3>
-        {children}
-    </div>
-);
-
-const TestSection = ({ icon, title, sub, children }: { icon: string; title: string; sub: string; children: ReactNode }) => (
-    <div className="bg-surface rounded-2xl border border-line/30 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 bg-gradient-to-r from-surface-3 to-white border-b border-line/30 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#d7e2ff] flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-brand-ink" style={{ fontSize: 20 }}>{icon}</span>
-            </div>
-            <div>
-                <p className="font-extrabold text-sm text-ink leading-tight">{title}</p>
-                <p className="text-xs text-ink-500 leading-tight mt-0.5">{sub}</p>
-            </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line/20">
-            {children}
-        </div>
-    </div>
-);
-
-interface TestResult { loading: boolean; ok?: boolean; msg: string }
-
-interface TestCardProps {
-    badge: string;
-    badgeClass: string;
-    title: string;
-    desc: string;
-    btnClass: string;
-    label: string;
-    onClick: () => void;
-    result?: TestResult;
-    selectLabel?: string;
-    selectId?: string;
-    options?: { value: string; label: string }[];
-    select2Label?: string;
-    select2Id?: string;
-    options2?: { value: string; label: string }[];
-    isImage?: boolean;
-}
-
-const TestCard = ({ badge, badgeClass, title, desc, btnClass, label, onClick, result, selectLabel, selectId, options, select2Label, select2Id, options2, isImage }: TestCardProps) => (
-    <div className="p-5 hover:bg-canvas/50 transition-colors">
-        <div className="flex items-center gap-2 mb-2">
-            <span className={`text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${badgeClass}`}>{badge}</span>
-            <span className="font-extrabold text-sm text-ink">{title}</span>
-        </div>
-        <p className="text-xs text-ink-500 leading-relaxed mb-3">{desc}</p>
-
-        {selectLabel && selectId && (
-            <div className="mb-2">
-                <label className="text-xs font-bold text-ink-700 block mb-1">{selectLabel}</label>
-                <select id={selectId} className="w-full h-10 px-2 rounded-xl border border-line bg-canvas text-xs outline-none focus:border-brand transition-all">
-                    {(options?.length ? options : [{ value: '', label: 'No hay datos disponibles' }]).map(o => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                </select>
-            </div>
-        )}
-        {select2Label && select2Id && (
-            <div className="mb-3">
-                <label className="text-xs font-bold text-ink-700 block mb-1">{select2Label}</label>
-                <select id={select2Id} className="w-full h-10 px-2 rounded-xl border border-line bg-canvas text-xs outline-none focus:border-brand transition-all">
-                    {(options2?.length ? options2 : [{ value: '', label: 'No hay datos disponibles' }]).map(o => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                </select>
-            </div>
-        )}
-
-        <button onClick={onClick} disabled={result?.loading}
-            className={`w-full py-2.5 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-50 active:scale-[.98] ${btnClass}`}>
-            {result?.loading ? <span className="inline-flex items-center gap-2"><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />Ejecutando...</span> : label}
-        </button>
-
-        {result && !result.loading && (
-            <div className={`mt-3 p-2.5 rounded-xl text-xs border break-all ${result.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                {isImage && result.ok ? (
-                    <img src={result.msg} alt="Mapa de alertas" className="w-full rounded-lg" />
-                ) : (
-                    <pre className="whitespace-pre-wrap max-h-40 overflow-y-auto font-mono text-[11px]">{result.msg}</pre>
-                )}
-            </div>
-        )}
-    </div>
-);
